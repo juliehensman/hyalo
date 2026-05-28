@@ -3210,6 +3210,13 @@ function renderSettings() {
           </div>
           <div class="settings-row-chev">›</div>
         </button>
+        <button class="settings-row" id="share-app">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Share Hyalo</div>
+            <div class="settings-row-value">Send the app to a friend</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
       </div>
     </div>
 
@@ -3261,6 +3268,7 @@ function wireSettingsHandlers() {
   });
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#open-install")?.addEventListener("click", openInstallModal);
+  $("#share-app")?.addEventListener("click", shareApp);
   $("#backup-data")?.addEventListener("click", backupData);
   $("#restore-data")?.addEventListener("click", restoreData);
   $("#data-info")?.addEventListener("click", openDataInfoModal);
@@ -3536,6 +3544,26 @@ function openDataInfoModal() {
     </div>
   `);
   $("#m-close").addEventListener("click", closeModal);
+}
+
+/* ============ Share the app ============ */
+function shareApp() {
+  const url = location.origin + location.pathname;
+  const shareData = {
+    title: "Hyalo",
+    text: "Hyalo — a quiet tracker for water and protein.",
+    url,
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(
+      () => showToast("Link copied"),
+      () => showToast(url)
+    );
+  } else {
+    showToast(url);
+  }
 }
 
 /* ============ Install / Add to Home Screen ============ */
