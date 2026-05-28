@@ -1163,9 +1163,19 @@
     padding: 22px 24px calc(28px + env(safe-area-inset-bottom));
     box-shadow: var(--shadow-lg);
     animation: slide-up 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 90vh; /* fallback */
-    max-height: 90dvh;
+    max-height: 100%;
     overflow-y: auto;
+  }
+  /* Tall modals (e.g. library): pin header/search, scroll only the list */
+  .modal.modal-tall {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal.modal-tall .lib-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
   }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -2589,15 +2599,25 @@ function cryptoId() {
 function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 
 /* ============ Modals ============ */
-function openModal(html) {
+function openModal(html, modalClass = "") {
   const root = $("#modal-root");
-  root.innerHTML = `<div class="modal-backdrop open" id="m-back"><div class="modal" id="m-modal">${html}</div></div>`;
+  root.innerHTML = `<div class="modal-backdrop open" id="m-back"><div class="modal ${modalClass}" id="m-modal">${html}</div></div>`;
   $("#m-back").addEventListener("click", e => { if (e.target === $("#m-back")) closeModal(); });
   document.body.style.overflow = "hidden";
+  syncModalViewport();
 }
 function closeModal() {
   $("#modal-root").innerHTML = "";
   document.body.style.overflow = "";
+}
+// iOS Safari draws the keyboard OVER the page without shrinking vh/dvh, so we
+// size the backdrop to the visualViewport (which DOES exclude the keyboard).
+function syncModalViewport() {
+  const backdrop = $("#m-back");
+  if (!backdrop || !window.visualViewport) return;
+  const vv = window.visualViewport;
+  backdrop.style.height = vv.height + "px";
+  backdrop.style.top = vv.offsetTop + "px";
 }
 
 function openCustomWaterModal() {
@@ -2672,7 +2692,7 @@ function openLibraryModal() {
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Close</button>
     </div>
-  `);
+  `, "modal-tall");
   $("#m-cancel").addEventListener("click", closeModal);
   $("#lib-search").addEventListener("input", e => {
     const q = e.target.value.toLowerCase();
@@ -3492,6 +3512,11 @@ function init() {
     }
     hideToast();
   });
+  // Keep open modals sized to the visible area when the iOS keyboard shows/hides
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncModalViewport);
+    window.visualViewport.addEventListener("scroll", syncModalViewport);
+  }
   // Refresh on visibility change (e.g., next morning)
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && state.hasOnboarded) render();
