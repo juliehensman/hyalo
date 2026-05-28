@@ -1245,6 +1245,20 @@
     margin-bottom: 12px;
   }
   .lib-search:focus { border-color: var(--ink); }
+  .time-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .time-input:focus { border-color: var(--ink); }
   .lib-list {
     max-height: 50vh;
     overflow-y: auto;
@@ -2085,6 +2099,20 @@ function fmtTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+// "HH:MM" (24h) from an ISO timestamp — for <input type="time"> values
+function tsToTimeStr(ts) {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+// Apply an "HH:MM" time to an existing timestamp, keeping its date
+function applyTimeToTs(ts, timeStr) {
+  const d = new Date(ts);
+  const parts = (timeStr || "").split(":").map(Number);
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    d.setHours(parts[0], parts[1], 0, 0);
+  }
+  return d.toISOString();
+}
 function greetingText() {
   const h = new Date().getHours();
   if (h < 5) return "Late night";
@@ -2589,18 +2617,18 @@ function wireTodayHandlers() {
   }));
 }
 
-function logWater(oz) {
+function logWater(oz, ts) {
   const day = ensureDay(todayKey());
-  const entry = { id: cryptoId(), oz, ts: new Date().toISOString() };
+  const entry = { id: cryptoId(), oz, ts: ts || new Date().toISOString() };
   day.water.push(entry);
   save();
   render();
   undoBuffer = { type: "water", entry, dayKey: todayKey() };
   showToast(`Logged ${oz}oz water`, () => undoLog());
 }
-function logProtein(g, name) {
+function logProtein(g, name, ts) {
   const day = ensureDay(todayKey());
-  const entry = { id: cryptoId(), g, name, ts: new Date().toISOString() };
+  const entry = { id: cryptoId(), g, name, ts: ts || new Date().toISOString() };
   day.protein.push(entry);
   // Promote to favorites if not present (and not too many)
   if (name && !state.favorites.protein.find(f => f.name === name && f.g === g)) {
@@ -2672,6 +2700,10 @@ function openCustomWaterModal() {
         <span class="num-unit">oz</span>
       </div>
     </div>
+    <div class="field" style="margin-top:14px">
+      <span class="field-label">Time</span>
+      <input type="time" class="time-input" id="log-time" value="${tsToTimeStr(new Date().toISOString())}" />
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Log</button>
@@ -2683,7 +2715,11 @@ function openCustomWaterModal() {
   $("#m-cancel").addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
     const v = +input.value;
-    if (v > 0) { closeModal(); logWater(v); }
+    if (v > 0) {
+      const ts = applyTimeToTs(new Date().toISOString(), $("#log-time").value);
+      closeModal();
+      logWater(v, ts);
+    }
   });
   setTimeout(() => input.focus(), 100);
 }
@@ -2705,6 +2741,10 @@ function openCustomProteinModal() {
         <span class="num-unit">g</span>
       </div>
     </div>
+    <div class="field">
+      <span class="field-label">Time</span>
+      <input type="time" class="time-input" id="log-time" value="${tsToTimeStr(new Date().toISOString())}" />
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Log</button>
@@ -2717,7 +2757,11 @@ function openCustomProteinModal() {
   $("#m-save").addEventListener("click", () => {
     const g = +gIn.value;
     const name = $("#p-name").value.trim();
-    if (g > 0) { closeModal(); logProtein(g, name || "Protein"); }
+    if (g > 0) {
+      const ts = applyTimeToTs(new Date().toISOString(), $("#log-time").value);
+      closeModal();
+      logProtein(g, name || "Protein", ts);
+    }
   });
 }
 
@@ -2929,7 +2973,7 @@ function openEntryActions(id, kind) {
 
   openModal(`
     <div class="modal-title">Edit entry</div>
-    <div class="modal-sub">Logged at ${fmtTime(entry.ts)}</div>
+    <div class="modal-sub">Adjust the amount or the time it was consumed.</div>
     ${kind === "protein" ? `
       <div class="field">
         <span class="field-label">Name</span>
@@ -2946,6 +2990,10 @@ function openEntryActions(id, kind) {
         <button class="num-step" id="inc" type="button">+</button>
         <span class="num-unit">${unit}</span>
       </div>
+    </div>
+    <div class="field">
+      <span class="field-label">Time</span>
+      <input type="time" class="time-input" id="edit-time" value="${tsToTimeStr(entry.ts)}" />
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="entry-delete">Delete</button>
@@ -2969,6 +3017,8 @@ function openEntryActions(id, kind) {
     const target = state.log[todayKey()]?.[kind].find(e => e.id === id);
     if (target) {
       target[valField] = newAmount;
+      const timeStr = $("#edit-time").value;
+      if (timeStr) target.ts = applyTimeToTs(target.ts, timeStr);
       if (kind === "protein") {
         const newName = $("#edit-name").value.trim();
         target.name = newName || "Protein";
