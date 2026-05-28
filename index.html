@@ -3529,7 +3529,8 @@ function openDataInfoModal() {
   openModal(`
     <div class="modal-title">How your data is stored</div>
     <div class="data-info">
-      <p>Everything you log in Hyalo is stored <strong>locally on this device</strong> — there's no account and no cloud, and nothing you enter ever leaves your phone. That's great for privacy, but it means your history lives in one place.</p>
+      <p>Hyalo is a <strong>progressive web app</strong> (PWA) — a website that behaves like a native app. There's no App Store and nothing to download: you open it in a browser, and "Add to Home Screen" lets it run fullscreen with its own icon, like a regular app.</p>
+      <p>Because it's web-based, everything you log is stored <strong>locally on this device</strong> — there's no account and no cloud, and nothing you enter ever leaves your phone. That's great for privacy, but it means your history lives in one place.</p>
       <p>To keep from losing it:</p>
       <ul>
         <li><strong>Install to your Home Screen</strong> and log there day-to-day. The Home Screen app keeps its own data, separate from the Safari tab — pick one and stick with it.</li>
@@ -3549,16 +3550,12 @@ function openDataInfoModal() {
 /* ============ Share the app ============ */
 function shareApp() {
   const url = location.origin + location.pathname;
-  const shareData = {
-    title: "Hyalo",
-    text: "Hyalo — a quiet tracker for water and protein.",
-    url,
-  };
+  const text = "Hyalo is a quiet tracker for water and protein. It's a web app — nothing to download. Open the link in your browser, and add it to your home screen if you want it to work like a regular app.";
   if (navigator.share) {
-    navigator.share(shareData).catch(() => {});
+    navigator.share({ title: "Hyalo", text, url }).catch(() => {});
   } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(
-      () => showToast("Link copied"),
+    navigator.clipboard.writeText(`${text}\n\n${url}`).then(
+      () => showToast("Copied to clipboard"),
       () => showToast(url)
     );
   } else {
