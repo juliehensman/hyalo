@@ -695,6 +695,41 @@
     opacity: 0.75;
   }
 
+  /* Data info modal */
+  .data-info p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .data-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 4px;
+  }
+  .data-info li {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    padding-left: 16px;
+    position: relative;
+    margin-bottom: 11px;
+  }
+  .data-info li::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--water);
+  }
+  .data-info strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
   /* Quick log */
   .section {
     margin: 18px 24px 0;
@@ -1884,31 +1919,36 @@ let undoTimer = null;
 let viewState = { date: null }; // currently-viewed date (history detail)
 
 /* ============ Storage ============ */
+// Merge loaded/imported data over defaults and run migrations.
+// Shared by load() and restoreData() so backups go through the same path.
+function normalizeState(data) {
+  const s = { ...DEFAULT_STATE(), ...data,
+    profile: { ...DEFAULT_STATE().profile, ...(data.profile || {}) },
+    goalsOverride: { ...DEFAULT_STATE().goalsOverride, ...(data.goalsOverride || {}) },
+    favorites: {
+      water: data.favorites?.water || DEFAULT_STATE().favorites.water,
+      protein: data.favorites?.protein || [],
+    },
+    library: data.library?.length ? data.library : [...DEFAULT_LIBRARY],
+    log: data.log || {},
+  };
+  // Migration: old single `workout` → new `workouts: []` array
+  for (const dateKey in s.log) {
+    const day = s.log[dateKey];
+    if (day.workout && !day.workouts) {
+      day.workouts = [day.workout];
+      delete day.workout;
+    }
+    if (!day.workouts) day.workouts = [];
+  }
+  return s;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-    const data = JSON.parse(raw);
-    // Shallow merge so missing fields fall back to defaults
-    state = { ...DEFAULT_STATE(), ...data,
-      profile: { ...DEFAULT_STATE().profile, ...(data.profile || {}) },
-      goalsOverride: { ...DEFAULT_STATE().goalsOverride, ...(data.goalsOverride || {}) },
-      favorites: {
-        water: data.favorites?.water || DEFAULT_STATE().favorites.water,
-        protein: data.favorites?.protein || [],
-      },
-      library: data.library?.length ? data.library : [...DEFAULT_LIBRARY],
-      log: data.log || {},
-    };
-    // Migration: old single `workout` → new `workouts: []` array
-    for (const dateKey in state.log) {
-      const day = state.log[dateKey];
-      if (day.workout && !day.workouts) {
-        day.workouts = [day.workout];
-        delete day.workout;
-      }
-      if (!day.workouts) day.workouts = [];
-    }
+    state = normalizeState(JSON.parse(raw));
   } catch (e) {
     console.warn("Could not load state", e);
   }
@@ -3129,8 +3169,31 @@ function renderSettings() {
     </div>
 
     <div class="settings-section">
-      <div class="section-head"><span class="section-title">Data</span></div>
-      <button class="danger-btn" id="reset-all">Reset all data</button>
+      <div class="section-head"><span class="section-title">Your data</span></div>
+      <div class="settings-card">
+        <button class="settings-row" id="backup-data">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Back up data</div>
+            <div class="settings-row-value">Save a copy of everything to a file</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+        <button class="settings-row" id="restore-data">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Restore from backup</div>
+            <div class="settings-row-value">Load your data from a backup file</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+        <button class="settings-row" id="data-info">
+          <div class="settings-row-info">
+            <div class="settings-row-label">How your data is stored</div>
+            <div class="settings-row-value">Where it lives & how to keep it safe</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+      </div>
+      <button class="danger-btn" id="reset-all" style="margin-top:12px">Reset all data</button>
     </div>
   `;
   $("#main-content").innerHTML = html;
@@ -3148,6 +3211,9 @@ function wireSettingsHandlers() {
   });
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#open-install")?.addEventListener("click", openInstallModal);
+  $("#backup-data")?.addEventListener("click", backupData);
+  $("#restore-data")?.addEventListener("click", restoreData);
+  $("#data-info")?.addEventListener("click", openDataInfoModal);
   $("#reset-all")?.addEventListener("click", confirmResetAll);
 }
 
@@ -3317,6 +3383,109 @@ function confirmResetAll() {
     initOnboarding();
     goToStep(1);
   });
+}
+
+/* ============ Backup / restore ============ */
+function backupData() {
+  const payload = {
+    app: "hyalo",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: state,
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const filename = `hyalo-backup-${todayKey()}.json`;
+
+  // Prefer the share sheet on iOS/mobile — the reliable way to save a file there.
+  try {
+    const file = new File([json], filename, { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: "Hyalo backup" }).catch(() => {});
+      return;
+    }
+  } catch (e) { /* File/share unsupported — fall through to download */ }
+
+  // Desktop fallback: trigger a download.
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded");
+}
+
+function restoreData() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try {
+        parsed = JSON.parse(reader.result);
+      } catch (e) {
+        showToast("That file isn't a valid backup");
+        return;
+      }
+      const incoming = parsed && parsed.app === "hyalo" && parsed.data ? parsed.data : null;
+      if (!incoming || typeof incoming !== "object" || !incoming.profile || !incoming.log) {
+        showToast("That doesn't look like a Hyalo backup");
+        return;
+      }
+      confirmRestore(incoming, parsed.exportedAt);
+    };
+    reader.onerror = () => showToast("Couldn't read that file");
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
+function confirmRestore(incoming, exportedAt) {
+  const when = exportedAt ? new Date(exportedAt).toLocaleDateString() : "an unknown date";
+  openModal(`
+    <div class="modal-title">Restore backup?</div>
+    <div class="modal-sub">This replaces all data currently in this browser with the backup from ${when}. It can't be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="m-restore">Restore</button>
+    </div>
+  `);
+  $("#m-cancel").addEventListener("click", closeModal);
+  $("#m-restore").addEventListener("click", () => {
+    state = normalizeState(incoming);
+    save();
+    closeModal();
+    render();
+    showToast("Backup restored");
+  });
+}
+
+function openDataInfoModal() {
+  openModal(`
+    <div class="modal-title">How your data is stored</div>
+    <div class="data-info">
+      <p>Everything you log in Hyalo is stored <strong>locally on this device</strong> — there's no account and no cloud, and nothing you enter ever leaves your phone. That's great for privacy, but it means your history lives in one place.</p>
+      <p>To keep from losing it:</p>
+      <ul>
+        <li><strong>Install to your Home Screen</strong> and log there day-to-day. The Home Screen app keeps its own data, separate from the Safari tab — pick one and stick with it.</li>
+        <li><strong>Avoid Private Browsing.</strong> Anything logged in a private tab is erased the moment you close it.</li>
+        <li><strong>Don't clear website data.</strong> Safari's "Clear History and Website Data" wipes Hyalo's logs along with everything else.</li>
+        <li><strong>Back up now and then.</strong> Use "Back up data" above to save a copy you can restore later.</li>
+        <li><strong>Each device is separate.</strong> Your phone and laptop keep their own data — use back up and restore to move between them.</li>
+      </ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="m-close" style="flex:1">Got it</button>
+    </div>
+  `);
+  $("#m-close").addEventListener("click", closeModal);
 }
 
 /* ============ Install / Add to Home Screen ============ */
