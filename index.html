@@ -1295,11 +1295,25 @@
     font-feature-settings: "tnum";
   }
   .lib-empty {
-    padding: 24px;
-    text-align: center;
-    color: var(--ink-muted);
+    padding: 18px 16px;
+    color: var(--ink-soft);
     font-size: 14px;
   }
+  .lib-empty-msg {
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 13px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .lib-add-form {
+    background: var(--bg-deep);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .lib-add-form .field { margin-bottom: 12px; }
+  .lib-add-form .field:last-of-type { margin-bottom: 14px; }
   .seg {
     display: flex;
     gap: 6px;
@@ -2771,7 +2785,7 @@ function openLibraryModal() {
     <div class="modal-title">Protein library</div>
     <input class="lib-search" id="lib-search" placeholder="Search foods…" />
     <div class="lib-list" id="lib-list">
-      ${renderLibList(items)}
+      ${renderLibList(items, "")}
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Close</button>
@@ -2779,15 +2793,75 @@ function openLibraryModal() {
   `, "modal-tall");
   $("#m-cancel").addEventListener("click", closeModal);
   $("#lib-search").addEventListener("input", e => {
-    const q = e.target.value.toLowerCase();
-    const filtered = items.filter(it => it.name.toLowerCase().includes(q) || (it.serving || "").toLowerCase().includes(q));
-    $("#lib-list").innerHTML = renderLibList(filtered);
+    const q = e.target.value;
+    const ql = q.toLowerCase();
+    const allItems = [...state.library].sort((a, b) => a.name.localeCompare(b.name));
+    const filtered = allItems.filter(it => it.name.toLowerCase().includes(ql) || (it.serving || "").toLowerCase().includes(ql));
+    $("#lib-list").innerHTML = renderLibList(filtered, q);
     wireLibItems();
+    wireLibAddForm();
   });
   wireLibItems();
+  wireLibAddForm();
 }
-function renderLibList(items) {
-  if (!items.length) return `<div class="lib-empty">No matches</div>`;
+
+function wireLibAddForm() {
+  const saveBtn = $("#lib-new-save");
+  if (!saveBtn) return; // Form isn't on screen (results exist)
+  const nameIn = $("#lib-new-name");
+  const servingIn = $("#lib-new-serving");
+  const gIn = $("#lib-new-g");
+  $("#lib-new-dec").addEventListener("click", () => gIn.value = Math.max(1, +gIn.value - 5));
+  $("#lib-new-inc").addEventListener("click", () => gIn.value = +gIn.value + 5);
+  saveBtn.addEventListener("click", () => {
+    const name = nameIn.value.trim();
+    const serving = servingIn.value.trim();
+    const g = +gIn.value;
+    if (!name) { showToast("Give it a name"); return; }
+    if (!g || g <= 0) { showToast("Protein must be more than 0g"); return; }
+    // Build a stable-ish id from the name + serving, deduped against existing
+    const baseId = (name + "-" + serving).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "custom";
+    let id = baseId, n = 2;
+    while (state.library.some(x => x.id === id)) { id = `${baseId}-${n++}`; }
+    state.library.push({ id, name, serving, g });
+    save();
+    closeModal();
+    logProtein(g, name);
+  });
+}
+
+function renderLibList(items, query = "") {
+  if (!items.length) {
+    const q = query.trim();
+    return `
+      <div class="lib-empty">
+        ${q
+          ? `<p class="lib-empty-msg">No matches for "${escapeHtml(q)}".<br>Add it to your library?</p>`
+          : `<p class="lib-empty-msg">Your library is empty. Add a custom item below.</p>`
+        }
+        <div class="lib-add-form">
+          <div class="field">
+            <span class="field-label">Name</span>
+            <div class="input-box"><input type="text" id="lib-new-name" value="${escapeHtml(q)}" placeholder="e.g. Tofu" /></div>
+          </div>
+          <div class="field">
+            <span class="field-label">Serving <span style="color:var(--ink-muted);font-weight:500">(optional)</span></span>
+            <div class="input-box"><input type="text" id="lib-new-serving" placeholder="e.g. 1 cup, 4 oz" /></div>
+          </div>
+          <div class="field">
+            <span class="field-label">Protein</span>
+            <div class="num-control">
+              <button class="num-step" id="lib-new-dec" type="button">−</button>
+              <input type="number" id="lib-new-g" value="20" inputmode="numeric" min="1" />
+              <button class="num-step" id="lib-new-inc" type="button">+</button>
+              <span class="num-unit">g</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="lib-new-save" style="width:100%;margin-top:4px">Add to library & log</button>
+        </div>
+      </div>
+    `;
+  }
   return items.map(it => `
     <div class="lib-item" data-lib-id="${escapeHtml(it.id)}">
       <div class="lib-item-info">
