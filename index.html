@@ -1262,6 +1262,38 @@
     appearance: none;
   }
   .time-input:focus { border-color: var(--ink); }
+
+  /* When widget — "Now" chip that expands to time + optional date */
+  .when-field { margin-bottom: 16px; }
+  .when-chip {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: left;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    font-weight: 500;
+    transition: border-color 0.15s ease;
+  }
+  .when-chip:hover { border-color: var(--ink); }
+  .when-expanded { display: flex; flex-direction: column; }
+  .when-date-link {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 3px;
+    background: none;
+    border: none;
+    padding: 8px 2px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .when-date-link:hover { color: var(--ink); }
   .lib-list {
     max-height: 50vh;
     overflow-y: auto;
@@ -2155,6 +2187,84 @@ function fmtTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+// "YYYY-MM-DD" from a timestamp (local time) — for <input type="date"> values
+function tsToDateStr(ts) {
+  return todayKey(new Date(ts));
+}
+// Build a local-time ISO timestamp from "YYYY-MM-DD" + "HH:MM"
+function buildTs(dateStr, timeStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h, min] = (timeStr || "00:00").split(":").map(Number);
+  return new Date(y, m - 1, d, h, min, 0, 0).toISOString();
+}
+// Human-readable "when" label for the summary chip
+function fmtWhen(ts) {
+  const now = new Date();
+  const d = new Date(ts);
+  if (Math.abs(now - d) < 2 * 60 * 1000) return "Now";
+  const t = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const entryDate = tsToDateStr(ts);
+  const todayDate = todayKey();
+  if (entryDate === todayDate) return `Today, ${t}`;
+  const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+  if (entryDate === todayKey(yest)) return `Yesterday, ${t}`;
+  const diff = Math.floor((now - d) / 86400000);
+  if (diff < 7) return `${d.toLocaleDateString(undefined, { weekday: "long" })}, ${t}`;
+  return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${t}`;
+}
+// Search all days for an entry by id — needed when editing past-dated entries
+function findEntry(id, kind) {
+  for (const [dayKey, day] of Object.entries(state.log)) {
+    const entry = day[kind]?.find(e => e.id === id);
+    if (entry) return { entry, dayKey };
+  }
+  return null;
+}
+// Render the "When?" widget HTML (collapsed chip → expands to time + optional date)
+function renderWhenWidget(ts, todayMax = true) {
+  const dateStr = tsToDateStr(ts);
+  const timeStr = tsToTimeStr(ts);
+  const label = fmtWhen(ts);
+  const maxAttr = todayMax ? `max="${todayKey()}"` : "";
+  return `
+    <div class="when-field">
+      <span class="field-label">When</span>
+      <button class="when-chip" id="when-chip" type="button">${escapeHtml(label)}</button>
+      <div class="when-expanded" id="when-expanded" style="display:none">
+        <input type="time" class="time-input" id="when-time" value="${timeStr}" />
+        <button class="when-date-link" id="when-date-link" type="button">Different day?</button>
+        <input type="date" class="time-input" id="when-date" value="${dateStr}" ${maxAttr} style="display:none;margin-top:8px" />
+      </div>
+    </div>
+  `;
+}
+// Wire the "When?" widget; returns getTs() to read the selected timestamp
+function wireWhenWidget(initialTs) {
+  let dateStr = tsToDateStr(initialTs);
+  let timeStr = tsToTimeStr(initialTs);
+  const chip = $("#when-chip");
+  const expanded = $("#when-expanded");
+  const timeIn = $("#when-time");
+  const dateLnk = $("#when-date-link");
+  const dateIn = $("#when-date");
+  chip.addEventListener("click", () => {
+    chip.style.display = "none";
+    expanded.style.display = "";
+    timeIn.value = timeStr;
+    dateIn.value = dateStr;
+    setTimeout(() => timeIn.focus(), 50);
+  });
+  timeIn.addEventListener("change", () => { timeStr = timeIn.value; });
+  dateLnk.addEventListener("click", () => {
+    dateIn.style.display = "";
+    dateLnk.style.display = "none";
+    dateIn.focus();
+  });
+  dateIn.addEventListener("change", () => { dateStr = dateIn.value; });
+  return {
+    getTs: () => dateStr && timeStr ? buildTs(dateStr, timeStr) : initialTs,
+  };
+}
 // "HH:MM" (24h) from an ISO timestamp — for <input type="time"> values
 function tsToTimeStr(ts) {
   const d = new Date(ts);
@@ -2674,26 +2784,29 @@ function wireTodayHandlers() {
 }
 
 function logWater(oz, ts) {
-  const day = ensureDay(todayKey());
-  const entry = { id: cryptoId(), oz, ts: ts || new Date().toISOString() };
+  const entry_ts = ts || new Date().toISOString();
+  const dayKey = todayKey(new Date(entry_ts));
+  const day = ensureDay(dayKey);
+  const entry = { id: cryptoId(), oz, ts: entry_ts };
   day.water.push(entry);
   save();
   render();
-  undoBuffer = { type: "water", entry, dayKey: todayKey() };
+  undoBuffer = { type: "water", entry, dayKey };
   showToast(`Logged ${oz}oz water`, () => undoLog());
 }
 function logProtein(g, name, ts) {
-  const day = ensureDay(todayKey());
-  const entry = { id: cryptoId(), g, name, ts: ts || new Date().toISOString() };
+  const entry_ts = ts || new Date().toISOString();
+  const dayKey = todayKey(new Date(entry_ts));
+  const day = ensureDay(dayKey);
+  const entry = { id: cryptoId(), g, name, ts: entry_ts };
   day.protein.push(entry);
-  // Promote to favorites if not present (and not too many)
   if (name && !state.favorites.protein.find(f => f.name === name && f.g === g)) {
     state.favorites.protein.unshift({ name, g });
     state.favorites.protein = state.favorites.protein.slice(0, 12);
   }
   save();
   render();
-  undoBuffer = { type: "protein", entry, dayKey: todayKey() };
+  undoBuffer = { type: "protein", entry, dayKey };
   showToast(`Logged ${g}g ${name || "protein"}`, () => undoLog());
 }
 function undoLog() {
@@ -2745,6 +2858,7 @@ function syncModalViewport() {
 }
 
 function openCustomWaterModal() {
+  const now = new Date().toISOString();
   openModal(`
     <div class="modal-title">Custom water</div>
     <div class="modal-sub">How many ounces?</div>
@@ -2756,26 +2870,20 @@ function openCustomWaterModal() {
         <span class="num-unit">oz</span>
       </div>
     </div>
-    <div class="field" style="margin-top:14px">
-      <span class="field-label">Time</span>
-      <input type="time" class="time-input" id="log-time" value="${tsToTimeStr(new Date().toISOString())}" />
-    </div>
+    ${renderWhenWidget(now)}
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Log</button>
     </div>
   `);
   const input = $("#oz-input");
+  const when = wireWhenWidget(now);
   $("#dec").addEventListener("click", () => input.value = Math.max(1, +input.value - 4));
   $("#inc").addEventListener("click", () => input.value = +input.value + 4);
   $("#m-cancel").addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
     const v = +input.value;
-    if (v > 0) {
-      const ts = applyTimeToTs(new Date().toISOString(), $("#log-time").value);
-      closeModal();
-      logWater(v, ts);
-    }
+    if (v > 0) { closeModal(); logWater(v, when.getTs()); }
   });
   setTimeout(() => input.focus(), 100);
 }
@@ -2799,10 +2907,7 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
         <span class="num-unit">g</span>
       </div>
     </div>
-    <div class="field">
-      <span class="field-label">Time</span>
-      <input type="time" class="time-input" id="log-time" value="${tsToTimeStr(new Date().toISOString())}" />
-    </div>
+    ${renderWhenWidget(new Date().toISOString())}
     <button class="toggle-row ${saveToLibDefault ? "on" : ""}" id="p-savelib" type="button">
       <div class="toggle-row-info">
         <div class="toggle-row-title">Save to my library</div>
@@ -2820,6 +2925,7 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
     </div>
   `);
   const gIn = $("#p-g");
+  const when = wireWhenWidget(new Date().toISOString());
   let saveToLib = saveToLibDefault;
   $("#dec").addEventListener("click", () => gIn.value = Math.max(1, +gIn.value - 5));
   $("#inc").addEventListener("click", () => gIn.value = +gIn.value + 5);
@@ -2834,7 +2940,7 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
     const name = $("#p-name").value.trim();
     if (!g || g <= 0) { showToast("Protein must be more than 0g"); return; }
     if (saveToLib && !name) { showToast("Name it to save to your library"); return; }
-    const ts = applyTimeToTs(new Date().toISOString(), $("#log-time").value);
+    const ts = when.getTs();
     if (saveToLib) {
       const serving = ($("#p-serving")?.value || "").trim();
       const baseId = (name + "-" + serving).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "custom";
@@ -3072,10 +3178,9 @@ function renderWorkoutEntryInModal(editIdx) {
 }
 
 function openEntryActions(id, kind) {
-  const day = state.log[todayKey()];
-  if (!day) return;
-  const entry = day[kind].find(e => e.id === id);
-  if (!entry) return;
+  const found = findEntry(id, kind);
+  if (!found) return;
+  const { entry, dayKey: oldDayKey } = found;
 
   const unit = kind === "water" ? "oz" : "g";
   const valField = kind === "water" ? "oz" : "g";
@@ -3083,7 +3188,7 @@ function openEntryActions(id, kind) {
 
   openModal(`
     <div class="modal-title">Edit entry</div>
-    <div class="modal-sub">Adjust the amount or the time it was consumed.</div>
+    <div class="modal-sub">Adjust the amount, time, or date.</div>
     ${kind === "protein" ? `
       <div class="field">
         <span class="field-label">Name</span>
@@ -3101,10 +3206,7 @@ function openEntryActions(id, kind) {
         <span class="num-unit">${unit}</span>
       </div>
     </div>
-    <div class="field">
-      <span class="field-label">Time</span>
-      <input type="time" class="time-input" id="edit-time" value="${tsToTimeStr(entry.ts)}" />
-    </div>
+    ${renderWhenWidget(entry.ts)}
     <div class="modal-actions">
       <button class="btn btn-secondary" id="entry-delete">Delete</button>
       <button class="btn btn-primary" id="entry-save">Save</button>
@@ -3112,31 +3214,35 @@ function openEntryActions(id, kind) {
   `);
 
   const amountIn = $("#edit-amount");
+  const when = wireWhenWidget(entry.ts);
   $("#dec").addEventListener("click", () => amountIn.value = Math.max(1, +amountIn.value - step));
   $("#inc").addEventListener("click", () => amountIn.value = +amountIn.value + step);
   $("#entry-delete").addEventListener("click", () => {
-    deleteEntry(id, kind);
+    // Remove from whichever day it lives in
+    const oldDay = state.log[oldDayKey];
+    if (oldDay) oldDay[kind] = oldDay[kind].filter(e => e.id !== id);
+    save(); render();
+    showToast("Entry removed");
     closeModal();
   });
   $("#entry-save").addEventListener("click", () => {
     const newAmount = +amountIn.value;
-    if (!newAmount || newAmount <= 0) {
-      showToast("Amount must be more than 0");
-      return;
-    }
-    const target = state.log[todayKey()]?.[kind].find(e => e.id === id);
-    if (target) {
-      target[valField] = newAmount;
-      const timeStr = $("#edit-time").value;
-      if (timeStr) target.ts = applyTimeToTs(target.ts, timeStr);
-      if (kind === "protein") {
-        const newName = $("#edit-name").value.trim();
-        target.name = newName || "Protein";
-      }
-      save();
-      render();
-      showToast("Entry updated");
-    }
+    if (!newAmount || newAmount <= 0) { showToast("Amount must be more than 0"); return; }
+    const newTs = when.getTs();
+    const newDayKey = todayKey(new Date(newTs));
+    const newName = kind === "protein" ? ($("#edit-name").value.trim() || "Protein") : undefined;
+
+    // Remove from old day
+    const oldDay = state.log[oldDayKey];
+    if (oldDay) oldDay[kind] = oldDay[kind].filter(e => e.id !== id);
+
+    // Build updated entry and write to (possibly different) day
+    const updated = { ...entry, [valField]: newAmount, ts: newTs };
+    if (newName !== undefined) updated.name = newName;
+    ensureDay(newDayKey)[kind].push(updated);
+
+    save(); render();
+    showToast("Entry updated");
     closeModal();
   });
 }
