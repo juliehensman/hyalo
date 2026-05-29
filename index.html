@@ -1295,25 +1295,15 @@
     font-feature-settings: "tnum";
   }
   .lib-empty {
-    padding: 18px 16px;
-    color: var(--ink-soft);
-    font-size: 14px;
+    padding: 28px 20px;
+    text-align: center;
   }
   .lib-empty-msg {
-    text-align: center;
     color: var(--ink-muted);
-    font-size: 13px;
-    margin-bottom: 14px;
+    font-size: 13.5px;
+    margin-bottom: 16px;
     line-height: 1.5;
   }
-  .lib-add-form {
-    background: var(--bg-deep);
-    border: 1px dashed var(--border-strong);
-    border-radius: var(--radius);
-    padding: 14px;
-  }
-  .lib-add-form .field { margin-bottom: 12px; }
-  .lib-add-form .field:last-of-type { margin-bottom: 14px; }
   .seg {
     display: flex;
     gap: 6px;
@@ -2799,27 +2789,63 @@ function openLibraryModal() {
     const filtered = allItems.filter(it => it.name.toLowerCase().includes(ql) || (it.serving || "").toLowerCase().includes(ql));
     $("#lib-list").innerHTML = renderLibList(filtered, q);
     wireLibItems();
-    wireLibAddForm();
+    wireLibAddButton();
   });
   wireLibItems();
-  wireLibAddForm();
+  wireLibAddButton();
 }
 
-function wireLibAddForm() {
-  const saveBtn = $("#lib-new-save");
-  if (!saveBtn) return; // Form isn't on screen (results exist)
-  const nameIn = $("#lib-new-name");
-  const servingIn = $("#lib-new-serving");
-  const gIn = $("#lib-new-g");
+function wireLibAddButton() {
+  const btn = $("#lib-add-open");
+  if (!btn) return; // Only present in the empty state
+  btn.addEventListener("click", () => {
+    const q = ($("#lib-search")?.value || "").trim();
+    openLibAddView(q);
+  });
+}
+
+// Full-size add form (replaces the modal contents, like the workout entry view)
+// so the fields get the whole modal and aren't cramped inside the scrolling list.
+function openLibAddView(prefillName = "") {
+  const modal = $("#m-modal");
+  if (!modal) return;
+  modal.classList.remove("modal-tall"); // let the modal size to the form
+  modal.innerHTML = `
+    <div class="modal-title">Add to library</div>
+    <div class="modal-sub">Saved for next time — and logged for today.</div>
+    <div class="field">
+      <span class="field-label">Name</span>
+      <div class="input-box"><input type="text" id="lib-new-name" value="${escapeHtml(prefillName)}" placeholder="e.g. Collagen" /></div>
+    </div>
+    <div class="field">
+      <span class="field-label">Serving <span style="color:var(--ink-muted);font-weight:500">(optional)</span></span>
+      <div class="input-box"><input type="text" id="lib-new-serving" placeholder="e.g. 1 scoop, 2 tbsp" /></div>
+    </div>
+    <div class="field">
+      <span class="field-label">Protein</span>
+      <div class="num-control">
+        <button class="num-step" id="lib-new-dec" type="button">−</button>
+        <input type="number" id="lib-new-g" value="20" inputmode="numeric" min="1" />
+        <button class="num-step" id="lib-new-inc" type="button">+</button>
+        <span class="num-unit">g</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="lib-add-back">Back</button>
+      <button class="btn btn-primary" id="lib-add-save">Add &amp; log</button>
+    </div>
+  `;
+  const nameIn = $("#lib-new-name"), servingIn = $("#lib-new-serving"), gIn = $("#lib-new-g");
   $("#lib-new-dec").addEventListener("click", () => gIn.value = Math.max(1, +gIn.value - 5));
   $("#lib-new-inc").addEventListener("click", () => gIn.value = +gIn.value + 5);
-  saveBtn.addEventListener("click", () => {
+  $("#lib-add-back").addEventListener("click", () => openLibraryModal());
+  $("#lib-add-save").addEventListener("click", () => {
     const name = nameIn.value.trim();
     const serving = servingIn.value.trim();
     const g = +gIn.value;
     if (!name) { showToast("Give it a name"); return; }
     if (!g || g <= 0) { showToast("Protein must be more than 0g"); return; }
-    // Build a stable-ish id from the name + serving, deduped against existing
+    // Build a stable-ish id from name + serving, deduped against existing
     const baseId = (name + "-" + serving).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "custom";
     let id = baseId, n = 2;
     while (state.library.some(x => x.id === id)) { id = `${baseId}-${n++}`; }
@@ -2836,29 +2862,10 @@ function renderLibList(items, query = "") {
     return `
       <div class="lib-empty">
         ${q
-          ? `<p class="lib-empty-msg">No matches for "${escapeHtml(q)}".<br>Add it to your library?</p>`
-          : `<p class="lib-empty-msg">Your library is empty. Add a custom item below.</p>`
+          ? `<p class="lib-empty-msg">No matches for "${escapeHtml(q)}".</p>`
+          : `<p class="lib-empty-msg">Your library is empty.</p>`
         }
-        <div class="lib-add-form">
-          <div class="field">
-            <span class="field-label">Name</span>
-            <div class="input-box"><input type="text" id="lib-new-name" value="${escapeHtml(q)}" placeholder="e.g. Tofu" /></div>
-          </div>
-          <div class="field">
-            <span class="field-label">Serving <span style="color:var(--ink-muted);font-weight:500">(optional)</span></span>
-            <div class="input-box"><input type="text" id="lib-new-serving" placeholder="e.g. 1 cup, 4 oz" /></div>
-          </div>
-          <div class="field">
-            <span class="field-label">Protein</span>
-            <div class="num-control">
-              <button class="num-step" id="lib-new-dec" type="button">−</button>
-              <input type="number" id="lib-new-g" value="20" inputmode="numeric" min="1" />
-              <button class="num-step" id="lib-new-inc" type="button">+</button>
-              <span class="num-unit">g</span>
-            </div>
-          </div>
-          <button class="btn btn-primary" id="lib-new-save" style="width:100%;margin-top:4px">Add to library & log</button>
-        </div>
+        <button class="btn btn-secondary" id="lib-add-open" style="width:100%">+ Add ${q ? `"${escapeHtml(q)}"` : "a custom item"}</button>
       </div>
     `;
   }
