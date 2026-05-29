@@ -2663,7 +2663,7 @@ function wireTodayHandlers() {
   }));
   $("#water-custom")?.addEventListener("click", openCustomWaterModal);
   $("#protein-library")?.addEventListener("click", openLibraryModal);
-  $("#protein-custom")?.addEventListener("click", openCustomProteinModal);
+  $("#protein-custom")?.addEventListener("click", () => openCustomProteinModal());
   $("#workout-card")?.addEventListener("click", openWorkoutModal);
   $$("[data-entry-id]").forEach(b => b.addEventListener("click", () => {
     openEntryActions(b.dataset.entryId, b.dataset.entryKind);
@@ -2778,6 +2778,8 @@ function openCustomWaterModal() {
 }
 
 function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
+  // Guard against being called directly as an event handler (prefillName = Event)
+  if (typeof prefillName !== "string") prefillName = "";
   openModal(`
     <div class="modal-title">Custom protein</div>
     <div class="modal-sub">Log a one-off, or save it to your library to reuse.</div>
