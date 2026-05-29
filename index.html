@@ -1304,6 +1304,55 @@
     margin-bottom: 16px;
     line-height: 1.5;
   }
+  /* Toggle row (e.g. "Save to my library") */
+  .toggle-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: left;
+    transition: border-color 0.15s ease;
+  }
+  .toggle-row.on { border-color: var(--protein); }
+  .toggle-row-info { flex: 1; min-width: 0; }
+  .toggle-row-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .toggle-row-sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .toggle-switch {
+    width: 44px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--border-strong);
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  .toggle-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    transition: transform 0.2s ease;
+  }
+  .toggle-row.on .toggle-switch { background: var(--protein); }
+  .toggle-row.on .toggle-switch::after { transform: translateX(18px); }
   .seg {
     display: flex;
     gap: 6px;
@@ -2728,13 +2777,13 @@ function openCustomWaterModal() {
   setTimeout(() => input.focus(), 100);
 }
 
-function openCustomProteinModal() {
+function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
   openModal(`
     <div class="modal-title">Custom protein</div>
-    <div class="modal-sub">Add a one-off, or save as a favorite.</div>
+    <div class="modal-sub">Log a one-off, or save it to your library to reuse.</div>
     <div class="field">
-      <span class="field-label">Name (optional)</span>
-      <div class="input-box"><input type="text" id="p-name" placeholder="e.g. lunch chicken bowl" /></div>
+      <span class="field-label">Name${saveToLibDefault ? "" : " (optional)"}</span>
+      <div class="input-box"><input type="text" id="p-name" value="${escapeHtml(prefillName)}" placeholder="e.g. lunch chicken bowl" /></div>
     </div>
     <div class="field">
       <span class="field-label">Grams of protein</span>
@@ -2749,23 +2798,48 @@ function openCustomProteinModal() {
       <span class="field-label">Time</span>
       <input type="time" class="time-input" id="log-time" value="${tsToTimeStr(new Date().toISOString())}" />
     </div>
+    <button class="toggle-row ${saveToLibDefault ? "on" : ""}" id="p-savelib" type="button">
+      <div class="toggle-row-info">
+        <div class="toggle-row-title">Save to my library</div>
+        <div class="toggle-row-sub">Find it quickly next time you search</div>
+      </div>
+      <div class="toggle-switch"></div>
+    </button>
+    <div class="field" id="serving-field" style="${saveToLibDefault ? "" : "display:none"};margin-top:12px">
+      <span class="field-label">Serving <span style="color:var(--ink-muted);font-weight:500">(optional)</span></span>
+      <div class="input-box"><input type="text" id="p-serving" placeholder="e.g. 1 scoop, 2 tbsp" /></div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Log</button>
     </div>
   `);
   const gIn = $("#p-g");
+  let saveToLib = saveToLibDefault;
   $("#dec").addEventListener("click", () => gIn.value = Math.max(1, +gIn.value - 5));
   $("#inc").addEventListener("click", () => gIn.value = +gIn.value + 5);
+  $("#p-savelib").addEventListener("click", () => {
+    saveToLib = !saveToLib;
+    $("#p-savelib").classList.toggle("on", saveToLib);
+    $("#serving-field").style.display = saveToLib ? "" : "none";
+  });
   $("#m-cancel").addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
     const g = +gIn.value;
     const name = $("#p-name").value.trim();
-    if (g > 0) {
-      const ts = applyTimeToTs(new Date().toISOString(), $("#log-time").value);
-      closeModal();
-      logProtein(g, name || "Protein", ts);
+    if (!g || g <= 0) { showToast("Protein must be more than 0g"); return; }
+    if (saveToLib && !name) { showToast("Name it to save to your library"); return; }
+    const ts = applyTimeToTs(new Date().toISOString(), $("#log-time").value);
+    if (saveToLib) {
+      const serving = ($("#p-serving")?.value || "").trim();
+      const baseId = (name + "-" + serving).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "custom";
+      let id = baseId, n = 2;
+      while (state.library.some(x => x.id === id)) { id = `${baseId}-${n++}`; }
+      state.library.push({ id, name, serving, g });
     }
+    closeModal();
+    logProtein(g, name || "Protein", ts);
+    if (saveToLib) showToast("Logged & saved to library");
   });
 }
 
@@ -2800,59 +2874,9 @@ function wireLibAddButton() {
   if (!btn) return; // Only present in the empty state
   btn.addEventListener("click", () => {
     const q = ($("#lib-search")?.value || "").trim();
-    openLibAddView(q);
-  });
-}
-
-// Full-size add form (replaces the modal contents, like the workout entry view)
-// so the fields get the whole modal and aren't cramped inside the scrolling list.
-function openLibAddView(prefillName = "") {
-  const modal = $("#m-modal");
-  if (!modal) return;
-  modal.classList.remove("modal-tall"); // let the modal size to the form
-  modal.innerHTML = `
-    <div class="modal-title">Add to library</div>
-    <div class="modal-sub">Saved for next time — and logged for today.</div>
-    <div class="field">
-      <span class="field-label">Name</span>
-      <div class="input-box"><input type="text" id="lib-new-name" value="${escapeHtml(prefillName)}" placeholder="e.g. Collagen" /></div>
-    </div>
-    <div class="field">
-      <span class="field-label">Serving <span style="color:var(--ink-muted);font-weight:500">(optional)</span></span>
-      <div class="input-box"><input type="text" id="lib-new-serving" placeholder="e.g. 1 scoop, 2 tbsp" /></div>
-    </div>
-    <div class="field">
-      <span class="field-label">Protein</span>
-      <div class="num-control">
-        <button class="num-step" id="lib-new-dec" type="button">−</button>
-        <input type="number" id="lib-new-g" value="20" inputmode="numeric" min="1" />
-        <button class="num-step" id="lib-new-inc" type="button">+</button>
-        <span class="num-unit">g</span>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="lib-add-back">Back</button>
-      <button class="btn btn-primary" id="lib-add-save">Add &amp; log</button>
-    </div>
-  `;
-  const nameIn = $("#lib-new-name"), servingIn = $("#lib-new-serving"), gIn = $("#lib-new-g");
-  $("#lib-new-dec").addEventListener("click", () => gIn.value = Math.max(1, +gIn.value - 5));
-  $("#lib-new-inc").addEventListener("click", () => gIn.value = +gIn.value + 5);
-  $("#lib-add-back").addEventListener("click", () => openLibraryModal());
-  $("#lib-add-save").addEventListener("click", () => {
-    const name = nameIn.value.trim();
-    const serving = servingIn.value.trim();
-    const g = +gIn.value;
-    if (!name) { showToast("Give it a name"); return; }
-    if (!g || g <= 0) { showToast("Protein must be more than 0g"); return; }
-    // Build a stable-ish id from name + serving, deduped against existing
-    const baseId = (name + "-" + serving).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "custom";
-    let id = baseId, n = 2;
-    while (state.library.some(x => x.id === id)) { id = `${baseId}-${n++}`; }
-    state.library.push({ id, name, serving, g });
-    save();
     closeModal();
-    logProtein(g, name);
+    // Hand off to the single Custom screen, pre-filled and set to save to library
+    openCustomProteinModal(q, true);
   });
 }
 
