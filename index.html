@@ -1263,24 +1263,11 @@
   }
   .time-input:focus { border-color: var(--ink); }
 
-  /* When widget — "Now" chip that expands to time + optional date */
+  /* When widget — time always visible, date one tap away */
   .when-field { margin-bottom: 16px; }
-  .when-chip {
-    width: 100%;
-    padding: 12px 14px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    text-align: left;
-    font-size: 15px;
-    font-family: inherit;
-    color: var(--ink);
-    font-weight: 500;
-    transition: border-color 0.15s ease;
-  }
-  .when-chip:hover { border-color: var(--ink); }
-  .when-expanded { display: flex; flex-direction: column; }
+  .when-field .time-input { margin-top: 0; }
   .when-date-link {
+    display: block;
     font-size: 12.5px;
     color: var(--ink-muted);
     text-decoration: underline;
@@ -1655,6 +1642,9 @@
   }
   .num-control {
     flex: 1;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -2197,21 +2187,6 @@ function buildTs(dateStr, timeStr) {
   const [h, min] = (timeStr || "00:00").split(":").map(Number);
   return new Date(y, m - 1, d, h, min, 0, 0).toISOString();
 }
-// Human-readable "when" label for the summary chip
-function fmtWhen(ts) {
-  const now = new Date();
-  const d = new Date(ts);
-  if (Math.abs(now - d) < 2 * 60 * 1000) return "Now";
-  const t = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  const entryDate = tsToDateStr(ts);
-  const todayDate = todayKey();
-  if (entryDate === todayDate) return `Today, ${t}`;
-  const yest = new Date(now); yest.setDate(yest.getDate() - 1);
-  if (entryDate === todayKey(yest)) return `Yesterday, ${t}`;
-  const diff = Math.floor((now - d) / 86400000);
-  if (diff < 7) return `${d.toLocaleDateString(undefined, { weekday: "long" })}, ${t}`;
-  return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${t}`;
-}
 // Search all days for an entry by id — needed when editing past-dated entries
 function findEntry(id, kind) {
   for (const [dayKey, day] of Object.entries(state.log)) {
@@ -2220,21 +2195,18 @@ function findEntry(id, kind) {
   }
   return null;
 }
-// Render the "When?" widget HTML (collapsed chip → expands to time + optional date)
+// Render the "When?" widget HTML — time always visible, date one tap away
 function renderWhenWidget(ts, todayMax = true) {
   const dateStr = tsToDateStr(ts);
   const timeStr = tsToTimeStr(ts);
-  const label = fmtWhen(ts);
   const maxAttr = todayMax ? `max="${todayKey()}"` : "";
+  const isToday = dateStr === todayKey();
   return `
     <div class="when-field">
       <span class="field-label">When</span>
-      <button class="when-chip" id="when-chip" type="button">${escapeHtml(label)}</button>
-      <div class="when-expanded" id="when-expanded" style="display:none">
-        <input type="time" class="time-input" id="when-time" value="${timeStr}" />
-        <button class="when-date-link" id="when-date-link" type="button">Different day?</button>
-        <input type="date" class="time-input" id="when-date" value="${dateStr}" ${maxAttr} style="display:none;margin-top:8px" />
-      </div>
+      <input type="time" class="time-input" id="when-time" value="${timeStr}" />
+      <button class="when-date-link" id="when-date-link" type="button">${isToday ? "Different day?" : "Change day"}</button>
+      <input type="date" class="time-input" id="when-date" value="${dateStr}" ${maxAttr} style="${isToday ? "display:none;" : ""}margin-top:8px" />
     </div>
   `;
 }
@@ -2242,18 +2214,9 @@ function renderWhenWidget(ts, todayMax = true) {
 function wireWhenWidget(initialTs) {
   let dateStr = tsToDateStr(initialTs);
   let timeStr = tsToTimeStr(initialTs);
-  const chip = $("#when-chip");
-  const expanded = $("#when-expanded");
   const timeIn = $("#when-time");
   const dateLnk = $("#when-date-link");
   const dateIn = $("#when-date");
-  chip.addEventListener("click", () => {
-    chip.style.display = "none";
-    expanded.style.display = "";
-    timeIn.value = timeStr;
-    dateIn.value = dateStr;
-    setTimeout(() => timeIn.focus(), 50);
-  });
   timeIn.addEventListener("change", () => { timeStr = timeIn.value; });
   dateLnk.addEventListener("click", () => {
     dateIn.style.display = "";
@@ -2862,12 +2825,11 @@ function openCustomWaterModal() {
   openModal(`
     <div class="modal-title">Custom water</div>
     <div class="modal-sub">How many ounces?</div>
-    <div class="num-row">
+    <div class="num-row" style="margin-bottom:22px">
       <div class="num-control">
         <button class="num-step" id="dec">−</button>
         <input type="number" id="oz-input" value="16" inputmode="numeric" />
         <button class="num-step" id="inc">+</button>
-        <span class="num-unit">oz</span>
       </div>
     </div>
     ${renderWhenWidget(now)}
@@ -2904,7 +2866,6 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
         <button class="num-step" id="dec">−</button>
         <input type="number" id="p-g" value="25" inputmode="numeric" />
         <button class="num-step" id="inc">+</button>
-        <span class="num-unit">g</span>
       </div>
     </div>
     ${renderWhenWidget(new Date().toISOString())}
@@ -3198,12 +3159,11 @@ function openEntryActions(id, kind) {
       </div>
     ` : ""}
     <div class="field">
-      <span class="field-label">Amount</span>
+      <span class="field-label">Amount (${unit})</span>
       <div class="num-control">
         <button class="num-step" id="dec" type="button">−</button>
         <input type="number" id="edit-amount" value="${entry[valField]}" inputmode="numeric" min="1" />
         <button class="num-step" id="inc" type="button">+</button>
-        <span class="num-unit">${unit}</span>
       </div>
     </div>
     ${renderWhenWidget(entry.ts)}
@@ -3497,12 +3457,11 @@ function openGoalOverride(kind) {
   const label = kind === "water" ? "Water goal" : "Protein goal";
   openModal(`
     <div class="modal-title">${label}</div>
-    <div class="modal-sub">Override the calculated value, or save to revert.</div>
+    <div class="modal-sub">Override the calculated value (${unit}), or save to revert.</div>
     <div class="num-control">
       <button class="num-step" id="dec">−</button>
       <input type="number" id="g-input" value="${current}" inputmode="numeric" />
       <button class="num-step" id="inc">+</button>
-      <span class="num-unit">${unit}</span>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
