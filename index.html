@@ -1567,6 +1567,37 @@
   .goals-update-body p:last-child { margin-bottom: 0; }
   .goals-update-body em { color: var(--ink); font-style: italic; }
 
+  /* ===== Goal-completion flourish: soft glow + halo pulse on the ring ===== */
+  .ring-card.water .ring-wrap.celebrate   { --glow: var(--water); }
+  .ring-card.protein .ring-wrap.celebrate { --glow: var(--protein); }
+  .ring-wrap.celebrate .ring-svg {
+    animation: ringGlow 1.4s ease-out;
+  }
+  .ring-wrap.celebrate::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--glow);
+    opacity: 0;
+    pointer-events: none;
+    animation: ringHalo 1.4s ease-out;
+  }
+  @keyframes ringGlow {
+    0%   { filter: drop-shadow(0 0 0 transparent); }
+    28%  { filter: drop-shadow(0 0 15px var(--glow)); }
+    100% { filter: drop-shadow(0 0 0 transparent); }
+  }
+  @keyframes ringHalo {
+    0%   { transform: scale(0.8); opacity: 0.5; }
+    60%  { opacity: 0.14; }
+    100% { transform: scale(1.3); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ring-wrap.celebrate .ring-svg { animation: none; }
+    .ring-wrap.celebrate::after { content: none; }
+  }
+
   /* Install instructions modal */
   .install-steps {
     background: var(--card);
@@ -2318,6 +2349,52 @@ function hideToast() {
   clearTimeout(undoTimer);
 }
 
+/* ============ Goal-hit celebrations (quiet ring flourish) ============ */
+
+// Returns whether each goal is currently met for a given day (pre/post snapshot).
+function goalHitStatus(dayKey) {
+  const goals = dayKey === todayKey() ? getTodayGoals() : goalsForDay(dayKey);
+  const t = dayTotals(dayKey);
+  return {
+    water:   goals.water   > 0 && t.water   >= goals.water,
+    protein: goals.protein > 0 && t.protein >= goals.protein,
+  };
+}
+
+// Called after a log; fires the right celebration only when a goal is newly
+// crossed today. "Both" wins if the same log completes the pair.
+function checkGoalCelebration(dayKey, before) {
+  if (dayKey !== todayKey()) return;       // celebrate live achievements only
+  const after = goalHitStatus(dayKey);
+  const bothBefore = before.water && before.protein;
+  const bothAfter  = after.water && after.protein;
+  if (!bothBefore && bothAfter)            showCelebration("both");
+  else if (!before.water && after.water)   showCelebration("water");
+  else if (!before.protein && after.protein) showCelebration("protein");
+}
+
+function showCelebration(type) {
+  // Quiet flourish: a soft glow + halo pulse on the completed ring(s),
+  // timed to land as the ring finishes filling.
+  if (type === "both") { pulseRing("water"); pulseRing("protein"); }
+  else pulseRing(type);
+  if (navigator.vibrate) {
+    try { navigator.vibrate(type === "both" ? [22, 50, 22] : 18); } catch (e) {}
+  }
+}
+
+function pulseRing(kind) {
+  setTimeout(() => {
+    const wrap = $(`.ring-card.${kind} .ring-wrap`);
+    if (!wrap) return;
+    wrap.classList.remove("celebrate");
+    void wrap.offsetWidth;            // restart the animation if it re-fires
+    wrap.classList.add("celebrate");
+    clearTimeout(wrap._pulseT);
+    wrap._pulseT = setTimeout(() => wrap.classList.remove("celebrate"), 1500);
+  }, 460);                            // let the 0.6s ring fill near completion first
+}
+
 /* ============ Onboarding ============ */
 function initOnboarding() {
   onbDraft = JSON.parse(JSON.stringify(state.profile));
@@ -2782,6 +2859,7 @@ function wireTodayHandlers() {
 function logWater(oz, ts) {
   const entry_ts = ts || new Date().toISOString();
   const dayKey = todayKey(new Date(entry_ts));
+  const before = goalHitStatus(dayKey);
   const day = ensureDay(dayKey);
   const entry = { id: cryptoId(), oz, ts: entry_ts };
   day.water.push(entry);
@@ -2789,10 +2867,12 @@ function logWater(oz, ts) {
   render();
   undoBuffer = { type: "water", entry, dayKey };
   showToast(`Logged ${oz}oz water`, () => undoLog());
+  checkGoalCelebration(dayKey, before);
 }
 function logProtein(g, name, ts) {
   const entry_ts = ts || new Date().toISOString();
   const dayKey = todayKey(new Date(entry_ts));
+  const before = goalHitStatus(dayKey);
   const day = ensureDay(dayKey);
   const entry = { id: cryptoId(), g, name, ts: entry_ts };
   day.protein.push(entry);
@@ -2804,6 +2884,7 @@ function logProtein(g, name, ts) {
   render();
   undoBuffer = { type: "protein", entry, dayKey };
   showToast(`Logged ${g}g ${name || "protein"}`, () => undoLog());
+  checkGoalCelebration(dayKey, before);
 }
 function undoLog() {
   if (!undoBuffer) return;
