@@ -6,8 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<meta name="theme-color" content="#f3ede2" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#14110c" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#14110c" id="meta-theme-color" />
 <title>Hyalo — water & protein</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -45,6 +44,7 @@
     --protein-bg: #f5e4dc;
     --protein-track: #ecd5c9;
     --sage: #6a8a64;
+    --sage-soft: #8a9a80;
     --shadow-sm: 0 1px 2px rgba(60, 45, 30, 0.04);
     --shadow: 0 1px 2px rgba(60, 45, 30, 0.05), 0 4px 16px rgba(60, 45, 30, 0.06);
     --shadow-lg: 0 12px 40px rgba(60, 45, 30, 0.15);
@@ -55,8 +55,7 @@
     --font-body: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
+  :root[data-theme="dark"] {
       --bg: #14110c;
       --bg-deep: #0e0c08;
       --card: #1d1812;
@@ -75,10 +74,10 @@
       --protein-bg: #3a201a;
       --protein-track: #4d2e25;
       --sage: #93b889;
+      --sage-soft: #7f9476;
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.45);
       --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
-    }
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -419,9 +418,11 @@
     transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .ring-card.water .ring-track-circle { stroke: var(--water-track); }
-  .ring-card.water .ring-progress-circle { stroke: var(--water); }
   .ring-card.protein .ring-track-circle { stroke: var(--protein-track); }
-  .ring-card.protein .ring-progress-circle { stroke: var(--protein); }
+  .ring-card.water .ring-grad-start   { stop-color: var(--water-soft); }
+  .ring-card.water .ring-grad-end     { stop-color: var(--water); }
+  .ring-card.protein .ring-grad-start { stop-color: var(--protein-soft); }
+  .ring-card.protein .ring-grad-end   { stop-color: var(--protein); }
   .ring-center {
     position: absolute;
     inset: 0;
@@ -464,8 +465,8 @@
   }
   .ring-goal-bumped {
     font-size: 11px;
-    color: var(--sage);
-    font-weight: 600;
+    color: var(--sage-soft);
+    font-weight: 500;
     margin-top: 2px;
     line-height: 1.3;
   }
@@ -757,8 +758,14 @@
     text-decoration: underline;
     text-decoration-color: var(--border-strong);
     text-underline-offset: 3px;
+    transition: transform 0.13s ease, color 0.15s ease;
   }
   .section-action:hover { color: var(--ink); }
+  /* Tactile press feedback (pills, buttons, and tabs already have it) */
+  .workout-card:active,
+  .log-item:active { transform: scale(0.985); }
+  .section-action:active,
+  .workout-edit:active { transform: scale(0.92); }
 
   .quick-row {
     display: flex;
@@ -800,7 +807,7 @@
 
   /* Workout chip */
   .workout-card {
-    margin: 18px 24px 0;
+    margin: 0;
     padding: 14px 16px;
     background: var(--card);
     border: 1px solid var(--border);
@@ -809,6 +816,8 @@
     align-items: center;
     justify-content: space-between;
     box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform 0.13s ease;
   }
   .workout-info {
     display: flex;
@@ -856,6 +865,7 @@
     color: var(--ink-soft);
     font-weight: 500;
     padding: 6px 10px;
+    transition: transform 0.13s ease, color 0.15s ease;
   }
   .workout-edit:hover { color: var(--ink); }
 
@@ -880,7 +890,7 @@
     align-items: center;
     gap: 12px;
     border-bottom: 1px solid var(--border);
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, transform 0.13s ease;
   }
   .log-item:last-child { border-bottom: none; }
   .log-item:hover { background: var(--card-hover); }
@@ -1131,6 +1141,9 @@
     right: 0;
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--card);
+    background: color-mix(in srgb, var(--card) 78%, transparent);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border-top: 1px solid var(--border);
     display: flex;
     z-index: 50;
@@ -1185,9 +1198,7 @@
     z-index: 200;
     animation: fade-in 0.18s ease;
   }
-  @media (prefers-color-scheme: dark) {
-    .modal-backdrop { background: rgba(0, 0, 0, 0.55); }
-  }
+  :root[data-theme="dark"] .modal-backdrop { background: rgba(0, 0, 0, 0.55); }
   .modal-backdrop.open { display: flex; }
   @media (min-width: 720px) {
     .modal-backdrop { align-items: center; }
@@ -1971,6 +1982,8 @@ const STORAGE_KEY = "hyalo-v1";
 // Bumped whenever the goal-calculation logic changes, so existing users get
 // a one-time notice. v2 = evidence-based protein ladder (build/recomp lowered).
 const CALC_VERSION = 2;
+// Display date for the most recent goal-logic change (shown in Recent updates).
+const RECENT_UPDATE_DATE = "May 2026";
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2054,6 +2067,8 @@ const DEFAULT_STATE = () => ({
   currentTab: "today",
   installBannerDismissed: false,
   calcVersionSeen: 0,
+  theme: "system",
+  priorVersionUser: false,
 });
 
 let state = DEFAULT_STATE();
@@ -2085,6 +2100,9 @@ function normalizeState(data) {
     }
     if (!day.workouts) day.workouts = [];
   }
+  // Any install that predates this flag was already using a prior version.
+  // (Brand-new users start from DEFAULT_STATE and never run normalizeState.)
+  if (data.priorVersionUser === undefined) s.priorVersionUser = true;
   return s;
 }
 
@@ -2729,8 +2747,15 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
   <div class="ring-card ${kind}">
     <div class="ring-wrap">
       <svg class="ring-svg" viewBox="0 0 140 140">
+        <defs>
+          <linearGradient id="ringGrad-${kind}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop class="ring-grad-start" offset="0%"></stop>
+            <stop class="ring-grad-end" offset="100%"></stop>
+          </linearGradient>
+        </defs>
         <circle class="ring-track-circle" cx="70" cy="70" r="${R}"></circle>
         <circle class="ring-progress-circle" cx="70" cy="70" r="${R}"
+          stroke="url(#ringGrad-${kind})"
           stroke-dasharray="${C}"
           stroke-dashoffset="${C}"
           data-target="${offset}"></circle>
@@ -2794,15 +2819,18 @@ function renderWorkoutCard(goals) {
     sub = `+${goals.bump.water}oz water · +${goals.bump.protein}g protein`;
   }
   return `
-  <div class="workout-card" id="workout-card">
-    <div class="workout-info">
-      <div class="workout-icon ${ws.length ? "" : "empty"}">${ws.length ? "✓" : "+"}</div>
-      <div class="workout-text">
-        <div class="workout-title">${escapeHtml(title)}</div>
-        <div class="workout-sub">${sub}</div>
+  <div class="section">
+    <div class="section-head"><span class="section-title">Log workout</span></div>
+    <div class="workout-card" id="workout-card">
+      <div class="workout-info">
+        <div class="workout-icon ${ws.length ? "" : "empty"}">${ws.length ? "✓" : "+"}</div>
+        <div class="workout-text">
+          <div class="workout-title">${escapeHtml(title)}</div>
+          <div class="workout-sub">${sub}</div>
+        </div>
       </div>
+      <button class="workout-edit">${ws.length ? "Edit" : "Add"}</button>
     </div>
-    <button class="workout-edit">${ws.length ? "Edit" : "Add"}</button>
   </div>`;
 }
 
@@ -3515,6 +3543,15 @@ function renderSettings() {
     </div>
 
     <div class="settings-section">
+      <div class="section-head"><span class="section-title">Appearance</span></div>
+      <div class="seg" id="theme-seg">
+        <button data-theme-opt="system" class="${state.theme === "system" ? "active" : ""}">System</button>
+        <button data-theme-opt="light" class="${state.theme === "light" ? "active" : ""}">Light</button>
+        <button data-theme-opt="dark" class="${state.theme === "dark" ? "active" : ""}">Dark</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="section-head"><span class="section-title">On your phone</span></div>
       <div class="settings-card">
         <button class="settings-row" id="open-install">
@@ -3537,6 +3574,17 @@ function renderSettings() {
     <div class="settings-section">
       <div class="section-head"><span class="section-title">About</span></div>
       <div class="about-card">${ABOUT_HTML}</div>
+      ${state.priorVersionUser ? `
+        <div class="settings-card" style="margin-top:12px">
+          <button class="settings-row" id="recent-updates">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Recent updates</div>
+              <div class="settings-row-value">What's changed in Hyalo lately</div>
+            </div>
+            <div class="settings-row-chev">›</div>
+          </button>
+        </div>
+      ` : ""}
     </div>
 
     <div class="settings-section">
@@ -3587,6 +3635,11 @@ function wireSettingsHandlers() {
   $("#restore-data")?.addEventListener("click", restoreData);
   $("#data-info")?.addEventListener("click", openDataInfoModal);
   $("#reset-all")?.addEventListener("click", confirmResetAll);
+  $$('#theme-seg [data-theme-opt]').forEach(b => b.addEventListener("click", () => {
+    setTheme(b.dataset.themeOpt);
+    render();
+  }));
+  $("#recent-updates")?.addEventListener("click", openRecentUpdatesModal);
 }
 
 function openGoalOverride(kind) {
@@ -4078,6 +4131,24 @@ function openGoalsUpdateModal() {
   $("#gu-close")?.addEventListener("click", closeModal);
 }
 
+function openRecentUpdatesModal() {
+  openModal(`
+    <div class="modal-title">Recent updates</div>
+    <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Protein goals refined</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
+      <p>Hyalo's protein targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were set a bit higher than current sports-nutrition evidence supports.</p>
+      <p>We've brought them into the well-established range for building and recomposition — roughly 1.6–2.2 g of protein per kg of bodyweight — so your daily target may have come down slightly.</p>
+      <p>This is about accuracy, not eating less: the muscle-building benefit levels off near the top of that range, so the new target lets you hit your goal without overshooting.</p>
+      <p>Your water target hasn't changed. And you can always set your own target by hand in Settings → Your goals.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="ru-close" style="width:100%">Got it</button>
+    </div>
+  `);
+  $("#ru-close")?.addEventListener("click", closeModal);
+}
+
 /* ============ Master render ============ */
 function render() {
   // Header bits
@@ -4091,9 +4162,34 @@ function render() {
   else if (state.currentTab === "settings") renderSettings();
 }
 
+/* ============ Theme (light / dark / system) ============ */
+const THEME_BG = { light: "#f3ede2", dark: "#14110c" };
+function resolvedTheme() {
+  if (state.theme === "light" || state.theme === "dark") return state.theme;
+  return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+}
+function applyTheme() {
+  const t = resolvedTheme();
+  document.documentElement.setAttribute("data-theme", t);
+  const meta = document.getElementById("meta-theme-color");
+  if (meta) meta.setAttribute("content", THEME_BG[t]);
+}
+function setTheme(pref) {
+  state.theme = pref;            // "light" | "dark" | "system"
+  save();
+  applyTheme();
+}
+// Keep "system" in sync with OS changes while the app is open
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (state.theme === "system") applyTheme();
+  });
+}
+
 /* ============ Init ============ */
 function init() {
   load();
+  applyTheme();
   if (!state.hasOnboarded) {
     switchView("onboarding");
     initOnboarding();
