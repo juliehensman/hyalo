@@ -1984,6 +1984,8 @@ const STORAGE_KEY = "hyalo-v1";
 const CALC_VERSION = 2;
 // Display date for the most recent goal-logic change (shown in Recent updates).
 const RECENT_UPDATE_DATE = "May 2026";
+// Bumped when default-library content changes, to top-up existing users once.
+const LIBRARY_SEED_VERSION = 1;
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2008,14 +2010,16 @@ const DEFAULT_LIBRARY = [
   { id: "chickpeas-1c", name: "Chickpeas", serving: "1 cup cooked", g: 15 },
   { id: "edamame-hc", name: "Edamame", serving: "½ cup shelled", g: 8 },
   { id: "quinoa-1c", name: "Quinoa", serving: "1 cup cooked", g: 8 },
+  { id: "brownrice-1c", name: "Brown rice", serving: "1 cup cooked", g: 5 },
+  { id: "oatmeal-1c", name: "Oatmeal", serving: "1 cup cooked", g: 6 },
   { id: "pb-2tb", name: "Peanut butter", serving: "2 tbsp", g: 8 },
   { id: "almonds-1oz", name: "Almonds", serving: "1 oz (~23 nuts)", g: 6 },
   { id: "cheddar-1oz", name: "Cheddar cheese", serving: "1 oz", g: 7 },
-  { id: "string-cheese", name: "String cheese", serving: "1 stick", g: 6 },
+  { id: "string-cheese", name: "Mozzarella string cheese", serving: "1 stick", g: 6 },
   { id: "milk-1c", name: "Milk", serving: "1 cup", g: 8 },
   { id: "bacon-2", name: "Bacon", serving: "2 slices", g: 6 },
   { id: "sausage-2", name: "Sausage", serving: "2 links", g: 12 },
-  { id: "protein-bar", name: "Protein bar", serving: "typical (60g)", g: 20 },
+  { id: "protein-bar", name: "Protein bar", serving: "1 bar", g: 10 },
   { id: "hummus-2tb", name: "Hummus", serving: "2 tbsp", g: 2 },
 ];
 
@@ -2069,6 +2073,7 @@ const DEFAULT_STATE = () => ({
   calcVersionSeen: 0,
   theme: "system",
   priorVersionUser: false,
+  librarySeedVersion: LIBRARY_SEED_VERSION,
 });
 
 let state = DEFAULT_STATE();
@@ -2103,6 +2108,22 @@ function normalizeState(data) {
   // Any install that predates this flag was already using a prior version.
   // (Brand-new users start from DEFAULT_STATE and never run normalizeState.)
   if (data.priorVersionUser === undefined) s.priorVersionUser = true;
+  // One-time library content update: add new staples, clarify string cheese as
+  // mozzarella, and lower the default protein bar. Runs once per existing user
+  // (won't resurrect items they later delete).
+  if ((data.librarySeedVersion ?? 0) < LIBRARY_SEED_VERSION) {
+    const byId = new Set(s.library.map(i => i.id));
+    const adds = [
+      { id: "brownrice-1c", name: "Brown rice", serving: "1 cup cooked", g: 5 },
+      { id: "oatmeal-1c", name: "Oatmeal", serving: "1 cup cooked", g: 6 },
+    ];
+    for (const it of adds) if (!byId.has(it.id)) s.library.push(it);
+    const sc = s.library.find(i => i.id === "string-cheese");
+    if (sc && sc.name === "String cheese") sc.name = "Mozzarella string cheese";
+    const bar = s.library.find(i => i.id === "protein-bar");
+    if (bar && bar.g === 20) { bar.g = 10; bar.serving = "1 bar"; }
+    s.librarySeedVersion = LIBRARY_SEED_VERSION;
+  }
   return s;
 }
 
