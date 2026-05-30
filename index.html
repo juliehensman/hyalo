@@ -3493,13 +3493,17 @@ function renderHistory() {
   const totals = days.map(d => dayTotals(d.key));
   const dayGoals = days.map(d => goalsForDay(d.key));
 
-  // Streaks: days where both goals hit (today included if hit), judged against
-  // each day's own goal (base + that day's workout bump)
+  // Streaks: consecutive days where both goals were hit, judged against each
+  // day's own goal (base + that day's workout bump). Today counts once it's
+  // hit, but while it's still in progress it neither adds to nor breaks the
+  // streak — so a perfect yesterday still shows even early in the morning.
   let streak = 0;
   for (let i = days.length - 1; i >= 0; i--) {
     const t = totals[i];
-    if (t.water >= dayGoals[i].water && t.protein >= dayGoals[i].protein) streak++;
-    else break;
+    const hit = t.water >= dayGoals[i].water && t.protein >= dayGoals[i].protein;
+    if (hit) { streak++; continue; }
+    if (i === days.length - 1) continue;  // today not done yet — skip, don't break
+    break;
   }
   // Avg this week
   const avgW = Math.round(totals.reduce((s, t) => s + t.water, 0) / 7);
