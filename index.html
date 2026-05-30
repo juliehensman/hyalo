@@ -2075,7 +2075,7 @@ function waterBreakdown(p) {
   return parts.join(" · ");
 }
 function computeProteinGoal(p) {
-  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 1.0, recomp: 1.05 }[p.goal];
+  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
   mult += { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
   if (p.age >= 65 && mult < 0.6) mult = 0.6;
   if (mult > 1.2) mult = 1.2;
@@ -2084,7 +2084,7 @@ function computeProteinGoal(p) {
   return Math.round(g);
 }
 function proteinBreakdown(p) {
-  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 1.0, recomp: 1.05 }[p.goal];
+  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
   const actBump = { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
   mult += actBump;
   let capped = false;
