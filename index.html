@@ -1655,6 +1655,7 @@
   }
   .num-control input {
     flex: 1;
+    min-width: 0;
     background: none;
     border: none;
     outline: none;
@@ -2162,6 +2163,14 @@ function getTodayGoals() {
     workouts,
   };
 }
+// Goal for any given day = base goal + that day's workout bump.
+// Used by History and the weekly review so every day is judged against the
+// target it actually had (consistent with today's rings).
+function goalsForDay(key) {
+  const base = getBaseGoals();
+  const bump = workoutsBump(state.log[key]?.workouts || []);
+  return { water: base.water + bump.water, protein: base.protein + bump.protein };
+}
 
 /* ============ Dates ============ */
 function todayKey(d = new Date()) {
@@ -2402,7 +2411,7 @@ function getWeeklyStats() {
     days.push({ date: d, key: todayKey(d) });
   }
   const totals = days.map(d => dayTotals(d.key));
-  const baseGoals = getBaseGoals();
+  const dayGoals = days.map(d => goalsForDay(d.key));
 
   const sumW = totals.reduce((s, t) => s + t.water, 0);
   const sumP = totals.reduce((s, t) => s + t.protein, 0);
@@ -2410,14 +2419,14 @@ function getWeeklyStats() {
   const avgProtein = Math.round(sumP / 7);
 
   let daysBothHit = 0;
-  for (const t of totals) {
-    if (t.water >= baseGoals.water && t.protein >= baseGoals.protein) daysBothHit++;
-  }
-  // Best day = highest combined % of goal (water + protein)
+  totals.forEach((t, i) => {
+    if (t.water >= dayGoals[i].water && t.protein >= dayGoals[i].protein) daysBothHit++;
+  });
+  // Best day = highest combined % of that day's goal (water + protein)
   let bestIdx = -1, bestScore = -1;
   totals.forEach((t, i) => {
     if (t.water === 0 && t.protein === 0) return;
-    const score = (t.water / Math.max(baseGoals.water, 1)) + (t.protein / Math.max(baseGoals.protein, 1));
+    const score = (t.water / Math.max(dayGoals[i].water, 1)) + (t.protein / Math.max(dayGoals[i].protein, 1));
     if (score > bestScore) { bestScore = score; bestIdx = i; }
   });
 
@@ -3082,6 +3091,11 @@ function renderWorkoutEntryInModal(editIdx) {
       </div>
     </div>
 
+    <div class="field">
+      <span class="field-label">Day</span>
+      <input type="date" class="time-input" id="wo-date" value="${todayKey()}" max="${todayKey()}" />
+    </div>
+
     <div class="modal-actions">
       ${existing
         ? '<button class="btn btn-secondary" id="entry-delete">Delete</button>'
@@ -3128,13 +3142,30 @@ function renderWorkoutEntryInModal(editIdx) {
       return;
     }
     draft.duration = totalMin;
+    const selectedDay = $("#wo-date").value || todayKey();
+    const isToday = selectedDay === todayKey();
+
     if (existing) {
-      day.workouts[editIdx] = draft;
+      if (isToday) {
+        day.workouts[editIdx] = draft;            // stays today — update in place
+      } else {
+        day.workouts.splice(editIdx, 1);          // moved to a past day
+        ensureDay(selectedDay).workouts.push(draft);
+      }
     } else {
-      day.workouts.push(draft);
+      ensureDay(selectedDay).workouts.push(draft); // new — straight to chosen day
     }
     save();
-    renderWorkoutListInModal();
+
+    if (isToday) {
+      renderWorkoutListInModal();
+    } else {
+      // Landed on a different day — it won't show in today's list, so confirm where it went
+      const label = new Date(selectedDay + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+      closeModal();
+      render();
+      showToast(`Workout logged for ${label}`);
+    }
   });
 }
 
@@ -3216,21 +3247,23 @@ function renderHistory() {
     days.push({ date: d, key: todayKey(d) });
   }
   const totals = days.map(d => dayTotals(d.key));
-  const baseGoals = getBaseGoals();
+  const dayGoals = days.map(d => goalsForDay(d.key));
 
-  // Streaks: days where both goals hit (today included if hit)
+  // Streaks: days where both goals hit (today included if hit), judged against
+  // each day's own goal (base + that day's workout bump)
   let streak = 0;
   for (let i = days.length - 1; i >= 0; i--) {
     const t = totals[i];
-    if (t.water >= baseGoals.water && t.protein >= baseGoals.protein) streak++;
+    if (t.water >= dayGoals[i].water && t.protein >= dayGoals[i].protein) streak++;
     else break;
   }
   // Avg this week
   const avgW = Math.round(totals.reduce((s, t) => s + t.water, 0) / 7);
   const avgP = Math.round(totals.reduce((s, t) => s + t.protein, 0) / 7);
 
-  const maxW = Math.max(baseGoals.water * 1.1, ...totals.map(t => t.water));
-  const maxP = Math.max(baseGoals.protein * 1.1, ...totals.map(t => t.protein));
+  // Scale so the tallest of (each day's goal + headroom) or actual intake fits
+  const maxW = Math.max(...dayGoals.map(g => g.water * 1.1), ...totals.map(t => t.water), 1);
+  const maxP = Math.max(...dayGoals.map(g => g.protein * 1.1), ...totals.map(t => t.protein), 1);
 
   const totalLogged = totals.some(t => t.water > 0 || t.protein > 0);
 
@@ -3257,8 +3290,8 @@ function renderHistory() {
           ${days.map((d, i) => {
             const t = totals[i];
             const pct = Math.min(t.water / maxW, 1) * 100;
-            const goalPct = (baseGoals.water / maxW) * 100;
-            const hit = t.water >= baseGoals.water;
+            const goalPct = (dayGoals[i].water / maxW) * 100;
+            const hit = t.water >= dayGoals[i].water;
             const isToday = d.key === todayKey();
             return `
               <div class="chart-bar-col">
@@ -3278,8 +3311,8 @@ function renderHistory() {
           ${days.map((d, i) => {
             const t = totals[i];
             const pct = Math.min(t.protein / maxP, 1) * 100;
-            const goalPct = (baseGoals.protein / maxP) * 100;
-            const hit = t.protein >= baseGoals.protein;
+            const goalPct = (dayGoals[i].protein / maxP) * 100;
+            const hit = t.protein >= dayGoals[i].protein;
             const isToday = d.key === todayKey();
             return `
               <div class="chart-bar-col">
