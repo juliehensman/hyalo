@@ -1327,6 +1327,38 @@
     font-weight: 600;
     font-feature-settings: "tnum";
   }
+  .lib-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .lib-toolbar-count { font-size: 13px; color: var(--ink-soft); }
+  .lib-edit-toggle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--protein);
+    padding: 4px 4px;
+  }
+  .lib-item-remove {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--protein-bg);
+    color: var(--protein);
+    font-size: 20px;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 10px;
+    transition: transform 0.12s ease;
+  }
+  .lib-item-remove:active { transform: scale(0.88); }
+  .lib-list.editing .lib-item-remove { display: inline-flex; }
+  .lib-list.editing .lib-item { cursor: default; }
+  .lib-list.editing .lib-item:hover { background: transparent; }
   .lib-empty {
     padding: 28px 20px;
     text-align: center;
@@ -3079,10 +3111,15 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
 }
 
 function openLibraryModal() {
+  libEditing = false;
   const items = [...state.library].sort((a, b) => a.name.localeCompare(b.name));
   openModal(`
     <div class="modal-title">Protein library</div>
     <input class="lib-search" id="lib-search" placeholder="Search foods…" />
+    <div class="lib-toolbar">
+      <span class="lib-toolbar-count" id="lib-count">${state.library.length} item${state.library.length === 1 ? "" : "s"}</span>
+      <button class="lib-edit-toggle" id="lib-edit-toggle">Edit</button>
+    </div>
     <div class="lib-list" id="lib-list">
       ${renderLibList(items, "")}
     </div>
@@ -3097,11 +3134,23 @@ function openLibraryModal() {
     const allItems = [...state.library].sort((a, b) => a.name.localeCompare(b.name));
     const filtered = allItems.filter(it => it.name.toLowerCase().includes(ql) || (it.serving || "").toLowerCase().includes(ql));
     $("#lib-list").innerHTML = renderLibList(filtered, q);
+    applyLibEditingClass();
     wireLibItems();
     wireLibAddButton();
   });
+  $("#lib-edit-toggle").addEventListener("click", () => {
+    libEditing = !libEditing;
+    $("#lib-edit-toggle").textContent = libEditing ? "Done" : "Edit";
+    applyLibEditingClass();
+  });
   wireLibItems();
   wireLibAddButton();
+}
+
+let libEditing = false;
+function applyLibEditingClass() {
+  const list = $("#lib-list");
+  if (list) list.classList.toggle("editing", libEditing);
 }
 
 function wireLibAddButton() {
@@ -3130,6 +3179,7 @@ function renderLibList(items, query = "") {
   }
   return items.map(it => `
     <div class="lib-item" data-lib-id="${escapeHtml(it.id)}">
+      <button class="lib-item-remove" data-remove-id="${escapeHtml(it.id)}" aria-label="Remove ${escapeHtml(it.name)}">−</button>
       <div class="lib-item-info">
         <div class="lib-item-name">${escapeHtml(it.name)}</div>
         <div class="lib-item-serv">${escapeHtml(it.serving || "")}</div>
@@ -3139,11 +3189,51 @@ function renderLibList(items, query = "") {
   `).join("");
 }
 function wireLibItems() {
+  $$(".lib-item-remove").forEach(btn => btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    removeLibraryItem(btn.dataset.removeId);
+  }));
   $$(".lib-item").forEach(el => el.addEventListener("click", () => {
+    if (libEditing) return;            // in edit mode, taps don't log
     const id = el.dataset.libId;
     const it = state.library.find(x => x.id === id);
     if (it) { closeModal(); logProtein(it.g, it.name); }
   }));
+}
+
+function removeLibraryItem(id) {
+  const idx = state.library.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const [removed] = state.library.splice(idx, 1);   // remove, remember position
+  save();
+  // Refresh the list in place, preserving the current search filter and edit mode
+  const q = ($("#lib-search")?.value || "").trim();
+  const ql = q.toLowerCase();
+  const filtered = [...state.library]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .filter(it => it.name.toLowerCase().includes(ql) || (it.serving || "").toLowerCase().includes(ql));
+  if ($("#lib-list")) $("#lib-list").innerHTML = renderLibList(filtered, q);
+  const countEl = $("#lib-count");
+  if (countEl) countEl.textContent = `${state.library.length} item${state.library.length === 1 ? "" : "s"}`;
+  applyLibEditingClass();
+  wireLibItems();
+  wireLibAddButton();
+  showToast(`Removed ${removed.name}`, () => {
+    state.library.splice(Math.min(idx, state.library.length), 0, removed);  // restore at original spot
+    save();
+    if ($("#lib-list")) {            // if library modal still open, refresh it live
+      const q2 = ($("#lib-search")?.value || "").trim();
+      const ql2 = q2.toLowerCase();
+      const f2 = [...state.library].sort((a, b) => a.name.localeCompare(b.name))
+        .filter(it => it.name.toLowerCase().includes(ql2) || (it.serving || "").toLowerCase().includes(ql2));
+      $("#lib-list").innerHTML = renderLibList(f2, q2);
+      const c2 = $("#lib-count");
+      if (c2) c2.textContent = `${state.library.length} item${state.library.length === 1 ? "" : "s"}`;
+      applyLibEditingClass();
+      wireLibItems();
+      wireLibAddButton();
+    }
+  });
 }
 
 function openWorkoutModal() {
