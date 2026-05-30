@@ -1550,6 +1550,22 @@
     border-radius: 50%;
   }
   .install-banner-close:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+  /* Goals-update banner reuses .install-banner; distinct terracotta mark */
+  .update-banner-icon {
+    background: var(--protein);
+    color: var(--bg);
+    font-family: inherit;
+    font-style: normal;
+    font-size: 17px;
+  }
+  .goals-update-body p {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
+  }
+  .goals-update-body p:last-child { margin-bottom: 0; }
+  .goals-update-body em { color: var(--ink); font-style: italic; }
 
   /* Install instructions modal */
   .install-steps {
@@ -1921,6 +1937,9 @@
 
 /* ============ Constants ============ */
 const STORAGE_KEY = "hyalo-v1";
+// Bumped whenever the goal-calculation logic changes, so existing users get
+// a one-time notice. v2 = evidence-based protein ladder (build/recomp lowered).
+const CALC_VERSION = 2;
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2003,6 +2022,7 @@ const DEFAULT_STATE = () => ({
   library: [...DEFAULT_LIBRARY],
   currentTab: "today",
   installBannerDismissed: false,
+  calcVersionSeen: 0,
 });
 
 let state = DEFAULT_STATE();
@@ -2369,12 +2389,14 @@ function computeAndShowResults() {
 function finishOnboarding() {
   state.profile = onbDraft;
   state.hasOnboarded = true;
+  state.calcVersionSeen = CALC_VERSION;
   save();
   switchView("main");
   render();
 }
 function skipOnboarding() {
   state.hasOnboarded = true;
+  state.calcVersionSeen = CALC_VERSION;
   // Default goals from default profile
   save();
   switchView("main");
@@ -2587,6 +2609,7 @@ function renderToday() {
   const today = state.log[todayKey()] || { water: [], protein: [], workout: null };
 
   const html = `
+    ${renderGoalsUpdateBanner()}
     ${renderWeeklyReview()}
     ${renderInstallBanner()}
     ${renderRings(totals, goals)}
@@ -2598,6 +2621,7 @@ function renderToday() {
   $("#main-content").innerHTML = html;
   wireTodayHandlers();
   wireInstallBanner();
+  wireGoalsUpdateBanner();
   $("#open-goals-why")?.addEventListener("click", openGoalsExplainerModal);
   // Trigger ring animation after insertion
   requestAnimationFrame(() => {
@@ -3930,6 +3954,47 @@ function wireInstallBanner() {
     save();
     render();
   });
+}
+
+// One-time notice shown only to existing users whose goal actually changed
+// in this calc version (build/recomp, no manual protein override).
+function renderGoalsUpdateBanner() {
+  if (!state.hasOnboarded) return "";
+  if (state.calcVersionSeen >= CALC_VERSION) return "";
+  const g = state.profile.goal;
+  if (g !== "build" && g !== "recomp") return "";       // only these goals moved
+  if (state.goalsOverride.protein_g != null) return "";  // manual target → unchanged
+  return `
+    <div class="install-banner" id="goals-update-banner">
+      <div class="install-banner-icon update-banner-icon">✦</div>
+      <div class="install-banner-text">
+        <div class="install-banner-title">Your protein goal was updated</div>
+        <div class="install-banner-sub">We fine-tuned the math to match current research.</div>
+      </div>
+      <button class="install-banner-show" id="goals-update-show">Details</button>
+      <button class="install-banner-close" id="goals-update-close" aria-label="Dismiss">×</button>
+    </div>
+  `;
+}
+function wireGoalsUpdateBanner() {
+  const retire = () => { state.calcVersionSeen = CALC_VERSION; save(); render(); };
+  $("#goals-update-show")?.addEventListener("click", () => { openGoalsUpdateModal(); retire(); });
+  $("#goals-update-close")?.addEventListener("click", retire);
+}
+function openGoalsUpdateModal() {
+  openModal(`
+    <div class="modal-title">Why your goal changed</div>
+    <div class="goals-update-body">
+      <p>Hyalo's protein targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were set a bit higher than current sports-nutrition evidence supports.</p>
+      <p>We've brought them into the well-established range for building and recomposition — roughly 1.6–2.2 g of protein per kg of bodyweight — so your daily target may have come down slightly.</p>
+      <p>This is about accuracy, not eating less: the muscle-building benefit levels off near the top of that range, so the new target lets you hit your goal without overshooting.</p>
+      <p>Your water target hasn't changed. And you can always set your own target by hand in Settings → Your goals.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="gu-close" style="width:100%">Got it</button>
+    </div>
+  `);
+  $("#gu-close")?.addEventListener("click", closeModal);
 }
 
 /* ============ Master render ============ */
