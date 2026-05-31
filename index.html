@@ -4378,6 +4378,11 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition setting added</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
+      <p>You can now optionally tell Hyalo about your body composition — a band (lower / average / higher body fat) or your exact percentage — in Settings → Body composition.</p>
+      <p>Protein needs track lean mass, so this fine-tunes your protein goal: it eases the target down if you carry more body fat than average, and nudges it up if you're leaner. It's entirely optional and never changes your water goal.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Protein goals refined</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
       <p>Hyalo's protein targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were set a bit higher than current sports-nutrition evidence supports.</p>
