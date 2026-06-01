@@ -3644,8 +3644,17 @@ function renderHistory() {
       </div>
       <div class="history-stat">
         <div class="history-stat-label">7-day avg</div>
-        <div class="history-stat-num">${avgW}<span style="font-size:18px;color:var(--ink-soft)">oz</span></div>
-        <div class="history-stat-sub">${avgP}g protein</div>
+        <div style="display:flex;justify-content:center;align-items:baseline;gap:14px;margin-top:4px">
+          <div style="text-align:center">
+            <div class="history-stat-num water" style="margin-top:0">${avgW}<span style="font-size:18px;color:var(--ink-soft)">oz</span></div>
+            <div class="history-stat-sub">water</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--border);flex-shrink:0;align-self:center"></div>
+          <div style="text-align:center">
+            <div class="history-stat-num protein" style="margin-top:0">${avgP}<span style="font-size:18px;color:var(--ink-soft)">g</span></div>
+            <div class="history-stat-sub">protein</div>
+          </div>
+        </div>
       </div>
     </div>
 
