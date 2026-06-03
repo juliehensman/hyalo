@@ -489,79 +489,6 @@
   }
   .rings-explainer-link:hover { color: var(--ink); }
 
-  /* Time-of-day timeline */
-  .timeline-card {
-    margin: 12px 24px 0;
-    padding: 14px 16px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-  }
-  .timeline-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--ink-muted);
-    font-weight: 700;
-    margin-bottom: 10px;
-  }
-  .timeline-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-  }
-  .timeline-row:last-of-type { margin-bottom: 6px; }
-  .timeline-label {
-    width: 14px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--ink-muted);
-    text-align: center;
-    letter-spacing: 0.05em;
-  }
-  .timeline-track {
-    flex: 1;
-    height: 14px;
-    position: relative;
-  }
-  .timeline-track::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0;
-    top: 50%;
-    height: 1px;
-    background: var(--border);
-  }
-  .timeline-marker {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 1px;
-    height: 5px;
-    background: var(--border-strong);
-  }
-  .timeline-dot {
-    position: absolute;
-    top: 50%;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-  }
-  .timeline-dot.water { background: var(--water); }
-  .timeline-dot.protein { background: var(--protein); }
-  .timeline-axis {
-    display: flex;
-    justify-content: space-between;
-    padding-left: 24px;
-    font-size: 9.5px;
-    color: var(--ink-muted);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    margin-top: 4px;
-  }
-
   /* Weekly review */
   .weekly-review {
     margin: 16px 20px 0;
@@ -2788,59 +2715,6 @@ function renderWeeklyReview() {
   `;
 }
 
-/* ============ Time-of-day timeline ============ */
-function renderTimeline(today) {
-  const total = today.water.length + today.protein.length;
-  if (total === 0) return "";
-
-  // Visible range: 6am to midnight (18 hours)
-  const startHour = 6;
-  const endHour = 24;
-  const span = endHour - startHour;
-  const posPct = (iso) => {
-    const d = new Date(iso);
-    let hours = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
-    // Anything before 6am or after midnight clips to the edges
-    if (hours < startHour) hours = startHour;
-    if (hours >= endHour) hours = endHour - 0.05;
-    return ((hours - startHour) / span) * 100;
-  };
-
-  // Vertical tick markers at noon and 6pm
-  const noonPos = ((12 - startHour) / span) * 100;
-  const sixPos = ((18 - startHour) / span) * 100;
-  const markers = `
-    <div class="timeline-marker" style="left:${noonPos}%"></div>
-    <div class="timeline-marker" style="left:${sixPos}%"></div>
-  `;
-
-  return `
-    <div class="timeline-card">
-      <div class="timeline-title">Today's flow</div>
-      <div class="timeline-row">
-        <div class="timeline-label" style="color:var(--water)">W</div>
-        <div class="timeline-track">
-          ${markers}
-          ${today.water.map(e => `<div class="timeline-dot water" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.oz} oz"></div>`).join("")}
-        </div>
-      </div>
-      <div class="timeline-row">
-        <div class="timeline-label" style="color:var(--protein)">P</div>
-        <div class="timeline-track">
-          ${markers}
-          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g"></div>`).join("")}
-        </div>
-      </div>
-      <div class="timeline-axis">
-        <span>6am</span>
-        <span>noon</span>
-        <span>6pm</span>
-        <span>12am</span>
-      </div>
-    </div>
-  `;
-}
-
 /* ============ "Why these goals?" modal ============ */
 function openGoalsExplainerModal() {
   const p = state.profile;
@@ -2909,7 +2783,6 @@ function renderToday() {
     ${renderRings(totals, goals)}
     ${renderQuickLog(goals)}
     ${renderWorkoutCard(goals)}
-    ${renderTimeline(today)}
     ${renderTodayLog(today)}
   `;
   $("#main-content").innerHTML = html;
