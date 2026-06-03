@@ -2970,9 +2970,29 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
   </div>`;
 }
 
+// Most-frequently-logged protein items across all history, highest→lowest.
+// Ties broken by most recent use. Only named items become quick chips.
+function topProteinItems(limit) {
+  const counts = {};
+  for (const dayKey in state.log) {
+    const entries = state.log[dayKey].protein || [];
+    for (const e of entries) {
+      if (!e.name) continue;
+      const key = e.name + "|" + e.g;
+      if (!counts[key]) counts[key] = { name: e.name, g: e.g, count: 0, lastTs: "" };
+      counts[key].count++;
+      if (e.ts > counts[key].lastTs) counts[key].lastTs = e.ts;
+    }
+  }
+  return Object.values(counts)
+    .sort((a, b) => b.count - a.count || (a.lastTs < b.lastTs ? 1 : -1))
+    .slice(0, limit);
+}
+let quickProteinItems = [];
+
 function renderQuickLog(goals) {
   const waterPresets = [8, 12, 16, 20, 32, 40];
-  const proteinFavs = state.favorites.protein.slice(0, 6);
+  quickProteinItems = topProteinItems(6);
 
   return `
   <div class="section">
@@ -2990,8 +3010,8 @@ function renderQuickLog(goals) {
       <button class="section-action" id="protein-custom">Custom</button>
     </div>
     <div class="quick-row">
-      ${proteinFavs.map((f, i) => `<button class="quick-btn protein" data-log-protein-fav="${i}">${escapeHtml(f.name)}<span class="label-sub">${f.g}g</span></button>`).join("")}
       <button class="quick-btn quick-btn-add" id="protein-library">+ Library</button>
+      ${quickProteinItems.map((f, i) => `<button class="quick-btn protein" data-log-protein-idx="${i}">${escapeHtml(f.name)}<span class="label-sub">${f.g}g</span></button>`).join("")}
     </div>
   </div>`;
 }
@@ -3070,9 +3090,9 @@ function wireTodayHandlers() {
   $$("[data-log-water]").forEach(b => b.addEventListener("click", () => {
     logWater(+b.dataset.logWater);
   }));
-  $$("[data-log-protein-fav]").forEach(b => b.addEventListener("click", () => {
-    const fav = state.favorites.protein[+b.dataset.logProteinFav];
-    if (fav) logProtein(fav.g, fav.name);
+  $$("[data-log-protein-idx]").forEach(b => b.addEventListener("click", () => {
+    const item = quickProteinItems[+b.dataset.logProteinIdx];
+    if (item) logProtein(item.g, item.name);
   }));
   $("#water-custom")?.addEventListener("click", openCustomWaterModal);
   $("#protein-library")?.addEventListener("click", openLibraryModal);
