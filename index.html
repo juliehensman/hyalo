@@ -992,6 +992,7 @@
     gap: 6px;
     align-items: end;
     height: 120px;
+    margin-top: 16px; /* headroom for tapped value labels above tall bars */
   }
   .chart-bar-col {
     display: flex;
@@ -1000,6 +1001,8 @@
     gap: 4px;
     height: 100%;
     justify-content: flex-end;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
   .chart-bar-stack {
     width: 100%;
@@ -1014,12 +1017,35 @@
     width: 100%;
     border-radius: 4px 4px 0 0;
     min-height: 2px;
-    transition: height 0.4s ease;
+    transition: height 0.4s ease, opacity 0.2s ease;
+    position: relative;
   }
   .chart-bar.water { background: var(--water); }
   .chart-bar.protein { background: var(--protein); }
   .chart-bar.under {
     opacity: 0.45;
+  }
+  .chart-bar-value {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(3px);
+    margin-bottom: 4px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+    font-feature-settings: "tnum";
+  }
+  .chart-bar.water .chart-bar-value { color: var(--water); }
+  .chart-bar.protein .chart-bar-value { color: var(--protein); }
+  .chart-bar-col.active .chart-bar { opacity: 1; }
+  .chart-bar-col.active .chart-bar-value {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
   .chart-goal-line {
     position: absolute;
@@ -3674,7 +3700,7 @@ function renderHistory() {
               <div class="chart-bar-col">
                 <div class="chart-bar-stack">
                   <div class="chart-goal-line" style="bottom: ${goalPct}%"></div>
-                  <div class="chart-bar water ${hit ? "" : "under"}" style="height: ${pct}%" title="${t.water}oz"></div>
+                  <div class="chart-bar water ${hit ? "" : "under"}" style="height: ${pct}%"><div class="chart-bar-value">${t.water}oz</div></div>
                 </div>
                 <div class="chart-day ${isToday ? "today" : ""}">${d.date.toLocaleDateString(undefined, { weekday: "narrow" })}</div>
               </div>`;
@@ -3695,27 +3721,9 @@ function renderHistory() {
               <div class="chart-bar-col">
                 <div class="chart-bar-stack">
                   <div class="chart-goal-line" style="bottom: ${goalPct}%"></div>
-                  <div class="chart-bar protein ${hit ? "" : "under"}" style="height: ${pct}%" title="${t.protein}g"></div>
+                  <div class="chart-bar protein ${hit ? "" : "under"}" style="height: ${pct}%"><div class="chart-bar-value">${t.protein}g</div></div>
                 </div>
                 <div class="chart-day ${isToday ? "today" : ""}">${d.date.toLocaleDateString(undefined, { weekday: "narrow" })}</div>
-              </div>`;
-          }).join("")}
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-head"><span class="section-title">Day by day</span></div>
-        <div class="log-list">
-          ${days.slice().reverse().map((d, idx) => {
-            const t = totals[days.length - 1 - idx];
-            const isToday = d.key === todayKey();
-            const dateStr = isToday ? "Today" : d.date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-            return `
-              <div class="log-item">
-                <div class="log-info">
-                  <div class="log-name">${dateStr}</div>
-                  <div class="log-amount">${t.water}oz water · ${t.protein}g protein</div>
-                </div>
               </div>`;
           }).join("")}
         </div>
@@ -3723,6 +3731,19 @@ function renderHistory() {
     `}
   `;
   $("#main-content").innerHTML = html;
+
+  // Tap a bar (anywhere in its column) to reveal that day's amount; one active
+  // bar per chart, tap again to dismiss.
+  $$("#main-content .chart-bar-col").forEach(col => {
+    col.addEventListener("click", () => {
+      const wasActive = col.classList.contains("active");
+      for (const sib of col.parentElement.children) sib.classList.remove("active");
+      if (!wasActive) {
+        col.classList.add("active");
+        if (navigator.vibrate) navigator.vibrate(5);
+      }
+    });
+  });
 }
 
 /* ============ Render: Settings ============ */
