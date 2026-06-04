@@ -413,9 +413,9 @@
   .ring-track-circle { fill: none; stroke-width: 10; }
   .ring-pace-circle {
     fill: none;
-    stroke-width: 2;
+    stroke-width: 3;
     stroke-linecap: round;
-    opacity: 0.55;
+    opacity: 0.7;
     transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .ring-card.water .ring-pace-circle { stroke: var(--water); }
@@ -2910,7 +2910,7 @@ function renderTimeline(today) {
     <div class="timeline-card">
       <div class="timeline-title">
         <span>Today's flow</span>
-        ${nowPos !== null ? `<span class="timeline-now-label">now ${formatHour(Math.floor(nowH))}</span>` : ""}
+        ${nowPos !== null ? `<span class="timeline-now-label">now ${fmtTime(new Date().toISOString())}</span>` : ""}
       </div>
       <div class="timeline-row">
         <div class="timeline-label" style="color:var(--water)">W</div>
@@ -3053,7 +3053,7 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
           </linearGradient>
         </defs>
         <circle class="ring-track-circle" cx="70" cy="70" r="${R}"></circle>
-        ${paceP > 0 && paceP < 1 ? `<circle class="ring-pace-circle" cx="70" cy="70" r="${R}"
+        ${paceP > 0 ? `<circle class="ring-pace-circle" cx="70" cy="70" r="${R}"
           stroke-dasharray="${C}"
           stroke-dashoffset="${paceOffset}"></circle>` : ""}
         <circle class="ring-progress-circle" cx="70" cy="70" r="${R}"
