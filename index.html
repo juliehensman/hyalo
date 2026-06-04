@@ -3123,8 +3123,8 @@ function renderWorkoutCard(goals) {
   const ws = goals.workouts;
   let title, sub;
   if (ws.length === 0) {
-    title = "Log today's workouts";
-    sub = "Adjusts your goals based on what you do";
+    title = "Log today's workout";
+    sub = "Log it ahead and your goal adjusts now — handy for evening sessions";
   } else if (ws.length === 1) {
     const w = ws[0];
     title = `${capitalize(w.type)} · ${fmtDuration(w.duration)} · ${capitalize(w.intensity)}`;
