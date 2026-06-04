@@ -411,6 +411,15 @@
     transform: rotate(-90deg);
   }
   .ring-track-circle { fill: none; stroke-width: 10; }
+  .ring-pace-circle {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    opacity: 0.55;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ring-card.water .ring-pace-circle { stroke: var(--water); }
+  .ring-card.protein .ring-pace-circle { stroke: var(--protein); }
   .ring-progress-circle {
     fill: none;
     stroke-width: 10;
@@ -488,6 +497,100 @@
     border: none;
   }
   .rings-explainer-link:hover { color: var(--ink); }
+
+  /* Time-of-day timeline */
+  .timeline-card {
+    margin: 12px 24px 0;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .timeline-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-muted);
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .timeline-now-label {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    color: var(--ink-soft);
+    font-size: 11px;
+  }
+  .timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+  .timeline-row:last-of-type { margin-bottom: 6px; }
+  .timeline-label {
+    width: 14px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  .timeline-track {
+    flex: 1;
+    height: 14px;
+    position: relative;
+  }
+  .timeline-track::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--border);
+  }
+  .timeline-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 1px;
+    height: 5px;
+    background: var(--border-strong);
+  }
+  .timeline-now {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 1.5px;
+    background: var(--ink-soft);
+    opacity: 0.55;
+    transform: translateX(-50%);
+    border-radius: 1px;
+    pointer-events: none;
+  }
+  .timeline-dot {
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .timeline-dot.water { background: var(--water); }
+  .timeline-dot.protein { background: var(--protein); }
+  .timeline-axis {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 24px;
+    font-size: 9.5px;
+    color: var(--ink-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
 
   /* Weekly review */
   .weekly-review {
@@ -1546,8 +1649,7 @@
     border-radius: 50%;
   }
   .install-banner-close:hover { opacity: 1; background: rgba(255,255,255,0.1); }
-  /* Goals-update banner reuses .install-banner; distinct terracotta mark */
-  .update-banner-icon {
+  /* Goals-update banner reuses .install-banner; distinct terracotta mark */  .update-banner-icon {
     background: var(--protein);
     color: var(--bg);
     font-family: inherit;
@@ -2066,6 +2168,7 @@ const DEFAULT_STATE = () => ({
     activity: "moderate", goal: "maintain",
     climate: "temperate", pregnancy: "none",
     bodyComp: "unset", bodyFatPct: null,
+    dayStart: 7, windDown: 20,
   },
   goalsOverride: { water_oz: null, protein_g: null },
   log: {},
@@ -2085,6 +2188,8 @@ const DEFAULT_STATE = () => ({
   priorVersionUser: false,
   librarySeedVersion: LIBRARY_SEED_VERSION,
   bodyCompNoticeSeen: false,
+  lastBodyCheckTs: null,
+  windDownDismissedDate: null,
 });
 
 let state = DEFAULT_STATE();
@@ -2231,6 +2336,60 @@ function bodyCompSummary(p) {
   if (p.bodyComp === "exact" && p.bodyFatPct) return `${p.bodyFatPct}% body fat`;
   if (p.bodyComp && p.bodyComp !== "unset") return BODYCOMP_LABELS[p.bodyComp];
   return "Not set";
+}
+
+/* ============ Pacing & daily-window helpers ============ */
+// Fractional hour [0,24) for "now".
+function nowHours(d) {
+  d = d || new Date();
+  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+}
+// Where pace says you should be (0..1) within today's drinking window.
+// Before dayStart → 0. After windDown → 1. Linear between.
+function paceFraction(now) {
+  const start = state.profile.dayStart ?? 7;
+  const end = state.profile.windDown ?? 20;
+  const h = nowHours(now);
+  if (h <= start) return 0;
+  if (h >= end) return 1;
+  return (h - start) / (end - start);
+}
+// Format a 0..23 hour as "7:00 AM" / "8:00 PM"
+function formatHour(h) {
+  const hr = ((h + 11) % 12) + 1;
+  const ampm = h < 12 ? "AM" : "PM";
+  return `${hr}:00 ${ampm}`;
+}
+
+/* ============ Body check-in (weight + body comp refresh) ============ */
+// Days between prompts depends on goal mode. General users never get prompted.
+function bodyCheckIntervalDays(goal) {
+  if (goal === "build" || goal === "lose" || goal === "recomp") return 42;  // 6 weeks
+  if (goal === "maintain") return 84;                                       // 12 weeks
+  return Infinity;                                                          // "general"
+}
+function bodyCheckDue() {
+  if (!state.hasOnboarded) return false;
+  const interval = bodyCheckIntervalDays(state.profile.goal);
+  if (!isFinite(interval)) return false;
+  if (!state.lastBodyCheckTs) return false;     // brand-new state — wait one interval
+  const elapsed = (Date.now() - new Date(state.lastBodyCheckTs).getTime()) / 86400000;
+  return elapsed >= interval;
+}
+function resetBodyCheckTimer() {
+  state.lastBodyCheckTs = new Date().toISOString();
+}
+function weeksSinceBodyCheck() {
+  if (!state.lastBodyCheckTs) return null;
+  const days = (Date.now() - new Date(state.lastBodyCheckTs).getTime()) / 86400000;
+  return Math.max(0, Math.round(days / 7));
+}
+function bodyCheckSubtext() {
+  const w = weeksSinceBodyCheck();
+  if (w === null) return "";
+  if (w === 0) return "Updated this week";
+  if (w === 1) return "Updated 1 week ago";
+  return `Updated ${w} weeks ago`;
 }
 
 function computeProteinGoal(p) {
@@ -2610,6 +2769,7 @@ function finishOnboarding() {
   state.hasOnboarded = true;
   state.calcVersionSeen = CALC_VERSION;
   state.bodyCompNoticeSeen = true;
+  resetBodyCheckTimer();
   save();
   switchView("main");
   render();
@@ -2618,6 +2778,7 @@ function skipOnboarding() {
   state.hasOnboarded = true;
   state.calcVersionSeen = CALC_VERSION;
   state.bodyCompNoticeSeen = true;
+  resetBodyCheckTimer();
   // Default goals from default profile
   save();
   switchView("main");
@@ -2716,6 +2877,65 @@ function renderWeeklyReview() {
 }
 
 /* ============ "Why these goals?" modal ============ */
+function renderTimeline(today) {
+  const total = today.water.length + today.protein.length;
+  if (total === 0) return "";
+
+  // Visible range: dayStart to midnight (so late drinkers still see their dots).
+  const startHour = state.profile.dayStart ?? 7;
+  const endHour = 24;
+  const span = endHour - startHour;
+  const posPct = (iso) => {
+    const d = new Date(iso);
+    let hours = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+    if (hours < startHour) hours = startHour;
+    if (hours >= endHour) hours = endHour - 0.05;
+    return ((hours - startHour) / span) * 100;
+  };
+  // Static tick marks at noon and 6pm (kept simple — orient the eye).
+  const noonPos = ((12 - startHour) / span) * 100;
+  const sixPos = ((18 - startHour) / span) * 100;
+  const windDown = state.profile.windDown ?? 20;
+  const windDownPos = ((windDown - startHour) / span) * 100;
+  // "Now" line — only shown during the visible window.
+  const nowH = nowHours();
+  const nowPos = nowH > startHour && nowH < endHour ? ((nowH - startHour) / span) * 100 : null;
+  const markers = `
+    <div class="timeline-marker" style="left:${noonPos}%"></div>
+    <div class="timeline-marker" style="left:${sixPos}%"></div>
+    <div class="timeline-marker" style="left:${windDownPos}%"></div>
+    ${nowPos !== null ? `<div class="timeline-now" style="left:${nowPos}%"></div>` : ""}
+  `;
+  return `
+    <div class="timeline-card">
+      <div class="timeline-title">
+        <span>Today's flow</span>
+        ${nowPos !== null ? `<span class="timeline-now-label">now ${formatHour(Math.floor(nowH))}</span>` : ""}
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-label" style="color:var(--water)">W</div>
+        <div class="timeline-track">
+          ${markers}
+          ${today.water.map(e => `<div class="timeline-dot water" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.oz} oz"></div>`).join("")}
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-label" style="color:var(--protein)">P</div>
+        <div class="timeline-track">
+          ${markers}
+          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g"></div>`).join("")}
+        </div>
+      </div>
+      <div class="timeline-axis">
+        <span>${formatHour(startHour)}</span>
+        <span>noon</span>
+        <span>6pm</span>
+        <span>12am</span>
+      </div>
+    </div>
+  `;
+}
+
 function openGoalsExplainerModal() {
   const p = state.profile;
   const base = getBaseGoals();
@@ -2778,17 +2998,22 @@ function renderToday() {
 
   const html = `
     ${renderGoalsUpdateBanner()}
+    ${renderBodyCheckBanner()}
+    ${renderWindDownBanner(totals, goals)}
     ${renderWeeklyReview()}
     ${renderInstallBanner()}
     ${renderRings(totals, goals)}
     ${renderQuickLog(goals)}
     ${renderWorkoutCard(goals)}
+    ${renderTimeline(today)}
     ${renderTodayLog(today)}
   `;
   $("#main-content").innerHTML = html;
   wireTodayHandlers();
   wireInstallBanner();
   wireGoalsUpdateBanner();
+  wireBodyCheckBanner();
+  wireWindDownBanner();
   $("#open-goals-why")?.addEventListener("click", openGoalsExplainerModal);
   // Trigger ring animation after insertion
   requestAnimationFrame(() => {
@@ -2815,6 +3040,8 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
   const R = 56;
   const C = 2 * Math.PI * R;
   const offset = C * (1 - pct);
+  const paceP = paceFraction();
+  const paceOffset = C * (1 - paceP);
   return `
   <div class="ring-card ${kind}">
     <div class="ring-wrap">
@@ -2826,6 +3053,9 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
           </linearGradient>
         </defs>
         <circle class="ring-track-circle" cx="70" cy="70" r="${R}"></circle>
+        ${paceP > 0 && paceP < 1 ? `<circle class="ring-pace-circle" cx="70" cy="70" r="${R}"
+          stroke-dasharray="${C}"
+          stroke-dashoffset="${paceOffset}"></circle>` : ""}
         <circle class="ring-progress-circle" cx="70" cy="70" r="${R}"
           stroke="url(#ringGrad-${kind})"
           stroke-dasharray="${C}"
@@ -3532,18 +3762,22 @@ function renderHistory() {
   const totals = days.map(d => dayTotals(d.key));
   const dayGoals = days.map(d => goalsForDay(d.key));
 
-  // Streaks: consecutive days where both goals were hit, judged against each
+  // Streaks: consecutive days where each metric was hit, judged against each
   // day's own goal (base + that day's workout bump). Today counts once it's
   // hit, but while it's still in progress it neither adds to nor breaks the
   // streak — so a perfect yesterday still shows even early in the morning.
-  let streak = 0;
-  for (let i = days.length - 1; i >= 0; i--) {
-    const t = totals[i];
-    const hit = t.water >= dayGoals[i].water && t.protein >= dayGoals[i].protein;
-    if (hit) { streak++; continue; }
-    if (i === days.length - 1) continue;  // today not done yet — skip, don't break
-    break;
+  function streakFor(predicate) {
+    let s = 0;
+    for (let i = days.length - 1; i >= 0; i--) {
+      if (predicate(totals[i], dayGoals[i])) { s++; continue; }
+      if (i === days.length - 1) continue;
+      break;
+    }
+    return s;
   }
+  const streakWater = streakFor((t, g) => t.water >= g.water);
+  const streakProtein = streakFor((t, g) => t.protein >= g.protein);
+  const streakBoth = streakFor((t, g) => t.water >= g.water && t.protein >= g.protein);
   // Avg this week
   const avgW = Math.round(totals.reduce((s, t) => s + t.water, 0) / 7);
   const avgP = Math.round(totals.reduce((s, t) => s + t.protein, 0) / 7);
@@ -3557,9 +3791,23 @@ function renderHistory() {
   const html = `
     <div class="history-stat-row">
       <div class="history-stat">
-        <div class="history-stat-label">Streak</div>
-        <div class="history-stat-num">${streak}</div>
-        <div class="history-stat-sub">day${streak === 1 ? "" : "s"} both goals hit</div>
+        <div class="history-stat-label">Streak (days)</div>
+        <div style="display:flex;justify-content:center;align-items:baseline;gap:10px;margin-top:4px">
+          <div style="text-align:center;flex:1">
+            <div class="history-stat-num water" style="margin-top:0;font-size:30px">${streakWater}</div>
+            <div class="history-stat-sub">water</div>
+          </div>
+          <div style="width:1px;height:32px;background:var(--border);flex-shrink:0;align-self:center"></div>
+          <div style="text-align:center;flex:1">
+            <div class="history-stat-num protein" style="margin-top:0;font-size:30px">${streakProtein}</div>
+            <div class="history-stat-sub">protein</div>
+          </div>
+          <div style="width:1px;height:32px;background:var(--border);flex-shrink:0;align-self:center"></div>
+          <div style="text-align:center;flex:1">
+            <div class="history-stat-num" style="margin-top:0;font-size:30px">${streakBoth}</div>
+            <div class="history-stat-sub">both</div>
+          </div>
+        </div>
       </div>
       <div class="history-stat">
         <div class="history-stat-label">7-day avg</div>
@@ -3679,7 +3927,7 @@ function renderSettings() {
         <button class="settings-row" data-edit="basics">
           <div class="settings-row-info">
             <div class="settings-row-label">Basics</div>
-            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age} · ${p.weight_lb} lb</div>
+            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age} · ${p.weight_lb} lb${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -3700,7 +3948,20 @@ function renderSettings() {
         <button class="settings-row" id="edit-bodycomp">
           <div class="settings-row-info">
             <div class="settings-row-label">Body composition</div>
-            <div class="settings-row-value">${bodyCompSummary(p)} · refines protein</div>
+            <div class="settings-row-value">${bodyCompSummary(p)} · refines protein${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-head"><span class="section-title">Daily window</span></div>
+      <div class="settings-card">
+        <button class="settings-row" id="edit-daily-window">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Hours you're drinking</div>
+            <div class="settings-row-value">${formatHour(p.dayStart ?? 7)} → ${formatHour(p.windDown ?? 20)} · used for pacing</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -3795,6 +4056,7 @@ function wireSettingsHandlers() {
   });
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#edit-bodycomp")?.addEventListener("click", openBodyCompModal);
+  $("#edit-daily-window")?.addEventListener("click", openDailyWindowModal);
   $("#open-install")?.addEventListener("click", openInstallModal);
   $("#share-app")?.addEventListener("click", shareApp);
   $("#backup-data")?.addEventListener("click", backupData);
@@ -3942,12 +4204,17 @@ function openProfileEdit(section) {
   }
   $("#m-cancel").addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
+    const prevWeight = state.profile.weight_lb;
+    const prevGoal = state.profile.goal;
     if (section === "basics") {
       p.age = +$("#ed-age").value || p.age;
       p.weight_lb = +$("#ed-weight").value || p.weight_lb;
     }
     if (p.sex !== "F") p.pregnancy = "none";
     state.profile = p;
+    // Weight or goal change → the body-check clock resets (you just refreshed
+    // one of the inputs the prompt would have asked about).
+    if (p.weight_lb !== prevWeight || p.goal !== prevGoal) resetBodyCheckTimer();
     save();
     closeModal();
     render();
@@ -4281,6 +4548,128 @@ function wireGoalsUpdateBanner() {
   $("#goals-update-show")?.addEventListener("click", () => { openGoalsUpdateModal(); retire(); });
   $("#goals-update-close")?.addEventListener("click", retire);
 }
+
+/* ============ Wind-down banner ============
+   After the wind-down hour, if water is still below goal, gently take the
+   pressure off rather than encouraging a late-night cram. */
+function renderWindDownBanner(totals, goals) {
+  if (!state.hasOnboarded) return "";
+  const h = nowHours();
+  const windDown = state.profile.windDown ?? 20;
+  if (h < windDown) return "";
+  if (totals.water >= goals.water) return "";
+  if (state.windDownDismissedDate === todayKey()) return "";
+  return `
+    <div class="install-banner" id="winddown-banner">
+      <div class="install-banner-icon" style="color:var(--water)">~</div>
+      <div class="install-banner-text">
+        <div class="install-banner-title">Ease up for the night</div>
+        <div class="install-banner-sub">Better to fall a bit short than wake up to use the restroom.</div>
+      </div>
+      <button class="install-banner-close" id="winddown-close" aria-label="Dismiss">×</button>
+    </div>
+  `;
+}
+function wireWindDownBanner() {
+  $("#winddown-close")?.addEventListener("click", () => {
+    state.windDownDismissedDate = todayKey();
+    save();
+    render();
+  });
+}
+
+/* ============ Body check-in banner ============
+   Periodic prompt to refresh weight + body composition, so the protein math
+   keeps tracking lean mass instead of slowly drifting. */
+function renderBodyCheckBanner() {
+  if (!bodyCheckDue()) return "";
+  return `
+    <div class="install-banner" id="bodycheck-banner">
+      <div class="install-banner-icon update-banner-icon">↻</div>
+      <div class="install-banner-text">
+        <div class="install-banner-title">Body check-in</div>
+        <div class="install-banner-sub">Quick refresh so your goals stay accurate.</div>
+      </div>
+      <button class="install-banner-show" id="bodycheck-update">Update</button>
+      <button class="install-banner-close" id="bodycheck-skip" aria-label="Looks the same">×</button>
+    </div>
+  `;
+}
+function wireBodyCheckBanner() {
+  $("#bodycheck-update")?.addEventListener("click", openBodyCheckModal);
+  $("#bodycheck-skip")?.addEventListener("click", () => {
+    resetBodyCheckTimer();
+    save();
+    render();
+    showToast("Got it — we'll check back later");
+  });
+}
+
+// Combined weight + body composition editor opened by the body-check banner.
+function openBodyCheckModal() {
+  const p = JSON.parse(JSON.stringify(state.profile));
+  const r = bodyFatRangeLabels(p.sex);
+  const cards = [
+    ["unset", "Skip / not sure", "No adjustment to protein"],
+    ["lower", "Lower body fat", r.lower],
+    ["average", "Average", r.average],
+    ["higher", "Higher body fat", r.higher],
+  ];
+  openModal(`
+    <div class="modal-title">Body check-in</div>
+    <div class="onb-sub" style="margin-bottom:14px;font-size:13px">A quick refresh so your protein and water goals stay accurate. Both shift with your weight and lean mass.</div>
+    <div class="field">
+      <span class="field-label">Weight (lb)</span>
+      <div class="input-box"><label>Weight</label><input type="number" id="bck-weight" inputmode="decimal" value="${p.weight_lb}" /></div>
+    </div>
+    <div class="field" style="margin-top:6px">
+      <span class="field-label">Body composition <span style="color:var(--ink-muted);font-weight:500">· optional</span></span>
+      <div id="bck-cards">
+        ${cards.map(([v, title, desc]) => `
+          <button class="card-option ${p.bodyComp === v ? "selected" : ""}" data-val="${v}">
+            <div class="card-option-title">${title}</div>
+            <div class="card-option-desc">${desc}</div>
+          </button>
+        `).join("")}
+      </div>
+      <div class="input-box" style="margin-top:10px"><label>Or enter exact body fat %</label><input type="number" id="bck-exact" inputmode="decimal" placeholder="—" value="${p.bodyComp === "exact" && p.bodyFatPct ? p.bodyFatPct : ""}" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="m-save">Save</button>
+    </div>
+  `);
+  let pick = p.bodyComp;
+  setupCardGroup("#bck-cards", v => { pick = v; $("#bck-exact").value = ""; }, p.bodyComp === "exact" ? "" : p.bodyComp);
+  $("#bck-exact").addEventListener("input", () => {
+    if ($("#bck-exact").value.trim() !== "") {
+      pick = "exact";
+      $$("#bck-cards .card-option").forEach(x => x.classList.remove("selected"));
+    }
+  });
+  $("#m-cancel").addEventListener("click", closeModal);
+  $("#m-save").addEventListener("click", () => {
+    const w = +$("#bck-weight").value;
+    if (!w || w < 50 || w > 700) { showToast("Enter a weight between 50 and 700 lb"); return; }
+    state.profile.weight_lb = Math.round(w);
+    const exactVal = $("#bck-exact").value.trim();
+    if (exactVal !== "") {
+      const pct = +exactVal;
+      if (!pct || pct < 3 || pct > 60) { showToast("Body fat % must be between 3 and 60"); return; }
+      state.profile.bodyComp = "exact";
+      state.profile.bodyFatPct = Math.round(pct * 10) / 10;
+    } else {
+      state.profile.bodyComp = pick || "unset";
+      state.profile.bodyFatPct = null;
+    }
+    resetBodyCheckTimer();
+    save();
+    closeModal();
+    render();
+    showToast("Updated — goals refreshed");
+  });
+}
+
 function openGoalsUpdateModal() {
   openModal(`
     <div class="modal-title">Why your goal changed</div>
@@ -4318,6 +4707,43 @@ function openRecentUpdatesModal() {
     </div>
   `);
   $("#ru-close")?.addEventListener("click", closeModal);
+}
+
+// Daily-window editor — controls dayStart/windDown used for pacing.
+function openDailyWindowModal() {
+  const p = state.profile;
+  const toTimeStr = h => `${String(h).padStart(2,"0")}:00`;
+  openModal(`
+    <div class="modal-title">Daily window</div>
+    <div class="onb-sub" style="margin-bottom:14px;font-size:13px">When you typically start and stop drinking. Used for the pace arcs on your rings and the wind-down nudge — not for goal math.</div>
+    <div class="field">
+      <span class="field-label">Day starts</span>
+      <div class="input-box"><label>Wake/start</label><input type="time" id="dw-start" value="${toTimeStr(p.dayStart ?? 7)}" step="3600" /></div>
+    </div>
+    <div class="field" style="margin-top:6px">
+      <span class="field-label">Wind down</span>
+      <div class="input-box"><label>Last sips by</label><input type="time" id="dw-end" value="${toTimeStr(p.windDown ?? 20)}" step="3600" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="m-save">Save</button>
+    </div>
+  `);
+  $("#m-cancel").addEventListener("click", closeModal);
+  $("#m-save").addEventListener("click", () => {
+    const s = parseInt($("#dw-start").value.split(":")[0], 10);
+    const e = parseInt($("#dw-end").value.split(":")[0], 10);
+    if (!Number.isFinite(s) || !Number.isFinite(e) || s < 0 || s > 23 || e < 0 || e > 23) {
+      showToast("Pick valid hours"); return;
+    }
+    if (e <= s) { showToast("Wind-down must be after day start"); return; }
+    state.profile.dayStart = s;
+    state.profile.windDown = e;
+    save();
+    closeModal();
+    render();
+    showToast("Daily window saved");
+  });
 }
 
 // Shared body-composition editor (used by Settings and the one-time notice).
@@ -4371,6 +4797,7 @@ function openBodyCompModal() {
       state.profile.bodyFatPct = null;
     }
     state.bodyCompNoticeSeen = true;
+    resetBodyCheckTimer();
     save();
     closeModal();
     render();
