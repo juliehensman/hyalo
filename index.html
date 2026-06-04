@@ -2086,7 +2086,7 @@ const CALC_VERSION = 2;
 const LATEST_UPDATE_DATE = "June 2026";
 const RECENT_UPDATE_DATE = "May 2026";
 // Bumped when default-library content changes, to top-up existing users once.
-const LIBRARY_SEED_VERSION = 1;
+const LIBRARY_SEED_VERSION = 2;
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2228,6 +2228,20 @@ function normalizeState(data) {
     if (sc && sc.name === "String cheese") sc.name = "Mozzarella string cheese";
     const bar = s.library.find(i => i.id === "protein-bar");
     if (bar && bar.g === 20) { bar.g = 10; bar.serving = "1 bar"; }
+    // v2: set conservative water content on known ready-to-drink items.
+    // Drink volume is 8–11.5 fl oz but dissolved solids (protein/carbs/fat)
+    // reduce the actual water portion, so we credit roughly 75–80% of volume.
+    const waterDefaults = [
+      { match: "nurri protein shake", oz: 9 },
+      { match: "ensure plus", oz: 6 },
+      { match: "ensure original", oz: 6 },
+    ];
+    for (const it of s.library) {
+      if (it.water_oz) continue;  // user-set value wins
+      const n = (it.name || "").trim().toLowerCase();
+      const hit = waterDefaults.find(w => n === w.match);
+      if (hit) it.water_oz = hit.oz;
+    }
     s.librarySeedVersion = LIBRARY_SEED_VERSION;
   }
   return s;
@@ -3076,7 +3090,12 @@ function topProteinItems(limit) {
   }
   return Object.values(counts)
     .sort((a, b) => b.count - a.count || (a.lastTs < b.lastTs ? 1 : -1))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(item => {
+      // Look up matching library item to inherit water content for auto-credit.
+      const lib = state.library.find(l => l.name === item.name && l.g === item.g);
+      return lib && lib.water_oz ? { ...item, water_oz: lib.water_oz } : item;
+    });
 }
 let quickProteinItems = [];
 
@@ -3182,7 +3201,7 @@ function wireTodayHandlers() {
   }));
   $$("[data-log-protein-idx]").forEach(b => b.addEventListener("click", () => {
     const item = quickProteinItems[+b.dataset.logProteinIdx];
-    if (item) logProtein(item.g, item.name);
+    if (item) logItemWithWater(item.g, item.name, item.water_oz);
   }));
   $("#water-custom")?.addEventListener("click", openCustomWaterModal);
   $("#protein-library")?.addEventListener("click", openLibraryModal);
@@ -3193,7 +3212,7 @@ function wireTodayHandlers() {
   }));
 }
 
-function logWater(oz, ts) {
+function logWater(oz, ts, opts = {}) {
   const entry_ts = ts || new Date().toISOString();
   const dayKey = todayKey(new Date(entry_ts));
   const before = goalHitStatus(dayKey);
@@ -3202,11 +3221,14 @@ function logWater(oz, ts) {
   day.water.push(entry);
   save();
   render();
-  undoBuffer = { type: "water", entry, dayKey };
-  showToast(`Logged ${oz}oz water`, () => undoLog());
+  if (!opts.silent) {
+    undoBuffer = [{ type: "water", entry, dayKey }];
+    showToast(`Logged ${oz}oz water`, () => undoLog());
+  }
   checkGoalCelebration(dayKey, before);
+  return { type: "water", entry, dayKey };
 }
-function logProtein(g, name, ts) {
+function logProtein(g, name, ts, opts = {}) {
   const entry_ts = ts || new Date().toISOString();
   const dayKey = todayKey(new Date(entry_ts));
   const before = goalHitStatus(dayKey);
@@ -3219,18 +3241,36 @@ function logProtein(g, name, ts) {
   }
   save();
   render();
-  undoBuffer = { type: "protein", entry, dayKey };
-  showToast(`Logged ${g}g ${name || "protein"}`, () => undoLog());
+  if (!opts.silent) {
+    undoBuffer = [{ type: "protein", entry, dayKey }];
+    showToast(`Logged ${g}g ${name || "protein"}`, () => undoLog());
+  }
   checkGoalCelebration(dayKey, before);
+  return { type: "protein", entry, dayKey };
+}
+
+// Log a library/custom item that may carry water content. Creates two entries
+// when water_oz > 0, with a single combined toast that undoes both.
+function logItemWithWater(g, name, water_oz, ts) {
+  const t = ts || new Date().toISOString();
+  if (!water_oz || water_oz <= 0) {
+    return logProtein(g, name, t);
+  }
+  const p = logProtein(g, name, t, { silent: true });
+  const w = logWater(water_oz, t, { silent: true });
+  undoBuffer = [p, w];
+  showToast(`Logged ${name || "protein"} — ${g}g · ${water_oz}oz water`, () => undoLog());
 }
 function undoLog() {
-  if (!undoBuffer) return;
-  const day = state.log[undoBuffer.dayKey];
-  if (!day) return;
-  if (undoBuffer.type === "water") {
-    day.water = day.water.filter(e => e.id !== undoBuffer.entry.id);
-  } else {
-    day.protein = day.protein.filter(e => e.id !== undoBuffer.entry.id);
+  if (!undoBuffer || !undoBuffer.length) return;
+  for (const u of undoBuffer) {
+    const day = state.log[u.dayKey];
+    if (!day) continue;
+    if (u.type === "water") {
+      day.water = day.water.filter(e => e.id !== u.entry.id);
+    } else {
+      day.protein = day.protein.filter(e => e.id !== u.entry.id);
+    }
   }
   undoBuffer = null;
   save();
@@ -3319,6 +3359,10 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
         <button class="num-step" id="inc">+</button>
       </div>
     </div>
+    <div class="field">
+      <span class="field-label">Water content <span style="color:var(--ink-muted);font-weight:500">(oz, optional — for shakes & drinks)</span></span>
+      <div class="input-box"><input type="number" id="p-water" inputmode="decimal" placeholder="—" /></div>
+    </div>
     ${renderWhenWidget(new Date().toISOString())}
     <button class="toggle-row ${saveToLibDefault ? "on" : ""}" id="p-savelib" type="button">
       <div class="toggle-row-info">
@@ -3350,7 +3394,10 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
   $("#m-save").addEventListener("click", () => {
     const g = +gIn.value;
     const name = $("#p-name").value.trim();
+    const waterRaw = $("#p-water").value.trim();
+    const water_oz = waterRaw ? +waterRaw : 0;
     if (!g || g <= 0) { showToast("Protein must be more than 0g"); return; }
+    if (water_oz < 0 || water_oz > 200) { showToast("Water must be between 0 and 200 oz"); return; }
     if (saveToLib && !name) { showToast("Name it to save to your library"); return; }
     const ts = when.getTs();
     if (saveToLib) {
@@ -3358,10 +3405,12 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
       const baseId = (name + "-" + serving).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "custom";
       let id = baseId, n = 2;
       while (state.library.some(x => x.id === id)) { id = `${baseId}-${n++}`; }
-      state.library.push({ id, name, serving, g });
+      const item = { id, name, serving, g };
+      if (water_oz > 0) item.water_oz = water_oz;
+      state.library.push(item);
     }
     closeModal();
-    logProtein(g, name || "Protein", ts);
+    logItemWithWater(g, name || "Protein", water_oz, ts);
     if (saveToLib) showToast("Logged & saved to library");
   });
 }
@@ -3438,7 +3487,7 @@ function renderLibList(items, query = "") {
       <button class="lib-item-remove" data-remove-id="${escapeHtml(it.id)}" aria-label="Remove ${escapeHtml(it.name)}">−</button>
       <div class="lib-item-info">
         <div class="lib-item-name">${escapeHtml(it.name)}</div>
-        <div class="lib-item-serv">${escapeHtml(it.serving || "")}</div>
+        <div class="lib-item-serv">${escapeHtml(it.serving || "")}${it.water_oz ? ` <span style="color:var(--water)">· +${it.water_oz}oz water</span>` : ""}</div>
       </div>
       <div class="lib-item-g">${it.g}g</div>
     </div>
@@ -3453,7 +3502,7 @@ function wireLibItems() {
     if (libEditing) return;            // in edit mode, taps don't log
     const id = el.dataset.libId;
     const it = state.library.find(x => x.id === id);
-    if (it) { closeModal(); logProtein(it.g, it.name); }
+    if (it) { closeModal(); logItemWithWater(it.g, it.name, it.water_oz); }
   }));
 }
 
