@@ -915,28 +915,31 @@
     line-height: 1.5;
   }
   .log-item {
-    padding: 12px 16px;
+    padding: 16px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    transition: background 0.15s ease, transform 0.13s ease;
+    text-align: left;
+  }
+  .log-item:hover { background: var(--card-hover); }
+  .log-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s ease, transform 0.13s ease;
+    gap: 14px;
   }
-  .log-item:last-child { border-bottom: none; }
-  .log-item:hover { background: var(--card-hover); }
-  .log-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+  .log-bar {
+    width: 2px;
+    height: 22px;
+    border-radius: 1px;
     flex-shrink: 0;
   }
-  .log-dot.water { background: var(--water); }
-  .log-dot.protein { background: var(--protein); }
-  .log-info {
+  .log-bar.water { background: var(--water); }
+  .log-bar.protein { background: var(--protein); }
+  .log-name {
     flex: 1;
     min-width: 0;
-  }
-  .log-name {
     font-size: 14px;
     font-weight: 500;
     color: var(--ink);
@@ -945,16 +948,17 @@
     white-space: nowrap;
   }
   .log-amount {
-    font-size: 12px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 17px;
     color: var(--ink-soft);
-    margin-top: 1px;
-    font-feature-settings: "tnum";
+    flex-shrink: 0;
   }
   .log-time {
     font-size: 12px;
     color: var(--ink-muted);
+    letter-spacing: 0.02em;
     font-feature-settings: "tnum";
-    flex-shrink: 0;
   }
 
   /* ===== History view ===== */
@@ -1587,49 +1591,35 @@
   /* Install banner */
   .install-banner {
     margin: 16px 20px 0;
-    background: var(--ink);
-    color: var(--bg);
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px 14px 14px 16px;
+    padding: 14px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: var(--shadow);
   }
-  .install-banner-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: var(--bg);
-    color: var(--ink);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: 22px;
-    flex-shrink: 0;
-    line-height: 1;
-  }
-  .install-banner-icon .dot { color: var(--protein); }
+  .install-banner-icon { display: none; }
   .install-banner-text {
     flex: 1;
     min-width: 0;
   }
   .install-banner-title {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.25;
+    color: var(--ink);
   }
   .install-banner-sub {
     font-size: 12px;
-    opacity: 0.75;
-    margin-top: 1px;
+    color: var(--ink-muted);
+    margin-top: 2px;
     line-height: 1.3;
   }
   .install-banner-show {
-    background: var(--bg);
-    color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
     padding: 7px 12px;
     border-radius: 999px;
     font-size: 12px;
@@ -1642,8 +1632,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bg);
-    opacity: 0.5;
+    color: var(--ink-muted);
     font-size: 18px;
     flex-shrink: 0;
     border-radius: 50%;
@@ -2093,7 +2082,8 @@ const STORAGE_KEY = "hyalo-v1";
 // Bumped whenever the goal-calculation logic changes, so existing users get
 // a one-time notice. v2 = evidence-based protein ladder (build/recomp lowered).
 const CALC_VERSION = 2;
-// Display date for the most recent goal-logic change (shown in Recent updates).
+// Display dates for entries in Recent updates.
+const LATEST_UPDATE_DATE = "June 2026";
 const RECENT_UPDATE_DATE = "May 2026";
 // Bumped when default-library content changes, to top-up existing users once.
 const LIBRARY_SEED_VERSION = 1;
@@ -2997,11 +2987,8 @@ function renderToday() {
   const today = state.log[todayKey()] || { water: [], protein: [], workout: null };
 
   const html = `
-    ${renderGoalsUpdateBanner()}
-    ${renderBodyCheckBanner()}
-    ${renderWindDownBanner(totals, goals)}
+    ${renderBanners(totals, goals)}
     ${renderWeeklyReview()}
-    ${renderInstallBanner()}
     ${renderRings(totals, goals)}
     ${renderQuickLog(goals)}
     ${renderWorkoutCard(goals)}
@@ -3063,13 +3050,13 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
           data-target="${offset}"></circle>
       </svg>
       <div class="ring-center">
-        <div class="ring-num">${current}<span class="ring-unit">/${goal}${unit}</span></div>
+        <div class="ring-num">${current}<span class="ring-unit"> ${unit}</span></div>
         <div class="ring-unit">${Math.round(pct * 100)}%</div>
       </div>
     </div>
     <div class="ring-label">${label}</div>
     <div class="ring-goal">Goal: ${goal}${unit}</div>
-    ${bump > 0 ? `<div class="ring-goal-bumped">base ${base}${unit} + workout ${bump}${unit}</div>` : ""}
+    ${bump > 0 ? `<div class="ring-goal-bumped">+${bump}${unit} from workout</div>` : ""}
   </div>`;
 }
 
@@ -3145,7 +3132,7 @@ function renderWorkoutCard(goals) {
     <div class="section-head"><span class="section-title">Log workout</span></div>
     <div class="workout-card" id="workout-card">
       <div class="workout-info">
-        <div class="workout-icon ${ws.length ? "" : "empty"}">${ws.length ? "✓" : "+"}</div>
+        ${ws.length === 0 ? '<div class="workout-icon empty">+</div>' : ""}
         <div class="workout-text">
           <div class="workout-title">${escapeHtml(title)}</div>
           <div class="workout-sub">${sub}</div>
@@ -3177,12 +3164,12 @@ function renderTodayLog(today) {
     <div class="log-list">
       ${entries.map(e => `
         <button class="log-item" data-entry-id="${e.id}" data-entry-kind="${e.kind}">
-          <div class="log-dot ${e.kind}"></div>
-          <div class="log-info">
+          <div class="log-time">${fmtTime(e.ts)}</div>
+          <div class="log-row">
+            <div class="log-bar ${e.kind}"></div>
             <div class="log-name">${e.kind === "water" ? "Water" : escapeHtml(e.name || "Protein")}</div>
             <div class="log-amount">${e.kind === "water" ? `${e.oz} oz` : `${e.g} g`}</div>
           </div>
-          <div class="log-time">${fmtTime(e.ts)}</div>
         </button>
       `).join("")}
     </div>
@@ -4543,6 +4530,17 @@ function renderGoalsUpdateBanner() {
     </div>
   `;
 }
+// Pick at most 2 active banners by priority. Most time-sensitive first.
+// Each banner's render fn already returns "" when it shouldn't show.
+function renderBanners(totals, goals) {
+  return [
+    renderWindDownBanner(totals, goals),   // time-critical: evening cram avoidance
+    renderBodyCheckBanner(),                // cyclical: refresh weight/body comp
+    renderGoalsUpdateBanner(),              // one-time: math notice for legacy users
+    renderInstallBanner(),                  // persistent: PWA install prompt
+  ].filter(html => html && html.trim()).slice(0, 2).join("");
+}
+
 function wireGoalsUpdateBanner() {
   const retire = () => { state.calcVersionSeen = CALC_VERSION; save(); render(); };
   $("#goals-update-show")?.addEventListener("click", () => { openGoalsUpdateModal(); retire(); });
@@ -4690,6 +4688,15 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Pace your day</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>A faint pace arc behind each ring now shows where you should be by this point in your day. A new <em>Daily window</em> section in Settings lets you set the hours you're typically drinking (defaults to 7 AM → 8 PM).</p>
+      <p>After your wind-down hour, if you're still short, Hyalo will gently tell you to ease up rather than cram — better to fall a bit short than wake up to use the restroom.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body check-in</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>If you're working toward an active goal (building, losing fat, or recomp), Hyalo will quietly check in every 6 weeks to refresh your weight and body composition — those drive the math, and they drift over time. For maintenance, it's every 12 weeks. For the "general" goal, it doesn't happen at all.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition setting added</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
       <p>You can now optionally tell Hyalo about your body composition — a band (lower / average / higher body fat) or your exact percentage — in Settings → Body composition.</p>
