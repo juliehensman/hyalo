@@ -472,6 +472,13 @@
     margin-top: 4px;
     font-weight: 500;
   }
+  .ring-remaining {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-weight: 500;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
   .ring-goal-bumped {
     font-size: 11px;
     color: var(--sage-soft);
@@ -2086,7 +2093,7 @@ const CALC_VERSION = 2;
 const LATEST_UPDATE_DATE = "June 2026";
 const RECENT_UPDATE_DATE = "May 2026";
 // Bumped when default-library content changes, to top-up existing users once.
-const LIBRARY_SEED_VERSION = 2;
+const LIBRARY_SEED_VERSION = 4;
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2101,7 +2108,24 @@ const DEFAULT_LIBRARY = [
   { id: "tuna-can", name: "Tuna", serving: "1 can, 5 oz", g: 30 },
   { id: "beef-4oz", name: "Beef, ground 90/10", serving: "4 oz cooked", g: 22 },
   { id: "steak-4oz", name: "Steak", serving: "4 oz cooked", g: 25 },
+  { id: "beef-tend-4oz", name: "Beef tenderloin", serving: "4 oz cooked", g: 30 },
+  { id: "beef-tend-6oz", name: "Beef tenderloin", serving: "6 oz cooked", g: 45 },
+  { id: "beef-rib-8oz", name: "Beef ribeye", serving: "8 oz cooked", g: 50 },
+  { id: "beef-rib-10oz", name: "Beef ribeye", serving: "10 oz cooked", g: 62 },
   { id: "salmon-4oz", name: "Salmon", serving: "4 oz cooked", g: 23 },
+  { id: "salmon-fillet", name: "Salmon fillet", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
+  { id: "halibut-4oz", name: "Halibut", serving: "4 oz cooked", g: 24 },
+  { id: "halibut-6oz", name: "Halibut", serving: "6 oz cooked", g: 36 },
+  { id: "tuna-steak-4oz", name: "Tuna steak", serving: "4 oz cooked fillet", g: 30 },
+  { id: "tuna-steak-6oz", name: "Tuna steak", serving: "6 oz cooked fillet", g: 45 },
+  { id: "lobster-tail", name: "Lobster tail", serving: "1 typical, ~5 oz cooked meat", g: 40 },
+  { id: "shrimp-sm", name: "Shrimp, small", serving: "1 shrimp", g: 1 },
+  { id: "shrimp-ml", name: "Shrimp, medium-large", serving: "1 shrimp", g: 3 },
+  { id: "scallop-sea", name: "Sea scallop", serving: "1 large scallop", g: 5 },
+  { id: "scallop-bay", name: "Bay scallop", serving: "1 small scallop", g: 1 },
+  { id: "mussel-1", name: "Mussel", serving: "1 mussel", g: 1 },
+  { id: "snow-crab-1", name: "Snow crab", serving: "1 crab (no body)", g: 30 },
+  { id: "king-crab-1", name: "King crab", serving: "1 crab (no body)", g: 180 },
   { id: "turkey-4oz", name: "Turkey", serving: "4 oz cooked", g: 24 },
   { id: "pork-4oz", name: "Pork", serving: "4 oz cooked", g: 26 },
   { id: "shrimp-4oz", name: "Shrimp", serving: "4 oz cooked", g: 24 },
@@ -2222,6 +2246,24 @@ function normalizeState(data) {
     const adds = [
       { id: "brownrice-1c", name: "Brown rice", serving: "1 cup cooked", g: 5 },
       { id: "oatmeal-1c", name: "Oatmeal", serving: "1 cup cooked", g: 6 },
+      // v3: beef and seafood expansions
+      { id: "beef-tend-4oz", name: "Beef tenderloin", serving: "4 oz cooked", g: 30 },
+      { id: "beef-tend-6oz", name: "Beef tenderloin", serving: "6 oz cooked", g: 45 },
+      { id: "beef-rib-8oz", name: "Beef ribeye", serving: "8 oz cooked", g: 50 },
+      { id: "beef-rib-10oz", name: "Beef ribeye", serving: "10 oz cooked", g: 62 },
+      { id: "salmon-fillet", name: "Salmon fillet", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
+      { id: "halibut-4oz", name: "Halibut", serving: "4 oz cooked", g: 24 },
+      { id: "halibut-6oz", name: "Halibut", serving: "6 oz cooked", g: 36 },
+      { id: "tuna-steak-4oz", name: "Tuna steak", serving: "4 oz cooked fillet", g: 30 },
+      { id: "tuna-steak-6oz", name: "Tuna steak", serving: "6 oz cooked fillet", g: 45 },
+      { id: "lobster-tail", name: "Lobster tail", serving: "1 typical, ~5 oz cooked meat", g: 40 },
+      { id: "shrimp-sm", name: "Shrimp, small", serving: "1 shrimp", g: 1 },
+      { id: "shrimp-ml", name: "Shrimp, medium-large", serving: "1 shrimp", g: 3 },
+      { id: "scallop-sea", name: "Sea scallop", serving: "1 large scallop", g: 5 },
+      { id: "scallop-bay", name: "Bay scallop", serving: "1 small scallop", g: 1 },
+      { id: "mussel-1", name: "Mussel", serving: "1 mussel", g: 1 },
+      { id: "snow-crab-1", name: "Snow crab", serving: "1 crab (no body)", g: 30 },
+      { id: "king-crab-1", name: "King crab", serving: "1 crab (no body)", g: 180 },
     ];
     for (const it of adds) if (!byId.has(it.id)) s.library.push(it);
     const sc = s.library.find(i => i.id === "string-cheese");
@@ -2241,6 +2283,15 @@ function normalizeState(data) {
       const n = (it.name || "").trim().toLowerCase();
       const hit = waterDefaults.find(w => n === w.match);
       if (hit) it.water_oz = hit.oz;
+    }
+    // v4: strip the ", medium" suffix from beef tenderloin/ribeye serving text —
+    // doneness affects protein by only a few grams, so the label was more
+    // confusing than helpful. Idempotent on any rerun.
+    const beefIds = new Set(["beef-tend-4oz","beef-tend-6oz","beef-rib-8oz","beef-rib-10oz"]);
+    for (const it of s.library) {
+      if (beefIds.has(it.id) && it.serving) {
+        it.serving = it.serving.replace(/,\s*medium\s*$/i, "");
+      }
     }
     s.librarySeedVersion = LIBRARY_SEED_VERSION;
   }
@@ -3070,6 +3121,7 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
     </div>
     <div class="ring-label">${label}</div>
     <div class="ring-goal">Goal: ${goal}${unit}</div>
+    <div class="ring-remaining">${current >= goal ? "Goal hit" : `To go: ${goal - current}${unit}`}</div>
     ${bump > 0 ? `<div class="ring-goal-bumped">+${bump}${unit} from workout</div>` : ""}
   </div>`;
 }
@@ -3874,10 +3926,10 @@ function renderHistory() {
             const hit = t.water >= dayGoals[i].water;
             const isToday = d.key === todayKey();
             return `
-              <div class="chart-bar-col">
+              <div class="chart-bar-col" data-day-key="${d.key}">
                 <div class="chart-bar-stack">
                   <div class="chart-goal-line" style="bottom: ${goalPct}%"></div>
-                  <div class="chart-bar water ${hit ? "" : "under"}" style="height: ${pct}%"><div class="chart-bar-value">${t.water}oz</div></div>
+                  <div class="chart-bar water ${hit ? "" : "under"}" style="height: ${pct}%"></div>
                 </div>
                 <div class="chart-day ${isToday ? "today" : ""}">${d.date.toLocaleDateString(undefined, { weekday: "narrow" })}</div>
               </div>`;
@@ -3895,10 +3947,10 @@ function renderHistory() {
             const hit = t.protein >= dayGoals[i].protein;
             const isToday = d.key === todayKey();
             return `
-              <div class="chart-bar-col">
+              <div class="chart-bar-col" data-day-key="${d.key}">
                 <div class="chart-bar-stack">
                   <div class="chart-goal-line" style="bottom: ${goalPct}%"></div>
-                  <div class="chart-bar protein ${hit ? "" : "under"}" style="height: ${pct}%"><div class="chart-bar-value">${t.protein}g</div></div>
+                  <div class="chart-bar protein ${hit ? "" : "under"}" style="height: ${pct}%"></div>
                 </div>
                 <div class="chart-day ${isToday ? "today" : ""}">${d.date.toLocaleDateString(undefined, { weekday: "narrow" })}</div>
               </div>`;
@@ -3909,16 +3961,11 @@ function renderHistory() {
   `;
   $("#main-content").innerHTML = html;
 
-  // Tap a bar (anywhere in its column) to reveal that day's amount; one active
-  // bar per chart, tap again to dismiss.
+  // Tap a bar (anywhere in its column) to open that day's full log.
   $$("#main-content .chart-bar-col").forEach(col => {
     col.addEventListener("click", () => {
-      const wasActive = col.classList.contains("active");
-      for (const sib of col.parentElement.children) sib.classList.remove("active");
-      if (!wasActive) {
-        col.classList.add("active");
-        if (navigator.vibrate) navigator.vibrate(5);
-      }
+      if (navigator.vibrate) navigator.vibrate(5);
+      openDayLogModal(col.dataset.dayKey);
     });
   });
 }
@@ -4653,6 +4700,44 @@ function wireBodyCheckBanner() {
 }
 
 // Combined weight + body composition editor opened by the body-check banner.
+// View any past (or current) day's full log — opened by tapping a chart bar.
+function openDayLogModal(dayKey) {
+  if (!dayKey) return;
+  const day = state.log[dayKey] || { water: [], protein: [] };
+  const dateObj = new Date(dayKey + "T12:00:00");   // noon avoids TZ off-by-one
+  const isToday = dayKey === todayKey();
+  const dayLabel = isToday
+    ? "Today"
+    : dateObj.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const entries = [
+    ...day.water.map(e => ({ kind: "water", ts: e.ts, oz: e.oz, name: "Water" })),
+    ...day.protein.map(e => ({ kind: "protein", ts: e.ts, g: e.g, name: e.name || "Protein" })),
+  ].sort((a, b) => (a.ts < b.ts ? 1 : -1));
+  const totalWater = day.water.reduce((s, e) => s + e.oz, 0);
+  const totalProtein = day.protein.reduce((s, e) => s + e.g, 0);
+  const entriesHtml = entries.length === 0
+    ? `<div style="text-align:center;padding:32px 0;color:var(--ink-muted);font-size:13px">No entries this day.</div>`
+    : entries.map(e => `
+        <div class="log-item" style="cursor:default">
+          <div class="log-time">${fmtTime(e.ts)}</div>
+          <div class="log-row">
+            <div class="log-bar ${e.kind}"></div>
+            <div class="log-name">${escapeHtml(e.name)}</div>
+            <div class="log-amount">${e.kind === "water" ? `${e.oz} oz` : `${e.g} g`}</div>
+          </div>
+        </div>
+      `).join("");
+  openModal(`
+    <div class="modal-title">${dayLabel}</div>
+    <div class="modal-sub">${totalWater}oz water · ${totalProtein}g protein</div>
+    <div class="log-list" style="margin-top:14px">${entriesHtml}</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
+    </div>
+  `, "modal-tall");
+  $("#m-close").addEventListener("click", closeModal);
+}
+
 function openBodyCheckModal() {
   const p = JSON.parse(JSON.stringify(state.profile));
   const r = bodyFatRangeLabels(p.sex);
