@@ -670,6 +670,91 @@
   }
 
   /* Goals explainer modal */
+  .ex-block {
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ex-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  .ex-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink);
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .ex-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 5px 0;
+    gap: 12px;
+  }
+  .ex-label { flex: 1; min-width: 0; }
+  .ex-val {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink);
+    font-feature-settings: "tnum";
+    white-space: nowrap;
+    text-align: right;
+  }
+  .ex-val .u {
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-left: 1px;
+    font-weight: 500;
+  }
+  .ex-subtotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .ex-subtotal .ex-val { font-size: 17px; }
+  .ex-override {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-style: italic;
+    padding: 4px 0 2px;
+  }
+  .ex-final {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 2px solid var(--ink);
+    font-size: 11px;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  .ex-final .ex-val { font-size: 22px; }
+  .ex-tip {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-style: italic;
+    text-align: center;
+  }
   .explainer-section {
     padding: 14px 16px;
     background: var(--card);
@@ -2998,45 +3083,103 @@ function openGoalsExplainerModal() {
   const overW = state.goalsOverride.water_oz !== null;
   const overP = state.goalsOverride.protein_g !== null;
   const hasBump = goals.bump.water > 0 || goals.bump.protein > 0;
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  const oz = (n, sign) => `${sign && n > 0 ? "+" : ""}${n}<span class="u">oz</span>`;
+  const g  = (n, sign) => `${sign && n > 0 ? "+" : ""}${n}<span class="u">g</span>`;
+
+  // Water breakdown rows (only shown if no override)
+  const waterRows = [];
+  if (!overW) {
+    waterRows.push({ label: "Half your bodyweight", value: oz(Math.round(p.weight_lb * 0.5)) });
+    const aBump = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
+    if (aBump > 0) waterRows.push({ label: `${ACTIVITY_LABELS[p.activity]} activity`, value: oz(aBump, true) });
+    if (p.climate === "hot") waterRows.push({ label: "Hot climate", value: oz(16, true) });
+    if (p.pregnancy === "pregnant") waterRows.push({ label: "Pregnancy", value: oz(24, true) });
+    else if (p.pregnancy === "breastfeeding") waterRows.push({ label: "Breastfeeding", value: oz(32, true) });
+  }
+
+  // Protein breakdown rows (only shown if no override)
+  const proteinRows = [];
+  if (!overP) {
+    let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
+    const actBump = { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
+    mult += actBump;
+    let capped = false;
+    if (p.age >= 65 && mult < 0.6) mult = 0.6;
+    if (mult > 1.2) { mult = 1.2; capped = true; }
+    const factor = bodyCompFactor(p);
+    const basis = proteinBasisWeight(p);
+    const goalText = GOAL_LABELS[p.goal].toLowerCase();
+    const actText = p.activity !== "sedentary" ? `, ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : "";
+    proteinRows.push({
+      label: `${cap(goalText)}${actText}${capped ? " (capped)" : ""}`,
+      value: `${mult.toFixed(2)}<span class="u">g/lb</span>`,
+    });
+    if (factor !== 1) {
+      const bcLabel = p.bodyComp === "exact" && p.bodyFatPct
+        ? `Body composition (${p.bodyFatPct}% body fat)`
+        : `Body composition (${p.bodyComp})`;
+      proteinRows.push({ label: bcLabel, value: `${p.weight_lb} → ${Math.round(basis)}<span class="u">lb</span>` });
+    }
+    proteinRows.push({
+      label: `${Math.round(basis)} lb × ${mult.toFixed(2)}`,
+      value: g(Math.round(basis * mult)),
+    });
+    if (p.pregnancy === "pregnant") proteinRows.push({ label: "Pregnancy", value: g(25, true) });
+    else if (p.pregnancy === "breastfeeding") proteinRows.push({ label: "Breastfeeding", value: g(25, true) });
+  }
+
+  // Workout breakdown rows (each logged workout + strength bonus if any)
+  const todayWorkouts = state.log[todayKey()]?.workouts || [];
+  const workoutRows = [];
+  let hasStrength = false;
+  for (const w of todayWorkouts) {
+    const b = workoutBump(w);
+    const parts = [];
+    if (b.water > 0) parts.push(`+${b.water}<span class="u">oz</span>`);
+    if (b.protein > 0) parts.push(`+${b.protein}<span class="u">g</span>`);
+    workoutRows.push({
+      label: `${cap(w.intensity)}, ${w.duration} min`,
+      value: parts.join(" · ") || "—",
+    });
+    if (w.type === "strength" || w.type === "both") hasStrength = true;
+  }
+  if (hasStrength) workoutRows.push({ label: "Strength bonus", value: g(5, true) });
+
+  const rowHtml = (rows) => rows.map(r => `
+    <div class="ex-line"><span class="ex-label">${escapeHtml(r.label)}</span><span class="ex-val">${r.value}</span></div>
+  `).join("");
 
   openModal(`
     <div class="modal-title">Your daily goals</div>
-    <div class="modal-sub">How the numbers are built from your profile.</div>
+    <div class="modal-sub">How they're built from your profile.</div>
 
-    <div class="explainer-section">
-      <div class="explainer-row">
-        <div class="explainer-label">Water — base</div>
-        <div class="explainer-num water">${base.water}<span>oz</span></div>
-      </div>
-      <div class="explainer-detail">${overW ? "Manually set in Settings, overriding the calculated value." : escapeHtml(waterBreakdown(p))}</div>
+    <div class="ex-block">
+      <div class="ex-title">Water</div>
+      ${overW ? `<div class="ex-override">Manually set in Settings.</div>` : rowHtml(waterRows)}
+      <div class="ex-subtotal"><span>Water base</span><span class="ex-val">${oz(base.water)}</span></div>
     </div>
 
-    <div class="explainer-section">
-      <div class="explainer-row">
-        <div class="explainer-label">Protein — base</div>
-        <div class="explainer-num protein">${base.protein}<span>g</span></div>
-      </div>
-      <div class="explainer-detail">${overP ? "Manually set in Settings, overriding the calculated value." : escapeHtml(proteinBreakdown(p))}</div>
+    <div class="ex-block">
+      <div class="ex-title">Protein</div>
+      ${overP ? `<div class="ex-override">Manually set in Settings.</div>` : rowHtml(proteinRows)}
+      <div class="ex-subtotal"><span>Protein base</span><span class="ex-val">${g(base.protein)}</span></div>
     </div>
 
     ${hasBump ? `
-      <div class="explainer-section workout">
-        <div class="explainer-row">
-          <div class="explainer-label">Today's workouts</div>
-          <div class="explainer-num">+${goals.bump.water}oz · +${goals.bump.protein}g</div>
-        </div>
-        <div class="explainer-detail">Bumped up to account for the sessions you've logged. +5g protein is added once if any strength session is logged today (the MPS signal elevates once, not per session).</div>
+      <div class="ex-block">
+        <div class="ex-title">Today's workouts</div>
+        ${rowHtml(workoutRows)}
+        <div class="ex-subtotal"><span>Workout bump</span><span class="ex-val">+${goals.bump.water}<span class="u">oz</span> · +${goals.bump.protein}<span class="u">g</span></span></div>
       </div>
-      <div class="explainer-section total">
-        <div class="explainer-row">
-          <div class="explainer-label">Today's target</div>
-          <div class="explainer-num">${goals.water}oz · ${goals.protein}g</div>
-        </div>
-        <div class="explainer-detail">Base + workout bump = today's number to chase.</div>
-      </div>
-    ` : `
-      <div class="explainer-detail" style="text-align:center;margin-top:4px">Log a workout to see today's goal shift upward.</div>
-    `}
+    ` : ""}
+
+    <div class="ex-final">
+      <span>Today's goal</span>
+      <span class="ex-val">${goals.water}<span class="u">oz</span> · ${goals.protein}<span class="u">g</span></span>
+    </div>
+
+    ${!hasBump ? `<div class="ex-tip">Log a workout to see today's goal shift upward.</div>` : ""}
 
     <div class="modal-actions">
       <button class="btn btn-primary" id="m-close" style="flex:1">Got it</button>
@@ -3094,6 +3237,16 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
   const offset = C * (1 - pct);
   const paceP = paceFraction();
   const paceOffset = C * (1 - paceP);
+  // "Behind pace" only meaningful inside the active drinking window
+  // (before dayStart: pace target = 0; after windDown: collapses to "to go")
+  const paceTarget = paceP * goal;
+  const behindBy = paceP > 0 && paceP < 1 ? Math.max(0, Math.round(paceTarget - current)) : 0;
+  const showBehind = behindBy > 0 && current < goal;
+  const remainingText = current >= goal
+    ? "Goal hit"
+    : showBehind
+      ? `${goal - current}${unit} to go · ${behindBy}${unit} behind`
+      : `${goal - current}${unit} to go`;
   return `
   <div class="ring-card ${kind}">
     <div class="ring-wrap">
@@ -3122,7 +3275,7 @@ function ringCard(kind, current, goal, bump, base, label, unit) {
     <div class="ring-label">${label}</div>
     <div class="ring-goal">Goal: ${goal}${unit}</div>
     <div class="ring-remaining">${current >= goal ? "Goal hit" : `To go: ${goal - current}${unit}`}</div>
-    ${bump > 0 ? `<div class="ring-goal-bumped">+${bump}${unit} from workout</div>` : ""}
+    ${showBehind ? `<div class="ring-remaining">${behindBy}${unit} behind pace</div>` : ""}
   </div>`;
 }
 
