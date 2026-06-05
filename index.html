@@ -2175,7 +2175,7 @@
 const STORAGE_KEY = "hyalo-v1";
 // Bumped whenever the goal-calculation logic changes, so existing users get
 // a one-time notice. v2 = evidence-based protein ladder (build/recomp lowered).
-const CALC_VERSION = 2;
+const CALC_VERSION = 3;
 // Display dates for entries in Recent updates.
 const LATEST_UPDATE_DATE = "June 2026";
 const RECENT_UPDATE_DATE = "May 2026";
@@ -2404,7 +2404,7 @@ function save() {
 
 /* ============ Calculator ============ */
 function computeWaterGoal(p) {
-  let oz = p.weight_lb * 0.5;
+  let oz = p.weight_lb * 0.4;
   oz += { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
   if (p.climate === "hot") oz += 16;
   if (p.pregnancy === "pregnant") oz += 24;
@@ -2412,11 +2412,11 @@ function computeWaterGoal(p) {
   return Math.round(oz);
 }
 function waterBreakdown(p) {
-  const baseline = Math.round(p.weight_lb * 0.5);
+  const baseline = Math.round(p.weight_lb * 0.4);
   const activityBump = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
   const climateBump = p.climate === "hot" ? 16 : 0;
   const pregBump = p.pregnancy === "pregnant" ? 24 : (p.pregnancy === "breastfeeding" ? 32 : 0);
-  const parts = [`Baseline ${baseline}oz (weight × 0.5)`];
+  const parts = [`Baseline ${baseline}oz (weight × 0.4)`];
   if (activityBump) parts.push(`Activity +${activityBump}oz (${ACTIVITY_LABELS[p.activity].toLowerCase()})`);
   if (climateBump) parts.push(`Climate +${climateBump}oz (hot/humid)`);
   if (pregBump) parts.push(`+${pregBump}oz (${p.pregnancy})`);
@@ -3092,7 +3092,7 @@ function openGoalsExplainerModal() {
   // Water breakdown rows (only shown if no override)
   const waterRows = [];
   if (!overW) {
-    waterRows.push({ label: "Half your bodyweight", value: oz(Math.round(p.weight_lb * 0.5)) });
+    waterRows.push({ label: "40% of your bodyweight", value: oz(Math.round(p.weight_lb * 0.4)) });
     const aBump = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
     if (aBump > 0) waterRows.push({ label: `${ACTIVITY_LABELS[p.activity]} activity`, value: oz(aBump, true) });
     if (p.climate === "hot") waterRows.push({ label: "Hot climate", value: oz(16, true) });
@@ -4766,15 +4766,13 @@ function wireInstallBanner() {
 function renderGoalsUpdateBanner() {
   if (!state.hasOnboarded) return "";
   if (state.calcVersionSeen >= CALC_VERSION) return "";
-  const g = state.profile.goal;
-  if (g !== "build" && g !== "recomp") return "";       // only these goals moved
-  if (state.goalsOverride.protein_g != null) return "";  // manual target → unchanged
+  if (state.goalsOverride.water_oz != null) return "";  // manual target → unchanged
   return `
     <div class="install-banner" id="goals-update-banner">
       <div class="install-banner-icon update-banner-icon">✦</div>
       <div class="install-banner-text">
-        <div class="install-banner-title">Your protein goal was updated</div>
-        <div class="install-banner-sub">We fine-tuned the math to match current research.</div>
+        <div class="install-banner-title">Your water goal was updated</div>
+        <div class="install-banner-sub">We dialed the baseline to match hydration research.</div>
       </div>
       <button class="install-banner-show" id="goals-update-show">Details</button>
       <button class="install-banner-close" id="goals-update-close" aria-label="Dismiss">×</button>
@@ -4961,10 +4959,9 @@ function openGoalsUpdateModal() {
   openModal(`
     <div class="modal-title">Why your goal changed</div>
     <div class="goals-update-body">
-      <p>Hyalo's protein targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were set a bit higher than current sports-nutrition evidence supports.</p>
-      <p>We've brought them into the well-established range for building and recomposition — roughly 1.6–2.2 g of protein per kg of bodyweight — so your daily target may have come down slightly.</p>
-      <p>This is about accuracy, not eating less: the muscle-building benefit levels off near the top of that range, so the new target lets you hit your goal without overshooting.</p>
-      <p>Your water target hasn't changed. And you can always set your own target by hand in Settings → Your goals.</p>
+      <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
+      <p>We've dialed the baseline from ×0.5 to ×0.4 of your bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
+      <p>If you preferred the higher target, you can override it in Settings → Your goals. And pale yellow pee is the best feedback signal there is, regardless of what the number says.</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="gu-close" style="width:100%">Got it</button>
@@ -4977,6 +4974,12 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Water goal: a more honest baseline</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
+      <p>We've dialed the baseline from ×0.5 to ×0.4 of bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
+      <p>If you preferred the higher target, you can override it in Settings → Your goals. Your body's the best feedback signal here — pale yellow pee means you're well hydrated, regardless of the number on the ring.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Pace your day</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>A faint pace arc behind each ring now shows where you should be by this point in your day. A new <em>Daily window</em> section in Settings lets you set the hours you're typically drinking (defaults to 7 AM → 8 PM).</p>
