@@ -2483,6 +2483,57 @@ function bodyCompSummary(p) {
   return "Not set";
 }
 
+/* ============ Breakdown row builders (shared by explainer + customize modals) ============
+   Each returns a [{label, value}] array describing how the base goal is built
+   from the profile. Used by openGoalsExplainerModal (informational, all metrics)
+   and openGoalOverride (one metric, with editable input below). */
+function fmtOz(n, sign) { return `${sign && n > 0 ? "+" : ""}${n}<span class="u">oz</span>`; }
+function fmtG(n, sign)  { return `${sign && n > 0 ? "+" : ""}${n}<span class="u">g</span>`; }
+function waterBreakdownRows(p) {
+  const rows = [];
+  rows.push({ label: "40% of your bodyweight", value: fmtOz(Math.round(p.weight_lb * 0.4)) });
+  const aBump = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
+  if (aBump > 0) rows.push({ label: `${ACTIVITY_LABELS[p.activity]} activity`, value: fmtOz(aBump, true) });
+  if (p.climate === "hot") rows.push({ label: "Hot climate", value: fmtOz(16, true) });
+  if (p.pregnancy === "pregnant") rows.push({ label: "Pregnancy", value: fmtOz(24, true) });
+  else if (p.pregnancy === "breastfeeding") rows.push({ label: "Breastfeeding", value: fmtOz(32, true) });
+  return rows;
+}
+function proteinBreakdownRows(p) {
+  const rows = [];
+  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
+  const actBump = { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
+  mult += actBump;
+  let capped = false;
+  if (p.age >= 65 && mult < 0.6) mult = 0.6;
+  if (mult > 1.2) { mult = 1.2; capped = true; }
+  const factor = bodyCompFactor(p);
+  const basis = proteinBasisWeight(p);
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  const goalText = GOAL_LABELS[p.goal].toLowerCase();
+  const actText = p.activity !== "sedentary" ? `, ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : "";
+  rows.push({
+    label: `${cap(goalText)}${actText}${capped ? " (capped)" : ""}`,
+    value: `${mult.toFixed(2)}<span class="u">g/lb</span>`,
+  });
+  if (factor !== 1) {
+    const bcLabel = p.bodyComp === "exact" && p.bodyFatPct
+      ? `Body composition (${p.bodyFatPct}% body fat)`
+      : `Body composition (${p.bodyComp})`;
+    rows.push({ label: bcLabel, value: `${p.weight_lb} → ${Math.round(basis)}<span class="u">lb</span>` });
+  }
+  rows.push({
+    label: `${Math.round(basis)} lb × ${mult.toFixed(2)}`,
+    value: fmtG(Math.round(basis * mult)),
+  });
+  if (p.pregnancy === "pregnant") rows.push({ label: "Pregnancy", value: fmtG(25, true) });
+  else if (p.pregnancy === "breastfeeding") rows.push({ label: "Breastfeeding", value: fmtG(25, true) });
+  return rows;
+}
+function rowsToHtml(rows) {
+  return rows.map(r => `<div class="ex-line"><span class="ex-label">${escapeHtml(r.label)}</span><span class="ex-val">${r.value}</span></div>`).join("");
+}
+
 /* ============ Pacing & daily-window helpers ============ */
 // Fractional hour [0,24) for "now".
 function nowHours(d) {
@@ -3089,50 +3140,6 @@ function openGoalsExplainerModal() {
   const overP = state.goalsOverride.protein_g !== null;
   const hasBump = goals.bump.water > 0 || goals.bump.protein > 0;
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
-  const oz = (n, sign) => `${sign && n > 0 ? "+" : ""}${n}<span class="u">oz</span>`;
-  const g  = (n, sign) => `${sign && n > 0 ? "+" : ""}${n}<span class="u">g</span>`;
-
-  // Water breakdown rows (only shown if no override)
-  const waterRows = [];
-  if (!overW) {
-    waterRows.push({ label: "40% of your bodyweight", value: oz(Math.round(p.weight_lb * 0.4)) });
-    const aBump = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
-    if (aBump > 0) waterRows.push({ label: `${ACTIVITY_LABELS[p.activity]} activity`, value: oz(aBump, true) });
-    if (p.climate === "hot") waterRows.push({ label: "Hot climate", value: oz(16, true) });
-    if (p.pregnancy === "pregnant") waterRows.push({ label: "Pregnancy", value: oz(24, true) });
-    else if (p.pregnancy === "breastfeeding") waterRows.push({ label: "Breastfeeding", value: oz(32, true) });
-  }
-
-  // Protein breakdown rows (only shown if no override)
-  const proteinRows = [];
-  if (!overP) {
-    let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
-    const actBump = { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
-    mult += actBump;
-    let capped = false;
-    if (p.age >= 65 && mult < 0.6) mult = 0.6;
-    if (mult > 1.2) { mult = 1.2; capped = true; }
-    const factor = bodyCompFactor(p);
-    const basis = proteinBasisWeight(p);
-    const goalText = GOAL_LABELS[p.goal].toLowerCase();
-    const actText = p.activity !== "sedentary" ? `, ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : "";
-    proteinRows.push({
-      label: `${cap(goalText)}${actText}${capped ? " (capped)" : ""}`,
-      value: `${mult.toFixed(2)}<span class="u">g/lb</span>`,
-    });
-    if (factor !== 1) {
-      const bcLabel = p.bodyComp === "exact" && p.bodyFatPct
-        ? `Body composition (${p.bodyFatPct}% body fat)`
-        : `Body composition (${p.bodyComp})`;
-      proteinRows.push({ label: bcLabel, value: `${p.weight_lb} → ${Math.round(basis)}<span class="u">lb</span>` });
-    }
-    proteinRows.push({
-      label: `${Math.round(basis)} lb × ${mult.toFixed(2)}`,
-      value: g(Math.round(basis * mult)),
-    });
-    if (p.pregnancy === "pregnant") proteinRows.push({ label: "Pregnancy", value: g(25, true) });
-    else if (p.pregnancy === "breastfeeding") proteinRows.push({ label: "Breastfeeding", value: g(25, true) });
-  }
 
   // Workout breakdown rows (each logged workout + strength bonus if any)
   const todayWorkouts = state.log[todayKey()]?.workouts || [];
@@ -3149,11 +3156,7 @@ function openGoalsExplainerModal() {
     });
     if (w.type === "strength" || w.type === "both") hasStrength = true;
   }
-  if (hasStrength) workoutRows.push({ label: "Strength bonus", value: g(5, true) });
-
-  const rowHtml = (rows) => rows.map(r => `
-    <div class="ex-line"><span class="ex-label">${escapeHtml(r.label)}</span><span class="ex-val">${r.value}</span></div>
-  `).join("");
+  if (hasStrength) workoutRows.push({ label: "Strength bonus", value: fmtG(5, true) });
 
   openModal(`
     <div class="modal-title">Your daily goals</div>
@@ -3161,20 +3164,20 @@ function openGoalsExplainerModal() {
 
     <div class="ex-block">
       <div class="ex-title water">Water</div>
-      ${overW ? `<div class="ex-override">Manually set in Settings.</div>` : rowHtml(waterRows)}
-      <div class="ex-subtotal"><span>Water base</span><span class="ex-val">${oz(base.water)}</span></div>
+      ${overW ? `<div class="ex-override">Manually set in Settings.</div>` : rowsToHtml(waterBreakdownRows(p))}
+      <div class="ex-subtotal"><span>Water base</span><span class="ex-val">${fmtOz(base.water)}</span></div>
     </div>
 
     <div class="ex-block">
       <div class="ex-title protein">Protein</div>
-      ${overP ? `<div class="ex-override">Manually set in Settings.</div>` : rowHtml(proteinRows)}
-      <div class="ex-subtotal"><span>Protein base</span><span class="ex-val">${g(base.protein)}</span></div>
+      ${overP ? `<div class="ex-override">Manually set in Settings.</div>` : rowsToHtml(proteinBreakdownRows(p))}
+      <div class="ex-subtotal"><span>Protein base</span><span class="ex-val">${fmtG(base.protein)}</span></div>
     </div>
 
     ${hasBump ? `
       <div class="ex-block">
         <div class="ex-title workout">Today's workouts</div>
-        ${rowHtml(workoutRows)}
+        ${rowsToHtml(workoutRows)}
         <div class="ex-subtotal"><span>Workout bump</span><span class="ex-val">+${goals.bump.water}<span class="u">oz</span> · +${goals.bump.protein}<span class="u">g</span></span></div>
       </div>
     ` : ""}
@@ -4312,36 +4315,69 @@ function wireSettingsHandlers() {
 }
 
 function openGoalOverride(kind) {
-  const current = kind === "water" ? getBaseGoals().water : getBaseGoals().protein;
+  const p = state.profile;
+  const base = getBaseGoals();
+  const suggested = kind === "water" ? base.water : base.protein;
   const unit = kind === "water" ? "oz" : "g";
-  const label = kind === "water" ? "Water goal" : "Protein goal";
+  const title = kind === "water" ? "Water goal" : "Protein goal";
+  const sectionTitle = kind === "water" ? "Water" : "Protein";
+  const tintClass = kind === "water" ? "water" : "protein";
+  const rows = kind === "water" ? waterBreakdownRows(p) : proteinBreakdownRows(p);
+  const subtotalVal = kind === "water" ? fmtOz(suggested) : fmtG(suggested);
+  const currentVal = kind === "water"
+    ? (state.goalsOverride.water_oz ?? suggested)
+    : (state.goalsOverride.protein_g ?? suggested);
+  const step = kind === "water" ? 4 : 5;
+
   openModal(`
-    <div class="modal-title">${label}</div>
-    <div class="modal-sub">Override the calculated value (${unit}), or save to revert.</div>
-    <div class="num-control">
-      <button class="num-step" id="dec">−</button>
-      <input type="number" id="g-input" value="${current}" inputmode="numeric" />
-      <button class="num-step" id="inc">+</button>
+    <div class="modal-title">${title}</div>
+
+    <div class="ex-block">
+      <div class="ex-title ${tintClass}">${sectionTitle}</div>
+      ${rowsToHtml(rows)}
+      <div class="ex-subtotal"><span>Suggested</span><span class="ex-val">${subtotalVal}</span></div>
     </div>
+
+    <div class="modal-sub" style="margin-top:14px">Built from your profile. Set your own number below if you'd prefer a different target.</div>
+
+    <div class="field" style="margin-top:18px">
+      <span class="field-label">Your goal</span>
+      <div class="num-control">
+        <button class="num-step" id="dec">−</button>
+        <input type="number" id="g-input" value="${currentVal}" inputmode="numeric" />
+        <button class="num-step" id="inc">+</button>
+      </div>
+      <button type="button" id="reset-suggested" style="display:none;background:none;border:none;color:var(--ink-muted);font-size:12.5px;padding:8px 0 0;cursor:pointer;text-align:left;font-family:var(--font-body)">↩ Reset to suggested (${suggested}${unit})</button>
+    </div>
+
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Save</button>
     </div>
   `);
-  const step = kind === "water" ? 4 : 5;
-  $("#dec").addEventListener("click", () => $("#g-input").value = Math.max(1, +$("#g-input").value - step));
-  $("#inc").addEventListener("click", () => $("#g-input").value = +$("#g-input").value + step);
+  const input = $("#g-input");
+  const resetLink = $("#reset-suggested");
+  const syncResetVisibility = () => {
+    resetLink.style.display = (+input.value !== suggested) ? "block" : "none";
+  };
+  syncResetVisibility();
+  $("#dec").addEventListener("click", () => { input.value = Math.max(1, +input.value - step); syncResetVisibility(); });
+  $("#inc").addEventListener("click", () => { input.value = +input.value + step; syncResetVisibility(); });
+  input.addEventListener("input", syncResetVisibility);
+  resetLink.addEventListener("click", () => { input.value = suggested; syncResetVisibility(); });
   $("#m-cancel").addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
-    const v = +$("#g-input").value;
-    if (v > 0) {
-      if (kind === "water") state.goalsOverride.water_oz = v;
-      else state.goalsOverride.protein_g = v;
-      save();
-      closeModal();
-      render();
-      showToast(`${label} updated`);
-    }
+    const v = +input.value;
+    if (!v || v <= 0) return;
+    // Matching the suggested value clears the override so the goal continues
+    // to track future profile changes (weight, body comp, etc.) automatically.
+    const newOverride = (v === suggested) ? null : v;
+    if (kind === "water") state.goalsOverride.water_oz = newOverride;
+    else state.goalsOverride.protein_g = newOverride;
+    save();
+    closeModal();
+    render();
+    showToast(`${title} updated`);
   });
 }
 
