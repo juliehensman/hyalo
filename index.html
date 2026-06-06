@@ -2628,28 +2628,30 @@ function proteinBreakdownRows(p) {
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
   const goalText = GOAL_LABELS[p.goal].toLowerCase();
   const actText = p.activity !== "sedentary" ? `, ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : "";
-  rows.push({
-    label: `${cap(goalText)}${actText}${capped ? " (capped)" : ""}`,
-    value: `${mult.toFixed(2)}<span class="u">g/lb</span>`,
-  });
+  const multLabel = `${goalText}${actText}${capped ? " (capped)" : ""}`;
+
+  // Always start the chain with the actual body weight as the visual anchor.
+  rows.push({ label: "Your weight", value: `${p.weight_lb}<span class="u">lb</span>` });
+
   if (factor !== 1) {
-    const direction = factor > 1 ? "Lower" : "Higher";
+    // Body composition step — adjust weight up (leaner) or down (higher BF).
+    const direction = factor > 1 ? "lower" : "higher";
     const bfNote = p.bodyComp === "exact" && p.bodyFatPct ? ` (${p.bodyFatPct}%)` : "";
     rows.push({
-      label: `${direction} body fat${bfNote} adjustment`,
-      value: `×${factor.toFixed(2)}`,
-    });
-    rows.push({
-      label: "Adjusted basis",
-      value: `${Math.round(basis)}<span class="u">lb</span>`,
+      label: `× ${direction} body fat${bfNote} adjustment (${factor.toFixed(2)})`,
+      value: `= ${Math.round(basis)}<span class="u">lb</span>`,
     });
   }
+
+  // Final multiplication step — per-pound rate × basis = protein.
   rows.push({
-    label: `${Math.round(basis)} lb × ${mult.toFixed(2)}`,
-    value: fmtG(Math.round(basis * mult)),
+    label: `× ${multLabel} (${mult.toFixed(2)} g/lb)`,
+    value: `= ${fmtG(Math.round(basis * mult))}`,
   });
-  if (p.pregnancy === "pregnant") rows.push({ label: "Pregnancy", value: fmtG(25, true) });
-  else if (p.pregnancy === "breastfeeding") rows.push({ label: "Breastfeeding", value: fmtG(25, true) });
+
+  if (p.pregnancy === "pregnant") rows.push({ label: "+ pregnancy", value: fmtG(25, true) });
+  else if (p.pregnancy === "breastfeeding") rows.push({ label: "+ breastfeeding", value: fmtG(25, true) });
+
   return rows;
 }
 function rowsToHtml(rows) {
@@ -4576,7 +4578,8 @@ function openGoalOverride(kind) {
       </div>
       <div class="planner-tier-info" id="planner-tier-info"></div>
       <div class="planner-breakdown" id="planner-breakdown"></div>
-      <p class="planner-caveat">Muscle gain ranges are estimates — people vary widely.</p>
+      <p class="planner-caveat">Same per-pound rate as above, applied to your projected goal weight instead of your current weight — that's why the number can differ.</p>
+      <p class="planner-caveat" style="margin-top:-4px">Muscle gain ranges are estimates — people vary widely.</p>
       <button type="button" class="planner-use-btn" id="planner-use">Use this number →</button>
     </div>
   ` : `
