@@ -1519,6 +1519,82 @@
     margin-top: 20px;
   }
 
+  /* Day-detail modal: nav header + goal/actual section heads */
+  .day-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .day-nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .day-nav-btn:hover:not(:disabled) { background: var(--card-strong); }
+  .day-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .day-nav-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 26px;
+    color: var(--ink);
+    text-align: center;
+    flex: 1;
+    line-height: 1.15;
+  }
+  .day-totals-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0 6px;
+  }
+  .day-tot {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .day-tot-label {
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+  .day-tot.water .day-tot-label { color: var(--water); }
+  .day-tot.protein .day-tot-label { color: var(--protein); }
+  .day-tot-value {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .day-tot-goal {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .day-tot-bump {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin-top: 2px;
+    opacity: 0.85;
+  }
+
   /* Library list in modal */
   .lib-search {
     width: 100%;
@@ -2040,7 +2116,7 @@
 <!-- ============ ONBOARDING ============ -->
 <div id="view-onboarding" class="view">
   <div class="onb">
-    <div class="onb-progress"><div class="onb-progress-bar" id="onb-bar" style="width: 20%"></div></div>
+    <div class="onb-progress"><div class="onb-progress-bar" id="onb-bar" style="width: 14%"></div></div>
 
     <!-- Step 1: Welcome -->
     <div class="onb-step onb-welcome active" data-step="1">
@@ -2150,8 +2226,76 @@
       </div>
     </div>
 
-    <!-- Step 4: Climate / special -->
+    <!-- Step 4: Body composition (optional) -->
     <div class="onb-step" data-step="4">
+      <h1>Body composition</h1>
+      <p class="onb-sub">Protein needs track lean mass, so this fine-tunes your protein goal. Skip if unsure — it won't affect water.</p>
+
+      <div class="field">
+        <span class="field-label">How would you describe your build? <span style="color:var(--ink-muted);font-weight:500">· optional</span></span>
+        <div id="bodycomp-cards">
+          <button class="card-option selected" data-val="unset">
+            <div class="card-option-title">Skip / not sure</div>
+            <div class="card-option-desc">Uses the standard formula</div>
+          </button>
+          <button class="card-option" data-val="lower">
+            <div class="card-option-title">Lower body fat <span class="bc-range" data-band="lower"></span></div>
+            <div class="card-option-desc">Leaner, more defined</div>
+          </button>
+          <button class="card-option" data-val="average">
+            <div class="card-option-title">Average <span class="bc-range" data-band="average"></span></div>
+            <div class="card-option-desc">Typical composition</div>
+          </button>
+          <button class="card-option" data-val="higher">
+            <div class="card-option-title">Higher body fat <span class="bc-range" data-band="higher"></span></div>
+            <div class="card-option-desc">Carrying extra weight</div>
+          </button>
+        </div>
+        <div class="input-box" style="margin-top:10px"><label>Or enter exact body fat %</label><input type="number" id="onb-bodyfat" inputmode="decimal" placeholder="—" /></div>
+      </div>
+
+      <div class="onb-actions">
+        <button class="btn btn-secondary" data-prev="3">Back</button>
+        <button class="btn btn-primary" id="step4-next">Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Goal-based planner (optional, shown only if body comp was set) -->
+    <div class="onb-step" data-step="5">
+      <h1>Plan toward a goal?</h1>
+      <p class="onb-sub">Optional. If you have a body composition you're aiming for, we'll project the protein your goal self will need. Otherwise skip — you can set this up anytime later.</p>
+
+      <div class="field">
+        <span class="field-label">Goal body fat</span>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <input type="number" class="planner-bf-input" id="onb-planner-bf" step="0.5" min="3" max="60" inputmode="decimal" />
+          <span style="color:var(--ink-muted);font-size:13px">%</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Muscle target</span>
+        <div class="chip-group" id="onb-planner-tiers"></div>
+        <div class="planner-tier-info" id="onb-planner-tier-info" style="margin-top:8px"></div>
+      </div>
+
+      <div class="ex-block" style="margin-top:16px">
+        <div class="ex-title" style="color:var(--protein)">Projected protein</div>
+        <div id="onb-planner-breakdown"></div>
+        <div class="ex-subtotal"><span>Suggested</span><span class="ex-val" id="onb-planner-result">—</span></div>
+      </div>
+
+      <p class="planner-caveat" style="text-align:left">Same per-pound rate as the default goal, applied to your projected goal weight. Muscle gain ranges are estimates — people vary widely.</p>
+
+      <div class="onb-actions">
+        <button class="btn btn-secondary" data-prev="4">Back</button>
+        <button class="btn btn-secondary" id="onb-planner-skip">Skip</button>
+        <button class="btn btn-primary" id="onb-planner-use">Use this</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Climate / special (was step 4 — climate & pregnancy only) -->
+    <div class="onb-step" data-step="6">
       <h1>Last bits</h1>
       <p class="onb-sub">A couple of factors that nudge your water needs up.</p>
 
@@ -2186,38 +2330,14 @@
         </div>
       </div>
 
-      <div class="field">
-        <span class="field-label">Body composition <span style="color:var(--ink-muted);font-weight:500">· optional</span></span>
-        <div class="onb-sub" style="margin-bottom:10px;font-size:12.5px">Protein tracks lean mass, so this fine-tunes your protein goal. Skip if unsure — it won't affect water.</div>
-        <div id="bodycomp-cards">
-          <button class="card-option selected" data-val="unset">
-            <div class="card-option-title">Skip / not sure</div>
-            <div class="card-option-desc">Uses the standard formula</div>
-          </button>
-          <button class="card-option" data-val="lower">
-            <div class="card-option-title">Lower body fat <span class="bc-range" data-band="lower"></span></div>
-            <div class="card-option-desc">Leaner, more defined</div>
-          </button>
-          <button class="card-option" data-val="average">
-            <div class="card-option-title">Average <span class="bc-range" data-band="average"></span></div>
-            <div class="card-option-desc">Typical composition</div>
-          </button>
-          <button class="card-option" data-val="higher">
-            <div class="card-option-title">Higher body fat <span class="bc-range" data-band="higher"></span></div>
-            <div class="card-option-desc">Carrying extra weight</div>
-          </button>
-        </div>
-        <div class="input-box" style="margin-top:10px"><label>Or enter exact body fat %</label><input type="number" id="onb-bodyfat" inputmode="decimal" placeholder="—" /></div>
-      </div>
-
       <div class="onb-actions">
-        <button class="btn btn-secondary" data-prev="3">Back</button>
-        <button class="btn btn-primary" data-next="5">See my goals</button>
+        <button class="btn btn-secondary" id="step6-back">Back</button>
+        <button class="btn btn-primary" data-next="7">See my goals</button>
       </div>
     </div>
 
-    <!-- Step 5: Results -->
-    <div class="onb-step" data-step="5">
+    <!-- Step 7: Results (was step 5) -->
+    <div class="onb-step" data-step="7">
       <h1>Your daily goals</h1>
       <p class="onb-sub">Built from what you told us. Editable anytime in Settings.</p>
 
@@ -2244,7 +2364,7 @@
       <p class="note-inline">Goals shift up automatically when you log a workout. These are starting points — adjust based on how you feel.</p>
 
       <div class="onb-actions">
-        <button class="btn btn-secondary" data-prev="4">Back</button>
+        <button class="btn btn-secondary" id="step7-back">Back</button>
         <button class="btn btn-primary" onclick="finishOnboarding()">Start tracking</button>
       </div>
     </div>
@@ -2408,6 +2528,7 @@ const DEFAULT_STATE = () => ({
   priorVersionUser: false,
   librarySeedVersion: LIBRARY_SEED_VERSION,
   bodyCompNoticeSeen: false,
+  plannerOnbSeen: false,    // existing-user banner for goal-based planner
   lastBodyCheckTs: null,
   windDownDismissedDate: null,
 });
@@ -2869,12 +2990,17 @@ function getTodayGoals() {
   };
 }
 // Goal for any given day = base goal + that day's workout bump.
-// Used by History and the weekly review so every day is judged against the
-// target it actually had (consistent with today's rings).
+// Past days use their captured base_goal snapshot so historical reviews reflect
+// the goal you actually had then. Today stays live (responds to settings changes
+// immediately). Legacy days without a snapshot fall back to the current profile.
 function goalsForDay(key) {
-  const base = getBaseGoals();
-  const bump = workoutsBump(state.log[key]?.workouts || []);
-  return { water: base.water + bump.water, protein: base.protein + bump.protein };
+  const day = state.log[key];
+  const isToday = key === todayKey();
+  const live = getBaseGoals();
+  const baseWater = isToday ? live.water : (day?.base_goal?.water_oz ?? live.water);
+  const baseProtein = isToday ? live.protein : (day?.base_goal?.protein_g ?? live.protein);
+  const bump = workoutsBump(day?.workouts || []);
+  return { water: baseWater + bump.water, protein: baseProtein + bump.protein };
 }
 
 /* ============ Dates ============ */
@@ -2965,9 +3091,26 @@ function greetingText() {
   return "Good night";
 }
 function ensureDay(key) {
-  if (!state.log[key]) state.log[key] = { water: [], protein: [], workouts: [] };
+  if (!state.log[key]) {
+    state.log[key] = {
+      water: [],
+      protein: [],
+      workouts: [],
+      base_goal: snapshotBaseGoal(),    // lock in the goal-as-of-now
+    };
+  }
   if (!state.log[key].workouts) state.log[key].workouts = [];
   return state.log[key];
+}
+// Capture the current base goals (override or computed) for a brand-new day.
+// Workout bumps are *not* part of the snapshot — they belong to that day's
+// actual workouts and always recompute from log.
+function snapshotBaseGoal() {
+  const p = state.profile;
+  return {
+    water_oz: state.goalsOverride.water_oz ?? computeWaterGoal(p),
+    protein_g: state.goalsOverride.protein_g ?? computeProteinGoal(p),
+  };
 }
 function dayTotals(key) {
   const d = state.log[key];
@@ -3052,8 +3195,12 @@ function pulseRing(kind) {
 /* ============ Onboarding ============ */
 function initOnboarding() {
   onbDraft = JSON.parse(JSON.stringify(state.profile));
+  onbDraft.plannerOverride = null;
+  // Reset planner module state in case of repeat init
+  _onbPlannerResult = null;
+  _onbPlannerTier = "maintain";
   // Wire chip groups
-  setupChipGroup("#sex-chips", v => { onbDraft.sex = v; togglePregField(); }, onbDraft.sex);
+  setupChipGroup("#sex-chips", v => { onbDraft.sex = v; togglePregField(); refreshBodyFatRanges(); }, onbDraft.sex);
   setupCardGroup("#activity-cards", v => { onbDraft.activity = v; }, onbDraft.activity);
   setupCardGroup("#goal-cards", v => { onbDraft.goal = v; }, onbDraft.goal);
   setupCardGroup("#climate-cards", v => { onbDraft.climate = v; }, onbDraft.climate);
@@ -3061,6 +3208,7 @@ function initOnboarding() {
   setupCardGroup("#bodycomp-cards", v => {
     onbDraft.bodyComp = v;
     onbDraft.bodyFatPct = null;
+    onbDraft.plannerOverride = null;   // body comp changed → planner result is stale
     $("#onb-bodyfat").value = "";
   }, onbDraft.bodyComp || "unset");
   $("#onb-bodyfat").addEventListener("input", e => {
@@ -3068,10 +3216,12 @@ function initOnboarding() {
     if (v !== "") {
       onbDraft.bodyComp = "exact";
       onbDraft.bodyFatPct = +v;
+      onbDraft.plannerOverride = null;
       $$("#bodycomp-cards .card-option").forEach(x => x.classList.remove("selected"));
     } else if (onbDraft.bodyComp === "exact") {
       onbDraft.bodyComp = "unset";
       onbDraft.bodyFatPct = null;
+      onbDraft.plannerOverride = null;
     }
   });
   refreshBodyFatRanges();
@@ -3081,7 +3231,7 @@ function initOnboarding() {
   $("#onb-age").addEventListener("input", e => { onbDraft.age = +e.target.value || 0; });
   $("#onb-weight").addEventListener("input", e => { onbDraft.weight_lb = +e.target.value || 0; });
 
-  // Wire step navigation
+  // Standard data-next / data-prev for non-conditional transitions
   $$("[data-next]").forEach(b => b.addEventListener("click", () => {
     const next = +b.dataset.next;
     if (b.id === "step2-next") {
@@ -3090,10 +3240,50 @@ function initOnboarding() {
         return;
       }
     }
-    if (next === 5) computeAndShowResults();
+    if (next === 7) computeAndShowResults();
     goToStep(next);
   }));
   $$("[data-prev]").forEach(b => b.addEventListener("click", () => goToStep(+b.dataset.prev)));
+
+  // Conditional transitions: step 4 next, step 6 back, step 7 back
+  // depend on whether body composition was set (and so the planner step exists).
+  $("#step4-next")?.addEventListener("click", () => {
+    if (onbDraft.bodyComp && onbDraft.bodyComp !== "unset") {
+      initPlannerStep();
+      goToStep(5);
+    } else {
+      onbDraft.plannerOverride = null;
+      goToStep(6);
+    }
+  });
+  $("#step6-back")?.addEventListener("click", () => {
+    goToStep(onbDraft.bodyComp && onbDraft.bodyComp !== "unset" ? 5 : 4);
+  });
+  $("#step7-back")?.addEventListener("click", () => goToStep(6));
+
+  // Planner step controls
+  $("#onb-planner-skip")?.addEventListener("click", () => {
+    onbDraft.plannerOverride = null;
+    goToStep(6);
+  });
+  $("#onb-planner-use")?.addEventListener("click", () => {
+    if (_onbPlannerResult) {
+      onbDraft.plannerOverride = {
+        protein_g: _onbPlannerResult.protein,
+        protein_meta: {
+          goalBFPct: _onbPlannerResult.goalBFPct,
+          tier: _onbPlannerResult.tier,
+          leanMass: _onbPlannerResult.leanMass,
+          muscleGain: _onbPlannerResult.muscleGain,
+          goalWeight: _onbPlannerResult.goalWeight,
+          mult: _onbPlannerResult.mult,
+          protein: _onbPlannerResult.protein,
+        },
+      };
+      goToStep(6);
+    }
+  });
+  $("#onb-planner-bf")?.addEventListener("input", renderOnbPlanner);
 
   togglePregField();
 }
@@ -3133,22 +3323,109 @@ function refreshBodyFatRanges() {
 function goToStep(n) {
   if (n === 4) refreshBodyFatRanges();   // ranges depend on sex chosen on step 2
   $$(".onb-step").forEach(s => s.classList.toggle("active", +s.dataset.step === n));
-  $("#onb-bar").style.width = (n / 5 * 100) + "%";
+  $("#onb-bar").style.width = (n / 7 * 100) + "%";
   window.scrollTo({ top: 0, behavior: "instant" });
 }
+
+/* ============ Onboarding planner (step 5) ============
+   Builds the same projected-protein UI used in the customize-goal modal, but
+   inline as a setup step. Stores the most recent computed result in module
+   scope so the "Use this" button can act on it without recomputing. */
+let _onbPlannerResult = null;
+let _onbPlannerTier = "maintain";
+
+function initPlannerStep() {
+  const sexKey = (onbDraft.sex === "M" || onbDraft.sex === "F" || onbDraft.sex === "X") ? onbDraft.sex : "X";
+  // Pre-fill goal BF — preserve a prior choice if returning to this step.
+  if (!$("#onb-planner-bf").value) {
+    const defaultGoalBF = { F: 22, M: 15, X: 18 }[sexKey];
+    $("#onb-planner-bf").value = onbDraft.plannerOverride?.protein_meta?.goalBFPct ?? defaultGoalBF;
+  }
+  _onbPlannerTier = onbDraft.plannerOverride?.protein_meta?.tier ?? _onbPlannerTier;
+
+  // Build tier chips (matching the customize-modal version, scoped to onb).
+  const tiersHost = $("#onb-planner-tiers");
+  tiersHost.innerHTML = MUSCLE_TIERS.map(t => {
+    const r = MUSCLE_RANGES[sexKey][t.key];
+    const rText = t.key === "maintain" ? "" : ` <span style="opacity:0.7;font-size:11px">+${r[0]}–${r[1]}lb</span>`;
+    return `<button type="button" class="chip ${t.key === _onbPlannerTier ? "selected" : ""}" data-tier="${t.key}">${t.label}${rText}</button>`;
+  }).join("");
+  $$("#onb-planner-tiers .chip").forEach(c => {
+    c.addEventListener("click", () => {
+      $$("#onb-planner-tiers .chip").forEach(x => x.classList.remove("selected"));
+      c.classList.add("selected");
+      _onbPlannerTier = c.dataset.tier;
+      renderOnbPlanner();
+    });
+  });
+  renderOnbPlanner();
+}
+
+function renderOnbPlanner() {
+  const goalBF = parseFloat($("#onb-planner-bf").value);
+  if (!goalBF || goalBF < 3 || goalBF > 60) {
+    $("#onb-planner-breakdown").innerHTML = "";
+    $("#onb-planner-result").textContent = "—";
+    $("#onb-planner-tier-info").textContent = "";
+    $("#onb-planner-use").disabled = true;
+    _onbPlannerResult = null;
+    return;
+  }
+  $("#onb-planner-use").disabled = false;
+  const result = projectedProteinGoal(onbDraft, goalBF, _onbPlannerTier);
+  if (!result) {
+    $("#onb-planner-breakdown").innerHTML = `<div style="font-size:13px;color:var(--ink-muted);padding:8px 0">Set your body composition to use the planner.</div>`;
+    $("#onb-planner-result").textContent = "—";
+    _onbPlannerResult = null;
+    return;
+  }
+  _onbPlannerResult = { ...result, goalBFPct: goalBF, tier: _onbPlannerTier };
+  const tierDesc = MUSCLE_TIERS.find(t => t.key === _onbPlannerTier)?.desc || "";
+  $("#onb-planner-tier-info").textContent = tierDesc;
+
+  const projRows = [
+    { label: "Current lean mass", value: `${result.leanMass}<span class="u">lb</span>` },
+  ];
+  if (result.muscleGain > 0) projRows.push({ label: "Muscle gain target", value: `+${result.muscleGain}<span class="u">lb</span>` });
+  projRows.push(
+    { label: `Goal weight at ${goalBF}% BF`, value: `${result.goalWeight}<span class="u">lb</span>` },
+    { label: `${result.goalWeight} lb × ${result.mult.toFixed(2)}`, value: fmtG(result.protein) },
+  );
+  $("#onb-planner-breakdown").innerHTML = rowsToHtml(projRows);
+  $("#onb-planner-result").textContent = `${result.protein}g`;
+  $("#onb-planner-use").textContent = `Use ${result.protein}g`;
+}
+
 function computeAndShowResults() {
+  // Apply the planner override (if used) before rendering the results screen so
+  // the user sees the actual number they'll start with.
+  const overrideProtein = onbDraft.plannerOverride?.protein_g;
   const water = computeWaterGoal(onbDraft);
-  const protein = computeProteinGoal(onbDraft);
+  const protein = overrideProtein ?? computeProteinGoal(onbDraft);
   $("#result-water").textContent = water;
   $("#result-protein").textContent = protein;
   $("#breakdown-water").textContent = waterBreakdown(onbDraft);
-  $("#breakdown-protein").textContent = proteinBreakdown(onbDraft);
+  if (overrideProtein) {
+    const meta = onbDraft.plannerOverride.protein_meta;
+    $("#breakdown-protein").textContent = `Goal-based plan: ${meta.goalWeight} lb × ${meta.mult.toFixed(2)} g/lb = ${overrideProtein} g (targeting ${meta.goalBFPct}% body fat, ${MUSCLE_TIERS.find(t => t.key === meta.tier)?.label.toLowerCase()} muscle goal).`;
+  } else {
+    $("#breakdown-protein").textContent = proteinBreakdown(onbDraft);
+  }
 }
 function finishOnboarding() {
-  state.profile = onbDraft;
+  // Strip the transient plannerOverride field before persisting profile.
+  const draft = { ...onbDraft };
+  const planner = draft.plannerOverride;
+  delete draft.plannerOverride;
+  state.profile = draft;
+  if (planner) {
+    state.goalsOverride.protein_g = planner.protein_g;
+    state.goalsOverride.protein_meta = planner.protein_meta;
+  }
   state.hasOnboarded = true;
   state.calcVersionSeen = CALC_VERSION;
   state.bodyCompNoticeSeen = true;
+  state.plannerOnbSeen = true;            // existing-user banner won't trigger
   resetBodyCheckTimer();
   save();
   switchView("main");
@@ -3158,6 +3435,7 @@ function skipOnboarding() {
   state.hasOnboarded = true;
   state.calcVersionSeen = CALC_VERSION;
   state.bodyCompNoticeSeen = true;
+  state.plannerOnbSeen = true;
   resetBodyCheckTimer();
   // Default goals from default profile
   save();
@@ -3431,6 +3709,7 @@ function renderToday() {
   wireTodayHandlers();
   wireInstallBanner();
   wireGoalsUpdateBanner();
+  wirePlannerOnbBanner();
   wireBodyCheckBanner();
   wireWindDownBanner();
   $("#open-goals-why")?.addEventListener("click", openGoalsExplainerModal);
@@ -4530,7 +4809,7 @@ function wireSettingsHandlers() {
   $("#recent-updates")?.addEventListener("click", openRecentUpdatesModal);
 }
 
-function openGoalOverride(kind) {
+function openGoalOverride(kind, opts = {}) {
   const p = state.profile;
   const base = getBaseGoals();
   const suggested = kind === "water" ? base.water : base.protein;
@@ -4549,11 +4828,11 @@ function openGoalOverride(kind) {
   const showPlanner = kind === "protein" && hasBodyComp;
   const sexKey = p.sex === "M" ? "M" : (p.sex === "F" ? "F" : "X");
   // Restore last planner setup if user previously saved an override via planner.
-  // Auto-expand the planner section in that case so re-tweaking takes one tap.
+  // Auto-expand the planner section in that case (or when caller requests it).
   const savedMeta = kind === "protein" ? state.goalsOverride.protein_meta : null;
   const initialGoalBF = savedMeta?.goalBFPct ?? (p.sex === "M" ? 15 : 20);
   const initialTier = savedMeta?.tier ?? "athletic";
-  const plannerOpen = showPlanner && savedMeta != null;
+  const plannerOpen = showPlanner && (savedMeta != null || opts.expandPlanner);
 
   const plannerHTML = kind !== "protein" ? "" : (hasBodyComp ? `
     <button type="button" class="planner-toggle ${plannerOpen ? "expanded" : ""}" id="planner-toggle">
@@ -5153,6 +5432,7 @@ function renderBanners(totals, goals) {
   return [
     renderWindDownBanner(totals, goals),   // time-critical: evening cram avoidance
     renderBodyCheckBanner(),                // cyclical: refresh weight/body comp
+    renderPlannerOnbBanner(),               // one-time: announce planner to existing users
     renderGoalsUpdateBanner(),              // one-time: math notice for legacy users
     renderInstallBanner(),                  // persistent: PWA install prompt
   ].filter(html => html && html.trim()).slice(0, 2).join("");
@@ -5162,6 +5442,37 @@ function wireGoalsUpdateBanner() {
   const retire = () => { state.calcVersionSeen = CALC_VERSION; save(); render(); };
   $("#goals-update-show")?.addEventListener("click", () => { openGoalsUpdateModal(); retire(); });
   $("#goals-update-close")?.addEventListener("click", retire);
+}
+
+// One-time discovery banner for users who onboarded before the goal-based
+// planner existed. Hidden until they have body composition set — otherwise
+// the planner is just disabled-with-hint, which makes the banner anticlimactic.
+function renderPlannerOnbBanner() {
+  if (!state.hasOnboarded) return "";
+  if (state.plannerOnbSeen) return "";
+  if (!state.profile.bodyComp || state.profile.bodyComp === "unset") return "";
+  // Don't show if user already has a planner-based override saved.
+  if (state.goalsOverride.protein_meta) { state.plannerOnbSeen = true; return ""; }
+  return `
+    <div class="install-banner" id="planner-onb-banner">
+      <div class="install-banner-icon update-banner-icon">✦</div>
+      <div class="install-banner-text">
+        <div class="install-banner-title">New: plan toward a body comp goal</div>
+        <div class="install-banner-sub">Project the protein your goal self will need.</div>
+      </div>
+      <button class="install-banner-show" id="planner-onb-show">Try it</button>
+      <button class="install-banner-close" id="planner-onb-close" aria-label="Dismiss">×</button>
+    </div>
+  `;
+}
+function wirePlannerOnbBanner() {
+  const retire = () => { state.plannerOnbSeen = true; save(); render(); };
+  $("#planner-onb-show")?.addEventListener("click", () => {
+    state.plannerOnbSeen = true;
+    save();
+    openGoalOverride("protein", { expandPlanner: true });
+  });
+  $("#planner-onb-close")?.addEventListener("click", retire);
 }
 
 /* ============ Wind-down banner ============
@@ -5222,20 +5533,45 @@ function wireBodyCheckBanner() {
 
 // Combined weight + body composition editor opened by the body-check banner.
 // View any past (or current) day's full log — opened by tapping a chart bar.
+// Supports left/right chevron + swipe navigation between days without closing
+// back to the chart. Each section shows actual vs goal for honest reflection.
+let _dayModalKey = null;
+
 function openDayLogModal(dayKey) {
   if (!dayKey) return;
-  const day = state.log[dayKey] || { water: [], protein: [] };
-  const dateObj = new Date(dayKey + "T12:00:00");   // noon avoids TZ off-by-one
+  _dayModalKey = dayKey;
+  const initialHtml = renderDayModalShell();
+  openModal(initialHtml, "modal-tall");
+  renderDayModalContent();
+  wireDayModalNav();
+}
+
+function renderDayModalShell() {
+  // The modal contents get fully redrawn on nav; this is just the outer shell.
+  return `<div id="day-modal-inner"></div>`;
+}
+
+function renderDayModalContent() {
+  const dayKey = _dayModalKey;
+  const day = state.log[dayKey] || { water: [], protein: [], workouts: [] };
+  const dateObj = new Date(dayKey + "T12:00:00");
   const isToday = dayKey === todayKey();
   const dayLabel = isToday
     ? "Today"
     : dateObj.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const totalWater = day.water.reduce((s, e) => s + e.oz, 0);
+  const totalProtein = day.protein.reduce((s, e) => s + e.g, 0);
+  const goals = goalsForDay(dayKey);
+  const bump = workoutsBump(day.workouts || []);
+  const hasWorkoutBump = (bump.water > 0 || bump.protein > 0);
+
+  const canPrev = prevDayKey(dayKey) !== null;
+  const canNext = nextDayKey(dayKey) !== null;
+
   const entries = [
     ...day.water.map(e => ({ kind: "water", ts: e.ts, oz: e.oz, name: "Water" })),
     ...day.protein.map(e => ({ kind: "protein", ts: e.ts, g: e.g, name: e.name || "Protein" })),
   ].sort((a, b) => (a.ts < b.ts ? 1 : -1));
-  const totalWater = day.water.reduce((s, e) => s + e.oz, 0);
-  const totalProtein = day.protein.reduce((s, e) => s + e.g, 0);
   const entriesHtml = entries.length === 0
     ? `<div style="text-align:center;padding:32px 0;color:var(--ink-muted);font-size:13px">No entries this day.</div>`
     : entries.map(e => `
@@ -5248,15 +5584,91 @@ function openDayLogModal(dayKey) {
           </div>
         </div>
       `).join("");
-  openModal(`
-    <div class="modal-title">${dayLabel}</div>
-    <div class="modal-sub">${totalWater}oz water · ${totalProtein}g protein</div>
+
+  const bumpNote = hasWorkoutBump
+    ? `<div style="font-size:11.5px;color:var(--ink-muted);font-style:italic;margin:6px 0 2px;text-align:center">
+         Includes workout bump: +${bump.water}oz · +${bump.protein}g
+       </div>`
+    : "";
+
+  $("#day-modal-inner").innerHTML = `
+    <div class="day-nav">
+      <button class="day-nav-btn" id="day-prev" ${canPrev ? "" : "disabled"} aria-label="Previous day">‹</button>
+      <div class="day-nav-title">${dayLabel}</div>
+      <button class="day-nav-btn" id="day-next" ${canNext ? "" : "disabled"} aria-label="Next day">›</button>
+    </div>
+    <div class="day-totals-head">
+      <div class="day-tot water">
+        <div class="day-tot-label">Water</div>
+        <div class="day-tot-value">${totalWater}<span style="font-size:14px;color:var(--ink-muted)">oz</span></div>
+        <div class="day-tot-goal">Goal: ${goals.water} oz${totalWater >= goals.water ? " · met" : ""}</div>
+      </div>
+      <div class="day-tot protein">
+        <div class="day-tot-label">Protein</div>
+        <div class="day-tot-value">${totalProtein}<span style="font-size:14px;color:var(--ink-muted)">g</span></div>
+        <div class="day-tot-goal">Goal: ${goals.protein} g${totalProtein >= goals.protein ? " · met" : ""}</div>
+      </div>
+    </div>
+    ${bumpNote}
     <div class="log-list" style="margin-top:14px">${entriesHtml}</div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
     </div>
-  `, "modal-tall");
-  $("#m-close").addEventListener("click", closeModal);
+  `;
+
+  $("#day-prev")?.addEventListener("click", () => navigateDay(-1));
+  $("#day-next")?.addEventListener("click", () => navigateDay(1));
+  $("#m-close")?.addEventListener("click", closeModal);
+}
+
+function navigateDay(direction) {
+  const next = direction < 0 ? prevDayKey(_dayModalKey) : nextDayKey(_dayModalKey);
+  if (!next) return;
+  _dayModalKey = next;
+  renderDayModalContent();
+}
+
+function prevDayKey(currentKey) {
+  const d = new Date(currentKey + "T12:00:00");
+  d.setDate(d.getDate() - 1);
+  const candidate = todayKey(d);
+  // Don't navigate past the earliest day we have any record of.
+  const logKeys = Object.keys(state.log).sort();
+  const earliest = logKeys[0] || todayKey();
+  if (candidate < earliest) return null;
+  return candidate;
+}
+function nextDayKey(currentKey) {
+  const d = new Date(currentKey + "T12:00:00");
+  d.setDate(d.getDate() + 1);
+  const candidate = todayKey(d);
+  if (candidate > todayKey()) return null;
+  return candidate;
+}
+
+// Swipe gesture: horizontal drag on the modal body navigates between days.
+// Threshold keeps accidental scrolls from triggering; vertical-dominant
+// gestures are ignored so the log list can still scroll.
+function wireDayModalNav() {
+  const modal = $("#m-modal");
+  if (!modal) return;
+  let startX = 0, startY = 0, tracking = false;
+  modal.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+  modal.addEventListener("touchend", e => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    if (Math.abs(dx) < 60) return;                 // too small — ignore
+    if (Math.abs(dy) > Math.abs(dx) * 0.7) return; // vertical-ish — ignore
+    navigateDay(dx < 0 ? 1 : -1);                  // swipe left → next, right → prev
+  }, { passive: true });
 }
 
 function openBodyCheckModal() {
@@ -5342,6 +5754,15 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">History day detail · goals & swipe</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>Tap a bar on the history chart to open that day's log — now showing the goal you were actually working toward that day, alongside what you logged. Swipe left/right (or use the ‹ › chevrons) to move between days without bouncing back to the chart.</p>
+      <p>Goals you change going forward won't retroactively rewrite past days — Hyalo locks in the day's base goal the first time you log to it. Older days from before this change fall back to your current profile.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition & goal planning in onboarding</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>New users can now set body composition and optionally use the goal-based planner during initial setup, before climate. Both steps are skippable — defaults are unchanged.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Plan around a body composition goal</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>Settings → Protein goal → Customize now has an optional planner that targets your protein based on a future body composition instead of just your current weight. Set a goal body fat % and a muscle gain tier (Maintain / Toned / Athletic / Built), and the planner projects what your weight would be at that composition, then applies your normal goal + activity multiplier from there.</p>
