@@ -687,6 +687,9 @@
     margin-bottom: 8px;
     line-height: 1;
   }
+  .ex-title.water { color: var(--water); }
+  .ex-title.protein { color: var(--protein); }
+  .ex-title.workout { color: var(--sage); }
   .ex-line {
     display: flex;
     justify-content: space-between;
@@ -3157,20 +3160,20 @@ function openGoalsExplainerModal() {
     <div class="modal-sub">How they're built from your profile.</div>
 
     <div class="ex-block">
-      <div class="ex-title">Water</div>
+      <div class="ex-title water">Water</div>
       ${overW ? `<div class="ex-override">Manually set in Settings.</div>` : rowHtml(waterRows)}
       <div class="ex-subtotal"><span>Water base</span><span class="ex-val">${oz(base.water)}</span></div>
     </div>
 
     <div class="ex-block">
-      <div class="ex-title">Protein</div>
+      <div class="ex-title protein">Protein</div>
       ${overP ? `<div class="ex-override">Manually set in Settings.</div>` : rowHtml(proteinRows)}
       <div class="ex-subtotal"><span>Protein base</span><span class="ex-val">${g(base.protein)}</span></div>
     </div>
 
     ${hasBump ? `
       <div class="ex-block">
-        <div class="ex-title">Today's workouts</div>
+        <div class="ex-title workout">Today's workouts</div>
         ${rowHtml(workoutRows)}
         <div class="ex-subtotal"><span>Workout bump</span><span class="ex-val">+${goals.bump.water}<span class="u">oz</span> · +${goals.bump.protein}<span class="u">g</span></span></div>
       </div>
