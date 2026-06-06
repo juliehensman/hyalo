@@ -758,6 +758,122 @@
     font-style: italic;
     text-align: center;
   }
+  .planner-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-family: var(--font-body);
+    padding: 16px 0 4px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .planner-toggle:hover { color: var(--ink); }
+  .planner-toggle-arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 13px;
+  }
+  .planner-toggle.expanded .planner-toggle-arrow { transform: rotate(90deg); }
+  .planner-section {
+    margin-top: 6px;
+    padding: 14px;
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .planner-row-bf {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .planner-bf-label { color: var(--ink-soft); font-size: 13px; }
+  .planner-bf-input {
+    background: transparent;
+    border: none;
+    color: var(--protein);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 20px;
+    text-align: right;
+    width: 64px;
+    padding: 0;
+    outline: none;
+    font-feature-settings: "tnum";
+  }
+  .planner-tier-label {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    margin: 14px 0 8px;
+  }
+  .planner-tier-info {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 6px;
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .planner-breakdown {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .planner-caveat {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin: 12px 0 12px;
+    line-height: 1.45;
+  }
+  .planner-use-btn {
+    width: 100%;
+    background: var(--protein);
+    color: #fff;
+    border: none;
+    padding: 11px;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .planner-use-btn:hover { opacity: 0.92; }
+  .planner-hint {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+    padding: 14px 0 0;
+    margin: 0;
+    text-align: center;
+  }
+  .ex-edit-link {
+    display: block;
+    margin-left: auto;
+    text-align: right;
+    font-size: 12px;
+    color: var(--ink-muted);
+    background: none;
+    border: none;
+    padding: 8px 0 0;
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .ex-edit-link:hover { color: var(--ink); }
+  .ex-custom-target {
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+    padding: 6px 0 2px;
+  }
   .explainer-section {
     padding: 14px 16px;
     background: var(--card);
@@ -2274,7 +2390,7 @@ const DEFAULT_STATE = () => ({
     bodyComp: "unset", bodyFatPct: null,
     dayStart: 7, windDown: 20,
   },
-  goalsOverride: { water_oz: null, protein_g: null },
+  goalsOverride: { water_oz: null, protein_g: null, protein_meta: null },
   log: {},
   favorites: {
     water: [
@@ -2517,10 +2633,16 @@ function proteinBreakdownRows(p) {
     value: `${mult.toFixed(2)}<span class="u">g/lb</span>`,
   });
   if (factor !== 1) {
-    const bcLabel = p.bodyComp === "exact" && p.bodyFatPct
-      ? `Body composition (${p.bodyFatPct}% body fat)`
-      : `Body composition (${p.bodyComp})`;
-    rows.push({ label: bcLabel, value: `${p.weight_lb} → ${Math.round(basis)}<span class="u">lb</span>` });
+    const direction = factor > 1 ? "Lower" : "Higher";
+    const bfNote = p.bodyComp === "exact" && p.bodyFatPct ? ` (${p.bodyFatPct}%)` : "";
+    rows.push({
+      label: `${direction} body fat${bfNote} adjustment`,
+      value: `×${factor.toFixed(2)}`,
+    });
+    rows.push({
+      label: "Adjusted basis",
+      value: `${Math.round(basis)}<span class="u">lb</span>`,
+    });
   }
   rows.push({
     label: `${Math.round(basis)} lb × ${mult.toFixed(2)}`,
@@ -2532,6 +2654,66 @@ function proteinBreakdownRows(p) {
 }
 function rowsToHtml(rows) {
   return rows.map(r => `<div class="ex-line"><span class="ex-label">${escapeHtml(r.label)}</span><span class="ex-val">${r.value}</span></div>`).join("");
+}
+
+/* ============ Goal-based protein planner ============
+   Optional path inside Settings → Protein goal that projects your future
+   weight from a target body composition (goal BF% + muscle gain tier), then
+   uses Hyalo's same per-pound multiplier to compute a goal-aware protein
+   number. Requires bodyComp to be set (any value other than "unset"). */
+const MUSCLE_RANGES = {
+  F: { maintain: [0, 0], toned: [3, 5], athletic: [6, 10], built: [10, 15] },
+  M: { maintain: [0, 0], toned: [5, 8], athletic: [10, 18], built: [18, 30] },
+  X: { maintain: [0, 0], toned: [3, 5], athletic: [6, 10], built: [10, 15] },
+};
+const MUSCLE_TIERS = [
+  { key: "maintain", label: "Maintain", desc: "Keep what you have" },
+  { key: "toned", label: "Toned", desc: "Visible definition, not bulky" },
+  { key: "athletic", label: "Athletic", desc: "Clearly fit, noticeable muscle" },
+  { key: "built", label: "Built", desc: "Substantial muscle mass" },
+];
+// Resolve the user's *current* body fat as a fraction (0..1). Returns null
+// when bodyComp is unset — without a BF estimate the planner can't compute.
+function currentBodyFat(p) {
+  if (p.bodyComp === "exact" && p.bodyFatPct) return p.bodyFatPct / 100;
+  if (p.bodyComp === "lower") return bandsForSex(p.sex).lo;
+  if (p.bodyComp === "average") return bandsForSex(p.sex).ref;
+  if (p.bodyComp === "higher") return bandsForSex(p.sex).hi;
+  return null;
+}
+// Hyalo's per-pound protein multiplier (factored out for reuse by planner).
+function proteinMultiplier(p) {
+  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
+  mult += { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
+  let capped = false;
+  if (p.age >= 65 && mult < 0.6) mult = 0.6;
+  if (mult > 1.2) { mult = 1.2; capped = true; }
+  return { mult, capped };
+}
+// Project the protein goal from a target body composition. Uses current lean
+// mass + tier muscle gain to project future weight at the goal BF%, then
+// applies Hyalo's per-pound multiplier (not a hard-coded 0.95).
+function projectedProteinGoal(p, goalBFPct, tier) {
+  const cbf = currentBodyFat(p);
+  if (cbf == null) return null;
+  const sexKey = p.sex === "M" ? "M" : (p.sex === "F" ? "F" : "X");
+  const range = MUSCLE_RANGES[sexKey][tier] || [0, 0];
+  const muscleGain = (range[0] + range[1]) / 2;
+  const leanMass = p.weight_lb * (1 - cbf);
+  const goalLean = leanMass + muscleGain;
+  const safeBF = Math.min(Math.max(goalBFPct, 3), 60);
+  const goalWeight = goalLean / (1 - safeBF / 100);
+  const { mult } = proteinMultiplier(p);
+  let protein = Math.round(goalWeight * mult);
+  if (p.pregnancy === "pregnant" || p.pregnancy === "breastfeeding") protein += 25;
+  return {
+    leanMass: Math.round(leanMass),
+    muscleGain: Math.round(muscleGain),
+    goalLean: Math.round(goalLean),
+    goalWeight: Math.round(goalWeight),
+    mult,
+    protein,
+  };
 }
 
 /* ============ Pacing & daily-window helpers ============ */
@@ -3158,20 +3340,44 @@ function openGoalsExplainerModal() {
   }
   if (hasStrength) workoutRows.push({ label: "Strength bonus", value: fmtG(5, true) });
 
+  // Render the per-section content when an override is active. For protein
+  // with saved planner meta we reproduce the planning rows; for water (no
+  // planner) or for typed manual overrides we show a single "Custom target"
+  // line so the breakdown space isn't empty.
+  const overrideContent = (kind) => {
+    if (kind === "protein") {
+      const meta = state.goalsOverride.protein_meta;
+      if (meta) {
+        const r = [{ label: "Current lean mass", value: `${meta.leanMass}<span class="u">lb</span>` }];
+        if (meta.muscleGain > 0) r.push({ label: "Muscle gain target", value: `+${meta.muscleGain}<span class="u">lb</span>` });
+        r.push(
+          { label: `Goal weight at ${meta.goalBFPct}% BF`, value: `${meta.goalWeight}<span class="u">lb</span>` },
+          { label: `${meta.goalWeight} lb × ${meta.mult.toFixed(2)}`, value: fmtG(meta.protein) },
+        );
+        return rowsToHtml(r);
+      }
+      return `<div class="ex-custom-target">Custom target · ${state.goalsOverride.protein_g}g</div>`;
+    }
+    return `<div class="ex-custom-target">Custom target · ${state.goalsOverride.water_oz}oz</div>`;
+  };
+  const editLink = (kind) => `<button type="button" class="ex-edit-link" data-edit-kind="${kind}">Edit →</button>`;
+
   openModal(`
     <div class="modal-title">Your daily goals</div>
     <div class="modal-sub">How they're built from your profile.</div>
 
     <div class="ex-block">
       <div class="ex-title water">Water</div>
-      ${overW ? `<div class="ex-override">Manually set in Settings.</div>` : rowsToHtml(waterBreakdownRows(p))}
+      ${overW ? overrideContent("water") : rowsToHtml(waterBreakdownRows(p))}
       <div class="ex-subtotal"><span>Water base</span><span class="ex-val">${fmtOz(base.water)}</span></div>
+      ${overW ? editLink("water") : ""}
     </div>
 
     <div class="ex-block">
       <div class="ex-title protein">Protein</div>
-      ${overP ? `<div class="ex-override">Manually set in Settings.</div>` : rowsToHtml(proteinBreakdownRows(p))}
+      ${overP ? overrideContent("protein") : rowsToHtml(proteinBreakdownRows(p))}
       <div class="ex-subtotal"><span>Protein base</span><span class="ex-val">${fmtG(base.protein)}</span></div>
+      ${overP ? editLink("protein") : ""}
     </div>
 
     ${hasBump ? `
@@ -3194,6 +3400,14 @@ function openGoalsExplainerModal() {
     </div>
   `);
   $("#m-close").addEventListener("click", closeModal);
+  // Edit links jump straight to the customize modal — no Settings detour.
+  $$(".ex-edit-link").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const kind = btn.dataset.editKind;
+      closeModal();
+      openGoalOverride(kind);
+    });
+  });
 }
 
 /* ============ Render: Today ============ */
@@ -4329,6 +4543,46 @@ function openGoalOverride(kind) {
     : (state.goalsOverride.protein_g ?? suggested);
   const step = kind === "water" ? 4 : 5;
 
+  const hasBodyComp = currentBodyFat(p) != null;
+  const showPlanner = kind === "protein" && hasBodyComp;
+  const sexKey = p.sex === "M" ? "M" : (p.sex === "F" ? "F" : "X");
+  // Restore last planner setup if user previously saved an override via planner.
+  // Auto-expand the planner section in that case so re-tweaking takes one tap.
+  const savedMeta = kind === "protein" ? state.goalsOverride.protein_meta : null;
+  const initialGoalBF = savedMeta?.goalBFPct ?? (p.sex === "M" ? 15 : 20);
+  const initialTier = savedMeta?.tier ?? "athletic";
+  const plannerOpen = showPlanner && savedMeta != null;
+
+  const plannerHTML = kind !== "protein" ? "" : (hasBodyComp ? `
+    <button type="button" class="planner-toggle ${plannerOpen ? "expanded" : ""}" id="planner-toggle">
+      <span class="planner-toggle-arrow">›</span>
+      <span>Plan around a body composition goal</span>
+    </button>
+    <div class="planner-section" id="planner-section" style="display:${plannerOpen ? "block" : "none"}">
+      <div class="planner-row-bf">
+        <span class="planner-bf-label">Goal body fat</span>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <input type="number" class="planner-bf-input" id="planner-goal-bf" value="${initialGoalBF}" step="0.5" min="3" max="60" inputmode="decimal" />
+          <span style="color:var(--ink-muted);font-size:13px">%</span>
+        </div>
+      </div>
+      <div class="planner-tier-label">Muscle target</div>
+      <div class="chip-group" id="planner-tiers">
+        ${MUSCLE_TIERS.map(t => {
+          const r = MUSCLE_RANGES[sexKey][t.key];
+          const rText = t.key === "maintain" ? "" : ` <span style="opacity:0.7;font-size:11px">+${r[0]}–${r[1]}lb</span>`;
+          return `<button type="button" class="chip ${t.key === initialTier ? "selected" : ""}" data-tier="${t.key}">${t.label}${rText}</button>`;
+        }).join("")}
+      </div>
+      <div class="planner-tier-info" id="planner-tier-info"></div>
+      <div class="planner-breakdown" id="planner-breakdown"></div>
+      <p class="planner-caveat">Muscle gain ranges are estimates — people vary widely.</p>
+      <button type="button" class="planner-use-btn" id="planner-use">Use this number →</button>
+    </div>
+  ` : `
+    <p class="planner-hint">Set your body composition in Settings to enable goal-based planning.</p>
+  `);
+
   openModal(`
     <div class="modal-title">${title}</div>
 
@@ -4350,6 +4604,8 @@ function openGoalOverride(kind) {
       <button type="button" id="reset-suggested" style="display:none;background:none;border:none;color:var(--ink-muted);font-size:12.5px;padding:8px 0 0;cursor:pointer;text-align:left;font-family:var(--font-body)">↩ Reset to suggested (${suggested}${unit})</button>
     </div>
 
+    ${plannerHTML}
+
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Save</button>
@@ -4366,14 +4622,84 @@ function openGoalOverride(kind) {
   input.addEventListener("input", syncResetVisibility);
   resetLink.addEventListener("click", () => { input.value = suggested; syncResetVisibility(); });
   $("#m-cancel").addEventListener("click", closeModal);
+
+  // Planner wiring. lastPlannerResult tracks the currently-displayed projection
+  // so we can match it against the saved value to decide whether to persist meta.
+  let currentTier = initialTier;
+  let lastPlannerResult = null;
+  const renderProjection = () => {
+    if (!showPlanner) return;
+    const goalBF = parseFloat($("#planner-goal-bf").value) || initialGoalBF;
+    const result = projectedProteinGoal(p, goalBF, currentTier);
+    if (!result) return;
+    lastPlannerResult = { ...result, goalBFPct: goalBF, tier: currentTier };
+    const tierDesc = MUSCLE_TIERS.find(t => t.key === currentTier)?.desc || "";
+    $("#planner-tier-info").textContent = tierDesc;
+    const projRows = [
+      { label: "Current lean mass", value: `${result.leanMass}<span class="u">lb</span>` },
+    ];
+    if (result.muscleGain > 0) projRows.push({ label: "Muscle gain target", value: `+${result.muscleGain}<span class="u">lb</span>` });
+    projRows.push(
+      { label: `Goal weight at ${goalBF}% BF`, value: `${result.goalWeight}<span class="u">lb</span>` },
+      { label: `${result.goalWeight} lb × ${result.mult.toFixed(2)}`, value: fmtG(result.protein) },
+    );
+    $("#planner-breakdown").innerHTML = rowsToHtml(projRows);
+    $("#planner-use").textContent = `Use ${result.protein}g →`;
+    $("#planner-use").dataset.value = result.protein;
+  };
+  if (showPlanner) {
+    $("#planner-toggle").addEventListener("click", () => {
+      const section = $("#planner-section");
+      const expanded = section.style.display !== "none";
+      section.style.display = expanded ? "none" : "block";
+      $("#planner-toggle").classList.toggle("expanded", !expanded);
+      if (!expanded) renderProjection();
+    });
+    $("#planner-goal-bf").addEventListener("input", renderProjection);
+    $$("#planner-tiers .chip").forEach(c => {
+      c.addEventListener("click", () => {
+        $$("#planner-tiers .chip").forEach(x => x.classList.remove("selected"));
+        c.classList.add("selected");
+        currentTier = c.dataset.tier;
+        renderProjection();
+      });
+    });
+    $("#planner-use").addEventListener("click", () => {
+      const v = +$("#planner-use").dataset.value;
+      if (v > 0) { input.value = v; syncResetVisibility(); }
+    });
+    // If meta exists, the planner is already expanded — render its rows now.
+    if (plannerOpen) renderProjection();
+  }
+
   $("#m-save").addEventListener("click", () => {
     const v = +input.value;
     if (!v || v <= 0) return;
-    // Matching the suggested value clears the override so the goal continues
-    // to track future profile changes (weight, body comp, etc.) automatically.
+    // Matching the suggested value clears the override (and any meta) so the
+    // goal continues to track future profile changes automatically.
     const newOverride = (v === suggested) ? null : v;
-    if (kind === "water") state.goalsOverride.water_oz = newOverride;
-    else state.goalsOverride.protein_g = newOverride;
+    if (kind === "water") {
+      state.goalsOverride.water_oz = newOverride;
+    } else {
+      state.goalsOverride.protein_g = newOverride;
+      // Persist planner metadata only if the saved value matches what the
+      // planner currently shows. If user typed a number that doesn't match
+      // (or never used the planner), meta clears so the explainer falls back
+      // to the simple "Custom target" view.
+      if (newOverride !== null && lastPlannerResult && v === lastPlannerResult.protein) {
+        state.goalsOverride.protein_meta = {
+          goalBFPct: lastPlannerResult.goalBFPct,
+          tier: lastPlannerResult.tier,
+          leanMass: lastPlannerResult.leanMass,
+          muscleGain: lastPlannerResult.muscleGain,
+          goalWeight: lastPlannerResult.goalWeight,
+          mult: lastPlannerResult.mult,
+          protein: lastPlannerResult.protein,
+        };
+      } else {
+        state.goalsOverride.protein_meta = null;
+      }
+    }
     save();
     closeModal();
     render();
@@ -5013,16 +5339,17 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Plan around a body composition goal</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>Settings → Protein goal → Customize now has an optional planner that targets your protein based on a future body composition instead of just your current weight. Set a goal body fat % and a muscle gain tier (Maintain / Toned / Athletic / Built), and the planner projects what your weight would be at that composition, then applies your normal goal + activity multiplier from there.</p>
+      <p>Useful if you're in active body recomp and want protein calibrated for the body you're building, not the body you have today.</p>
+      <p>The breakdown also shows up in <em>Why these goals?</em> so you can revisit how your number was built, and an <em>Edit →</em> link there opens the planner directly. Body composition must be set in your profile first (the planner needs a body fat estimate to compute lean mass). Muscle gain ranges are estimates — people vary widely.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Water goal: a more honest baseline</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
       <p>We've dialed the baseline from ×0.5 to ×0.4 of bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
       <p>If you preferred the higher target, you can override it in Settings → Your goals. Your body's the best feedback signal here — pale yellow pee means you're well hydrated, regardless of the number on the ring.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Pace your day</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>A faint pace arc behind each ring now shows where you should be by this point in your day. A new <em>Daily window</em> section in Settings lets you set the hours you're typically drinking (defaults to 7 AM → 8 PM).</p>
-      <p>After your wind-down hour, if you're still short, Hyalo will gently tell you to ease up rather than cram — better to fall a bit short than wake up to use the restroom.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body check-in</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
