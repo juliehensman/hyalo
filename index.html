@@ -1912,7 +1912,7 @@
     align-items: center;
     gap: 10px;
     padding: 13px 16px;
-    min-height: 56px;
+    min-height: 64px;
     box-sizing: border-box;
     border-bottom: 1px solid var(--border);
     width: 100%;
@@ -1986,6 +1986,8 @@
     font-family: inherit;
     font-size: 13px;
     padding: 13px 16px;
+    min-height: 64px;
+    box-sizing: border-box;
     cursor: pointer;
     transition: background 0.15s;
   }
@@ -2961,9 +2963,8 @@ const STORAGE_KEY = "hyalo-v1";
 const CALC_VERSION = 3;
 // Display dates for entries in Recent updates.
 const LATEST_UPDATE_DATE = "June 2026";
-const RECENT_UPDATE_DATE = "May 2026";
 // Bumped when default-library content changes, to top-up existing users once.
-const LIBRARY_SEED_VERSION = 5;
+const LIBRARY_SEED_VERSION = 6;
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2982,21 +2983,19 @@ const DEFAULT_LIBRARY = [
   { id: "beef-tend-6oz", name: "Beef tenderloin", serving: "6 oz cooked", g: 45 },
   { id: "beef-rib-8oz", name: "Beef ribeye", serving: "8 oz cooked", g: 50 },
   { id: "beef-rib-10oz", name: "Beef ribeye", serving: "10 oz cooked", g: 62 },
-  { id: "salmon-fillet", name: "Salmon fillet", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
+  { id: "salmon-fillet", name: "Salmon", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
   { id: "halibut-4oz", name: "Halibut", serving: "4 oz cooked", g: 24 },
   { id: "halibut-6oz", name: "Halibut", serving: "6 oz cooked", g: 36 },
   { id: "tuna-steak-4oz", name: "Tuna steak", serving: "4 oz cooked fillet", g: 30 },
   { id: "tuna-steak-6oz", name: "Tuna steak", serving: "6 oz cooked fillet", g: 45 },
   { id: "lobster-tail", name: "Lobster tail", serving: "1 typical, ~5 oz cooked meat", g: 40 },
   { id: "shrimp-sm", name: "Shrimp, small", serving: "1 shrimp", g: 1 },
-  { id: "shrimp-ml", name: "Shrimp, medium-large", serving: "1 shrimp", g: 3 },
   { id: "scallop-sea", name: "Sea scallop", serving: "1 large scallop", g: 5 },
   { id: "scallop-bay", name: "Bay scallop", serving: "1 small scallop", g: 1 },
   { id: "mussel-1", name: "Mussel", serving: "1 mussel", g: 1 },
   { id: "snow-crab-1", name: "Snow crab", serving: "1 crab (no body)", g: 30 },
   { id: "king-crab-1", name: "King crab", serving: "1 crab (no body)", g: 180 },
   { id: "turkey-4oz", name: "Turkey", serving: "4 oz cooked", g: 24 },
-  { id: "pork-4oz", name: "Pork tenderloin", serving: "4 oz cooked", g: 26 },
   { id: "pork-chop-4oz", name: "Pork chop", serving: "4 oz cooked", g: 28 },
   { id: "pork-ground-4oz", name: "Ground pork", serving: "4 oz cooked", g: 24 },
   { id: "tofu-firm", name: "Tofu, firm", serving: "½ cup", g: 10 },
@@ -3132,14 +3131,13 @@ function normalizeState(data) {
       { id: "beef-tend-6oz", name: "Beef tenderloin", serving: "6 oz cooked", g: 45 },
       { id: "beef-rib-8oz", name: "Beef ribeye", serving: "8 oz cooked", g: 50 },
       { id: "beef-rib-10oz", name: "Beef ribeye", serving: "10 oz cooked", g: 62 },
-      { id: "salmon-fillet", name: "Salmon fillet", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
+      { id: "salmon-fillet", name: "Salmon", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
       { id: "halibut-4oz", name: "Halibut", serving: "4 oz cooked", g: 24 },
       { id: "halibut-6oz", name: "Halibut", serving: "6 oz cooked", g: 36 },
       { id: "tuna-steak-4oz", name: "Tuna steak", serving: "4 oz cooked fillet", g: 30 },
       { id: "tuna-steak-6oz", name: "Tuna steak", serving: "6 oz cooked fillet", g: 45 },
       { id: "lobster-tail", name: "Lobster tail", serving: "1 typical, ~5 oz cooked meat", g: 40 },
       { id: "shrimp-sm", name: "Shrimp, small", serving: "1 shrimp", g: 1 },
-      { id: "shrimp-ml", name: "Shrimp, medium-large", serving: "1 shrimp", g: 3 },
       { id: "scallop-sea", name: "Sea scallop", serving: "1 large scallop", g: 5 },
       { id: "scallop-bay", name: "Bay scallop", serving: "1 small scallop", g: 1 },
       { id: "mussel-1", name: "Mussel", serving: "1 mussel", g: 1 },
@@ -3197,6 +3195,24 @@ function normalizeState(data) {
     ];
     const v5ById = new Set(s.library.map(i => i.id));
     for (const it of v5adds) if (!v5ById.has(it.id)) s.library.push(it);
+    // v6: trim labels and cuts. Drop the "fillet" word from Salmon (the
+    // serving line still describes the portion). Remove the bare pork
+    // tenderloin entry now that pork chop and ground pork cover the cuts
+    // people actually log. Remove the medium-large shrimp entry — and any
+    // user-added "Med-Lg" duplicate — leaving the small per-shrimp option
+    // as the per-piece pick. Idempotent on rerun.
+    const salmon = s.library.find(i => i.id === "salmon-fillet");
+    if (salmon && salmon.name === "Salmon fillet") salmon.name = "Salmon";
+    s.library = s.library.filter(it => it.id !== "pork-4oz" && it.id !== "shrimp-ml");
+    s.library = s.library.filter(it => {
+      const n = (it.name || "").toLowerCase();
+      return !(n === "shrimp, medium-large" || n === "shrimp, med-lg");
+    });
+    if (s.favorites?.protein) {
+      for (const f of s.favorites.protein) {
+        if (f.name === "Salmon fillet" && f.g === 35) f.name = "Salmon";
+      }
+    }
     s.librarySeedVersion = LIBRARY_SEED_VERSION;
   }
   return s;
@@ -6603,18 +6619,6 @@ function openRecentUpdatesModal() {
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>Inside Goals &amp; body, the measurement log tracks circumferences over time. Navy method fields (height + neck + waist + hip) compute body fat % on save; optional fields track muscle groups (chest, biceps, thighs, calves, shoulders), each with anatomical guidance for tape placement.</p>
       <p>The trend chart plots <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together, with dashed lines for any goals you set. WHR reveals the recomp signature — when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker (tap the ⓘ for thresholds).</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">History day detail · goals & swipe</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Tap a bar on the history chart to open that day's log — now showing the goal you were actually working toward that day, alongside what you logged. Swipe left/right (or use the ‹ › chevrons) between days. Goals you change going forward won't retroactively rewrite past days; Hyalo locks in each day's goal the first time you log to it.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Water goal: a more honest baseline</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Hyalo's water baseline changed from ×0.5 to ×0.4 of bodyweight — better aligned with research. Your water target may have dropped 15–20 oz. Override it in Settings → Goals &amp; body if you preferred the old number. Pale yellow pee is the real signal here.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Protein goals refined</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
-      <p>Targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were calibrated down to the well-established 1.6–2.2 g/kg range. The muscle-building benefit levels off near the top of that range, so the new target is accurate without overshooting. Water unchanged.</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="ru-close" style="width:100%">Got it</button>
