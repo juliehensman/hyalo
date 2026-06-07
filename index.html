@@ -1604,6 +1604,370 @@
     opacity: 0.85;
   }
 
+  /* Navy calculator (expandable section under exact-% input) */
+  .navy-calc-toggle {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 8px 0 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+  }
+  .navy-calc-toggle:hover { color: var(--ink); }
+  .navy-calc-toggle .arrow {
+    font-size: 14px;
+    transition: transform 0.2s;
+    line-height: 1;
+  }
+  .navy-calc-toggle.expanded .arrow { transform: rotate(90deg); }
+  .navy-calc-body {
+    display: none;
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--card);
+    border-radius: 12px;
+  }
+  .navy-calc-body.open { display: block; }
+  .navy-input-row { margin-bottom: 10px; }
+  .navy-input-row:last-child { margin-bottom: 0; }
+  .navy-input-row label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .navy-input-row .input-box { margin: 0; }
+  .navy-hint {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+    line-height: 1.35;
+    font-style: italic;
+  }
+  .navy-calc-result {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .navy-calc-result strong {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--protein);
+    display: block;
+    margin-top: 2px;
+  }
+  .navy-calc-result.empty {
+    color: var(--ink-muted);
+    font-style: italic;
+    font-size: 12px;
+  }
+
+  /* Body measurements tracker: list view + chart + entry rows */
+  .bm-add-btn {
+    width: 100%;
+    background: var(--card);
+    border: 1px dashed var(--border);
+    color: var(--ink);
+    border-radius: 12px;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 14px;
+  }
+  .bm-add-btn:hover { background: var(--card-strong); }
+  .bm-chart-wrap {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .bm-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .bm-chart-title {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .bm-chart-legend {
+    display: flex;
+    gap: 12px;
+    font-size: 11.5px;
+  }
+  .bm-chart-legend .swatch {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .bm-chart-legend .info-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--ink-muted);
+    font-family: inherit;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    padding: 0;
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    margin-left: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
+  .bm-chart-legend .info-btn:hover { color: var(--ink); }
+  .bm-chart-svg {
+    width: 100%;
+    height: 130px;
+    display: block;
+  }
+  .bm-chart-empty {
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 12.5px;
+    font-style: italic;
+    padding: 30px 12px;
+  }
+  .bm-entry {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+    width: 100%;
+    border: none;
+    color: var(--ink);
+    font-family: inherit;
+    display: block;
+  }
+  .bm-entry:hover { background: var(--card-strong); }
+  .bm-entry-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .bm-entry-date {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .bm-entry-bf {
+    font-size: 13px;
+    color: var(--protein);
+    font-weight: 600;
+  }
+  .bm-entry-metrics {
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.4;
+  }
+  .bm-entry-notes {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  /* Entry modal: section heads + grouped fields */
+  .bm-section {
+    margin-top: 16px;
+  }
+  .bm-section-title {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+  }
+  .bm-section-sub {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .bm-apply-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--card);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .bm-apply-row input[type="checkbox"] {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .bm-apply-row-text {
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  .bm-apply-row-text small {
+    color: var(--ink-muted);
+    font-size: 11.5px;
+    display: block;
+    margin-top: 2px;
+  }
+  /* Live-computed derived metrics (BF % + WHR) in the entry modal */
+  .bm-derived-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .bm-derived {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .bm-derived small {
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .bm-derived strong {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--protein);
+    line-height: 1.1;
+    display: block;
+  }
+  .bm-derived:nth-child(2) strong { color: var(--water); }
+  .bm-whr-band {
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    display: block;
+    margin-top: 3px;
+    text-transform: lowercase;
+  }
+  .bm-whr-band.band-low    { color: var(--sage, #6b8e6b); }
+  .bm-whr-band.band-high   { color: var(--protein); }
+  .bm-derived-note {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  /* Per-entry derived metrics in the list view */
+  .bm-entry-derived {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .bm-entry-derived .bf { color: var(--protein); }
+  .bm-entry-derived .whr { color: var(--water); }
+  .bm-entry-derived small {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.7;
+  }
+  .day-nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .day-nav-btn:hover:not(:disabled) { background: var(--card-strong); }
+  .day-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .day-nav-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 26px;
+    color: var(--ink);
+    text-align: center;
+    flex: 1;
+    line-height: 1.15;
+  }
+  .day-totals-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0 6px;
+  }
+  .day-tot {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .day-tot-label {
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+  .day-tot.water .day-tot-label { color: var(--water); }
+  .day-tot.protein .day-tot-label { color: var(--protein); }
+  .day-tot-value {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .day-tot-goal {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .day-tot-bump {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin-top: 2px;
+    opacity: 0.85;
+  }
+
   /* Library list in modal */
   .lib-search {
     width: 100%;
@@ -2166,6 +2530,20 @@
         </div>
       </div>
 
+      <div class="field">
+        <span class="field-label">Height</span>
+        <div class="input-row">
+          <div class="input-box">
+            <label>Feet</label>
+            <input type="number" id="onb-height-ft" inputmode="numeric" placeholder="—" />
+          </div>
+          <div class="input-box">
+            <label>Inches</label>
+            <input type="number" id="onb-height-in" inputmode="numeric" placeholder="—" step="0.5" />
+          </div>
+        </div>
+      </div>
+
       <div class="onb-actions">
         <button class="btn btn-secondary" data-prev="1">Back</button>
         <button class="btn btn-primary" data-next="3" id="step2-next">Continue</button>
@@ -2261,6 +2639,7 @@
           </button>
         </div>
         <div class="input-box" style="margin-top:10px"><label>Or enter exact body fat %</label><input type="number" id="onb-bodyfat" inputmode="decimal" placeholder="—" /></div>
+        <div id="onb-bodyfat-navy"></div>
       </div>
 
       <div class="onb-actions">
@@ -2539,6 +2918,7 @@ const DEFAULT_STATE = () => ({
   bodyCompNoticeSeen: false,
   plannerOnbSeen: false,    // existing-user banner for goal-based planner
   lastBodyCheckTs: null,
+  bodyMeasurements: [],     // [{id, ts, weight_lb, neck, waist, hip, chest, biceps, thighs, calves, shoulders, bodyFatPct, notes}]
   windDownDismissedDate: null,
 });
 
@@ -2813,6 +3193,94 @@ function currentBodyFat(p) {
   if (p.bodyComp === "higher") return bandsForSex(p.sex).hi;
   return null;
 }
+
+/* ============ Navy body fat method ============
+   US Navy circumference formula — inputs in INCHES.
+     Men:    %BF = 86.010·log10(waist − neck) − 70.041·log10(height) + 36.76
+     Women:  %BF = 163.205·log10(waist + hip − neck) − 97.684·log10(height) − 78.387
+   For "Prefer not to say" we use women's formula if hip is provided (more
+   inputs → tighter fit for high-fat or curvier builds), men's otherwise.
+   Returns null when any required input is missing or out of plausible range. */
+function navyBodyFat(sex, height_in, neck, waist, hip) {
+  if (!height_in || !neck || !waist) return null;
+  if (height_in < 48 || height_in > 84) return null;     // ~4'0" to 7'0"
+  if (neck < 8 || neck > 30) return null;
+  if (waist < 18 || waist > 80) return null;
+  const useFemale = (sex === "F") || (sex !== "M" && hip);
+  if (useFemale) {
+    if (!hip || hip < 20 || hip > 90) return null;
+    if (waist + hip <= neck) return null;                // log10 domain guard
+    const bf = 163.205 * Math.log10(waist + hip - neck)
+             - 97.684 * Math.log10(height_in)
+             - 78.387;
+    if (bf <= 0 || bf >= 60) return null;
+    return Math.round(bf * 10) / 10;                     // 0.1% resolution
+  }
+  if (waist <= neck) return null;
+  const bf = 86.010 * Math.log10(waist - neck)
+           - 70.041 * Math.log10(height_in)
+           + 36.76;
+  if (bf <= 0 || bf >= 60) return null;
+  return Math.round(bf * 10) / 10;
+}
+// Whether the Navy method, given a sex, requires hip circumference.
+function navyNeedsHip(sex) { return sex === "F" || sex === "X"; }
+
+/* ============ Waist-to-hip ratio (WHR) ============
+   Captures relative mass distribution — what waist or hip alone can't.
+   Drops when waist shrinks OR hip grows; classic recomp signature.
+   WHO uses it as an independent cardiovascular/metabolic risk marker. */
+function computeWHR(waist, hip) {
+  if (!waist || !hip || hip <= 0 || waist <= 0) return null;
+  return Math.round((waist / hip) * 100) / 100;     // 0.01 resolution
+}
+function whrRiskBand(sex, whr) {
+  if (!whr) return null;
+  if (sex === "F") {
+    if (whr < 0.80) return "low";
+    if (whr <= 0.85) return "moderate";
+    return "high";
+  }
+  // Men + X use male thresholds (male body fat distribution baseline).
+  if (whr < 0.90) return "low";
+  if (whr <= 1.00) return "moderate";
+  return "high";
+}
+
+/* ============ Body-measurement metadata ============
+   Anatomical hints shown beneath each input. Editorial: precise enough to
+   guide consistency from session to session, brief enough to glance at. */
+const MEASUREMENT_FIELDS = [
+  // [key, label, group, hintFn (sex) → string]
+  ["weight",    "Weight (lb)",    "core",     () => "On a scale, ideally same time of day each session."],
+  ["neck",      "Neck",           "navy",     () => "Just below the larynx (Adam's apple). Tape slopes slightly down toward the front. Look straight ahead."],
+  ["waist",     "Waist",          "navy",     (sex) => sex === "M"
+                                                ? "Around the navel, horizontal. End of a normal exhale — don't suck in."
+                                                : "Narrowest point between ribs and hip bones, usually just above the navel. End of a normal exhale — don't suck in."],
+  ["hip",       "Hip",            "navy",     (sex) => sex === "M"
+                                                ? "Widest point around your buttocks. Feet together, tape horizontal. Optional — used for waist-to-hip ratio."
+                                                : "Widest point around your buttocks. Feet together, tape horizontal."],
+  ["chest",     "Chest",          "extra",    (sex) => sex === "M"
+                                                ? "At nipple level. Arms relaxed at sides, end of a normal exhale."
+                                                : "At the bra line / just above breast tissue. Arms relaxed at sides, end of a normal exhale."],
+  ["biceps",    "Biceps",         "extra",    () => "Largest point of the relaxed upper arm. Hanging at your side — not flexed."],
+  ["thighs",    "Thigh",          "extra",    () => "Widest point, usually just below the glute fold."],
+  ["calves",    "Calf",           "extra",    () => "Widest point of mid-calf. Stand with weight even on both feet."],
+  ["shoulders", "Shoulders",      "extra",    () => "Widest point across the deltoids. Arms relaxed, tape horizontal."],
+];
+const MEASUREMENT_KEY_LABEL = Object.fromEntries(MEASUREMENT_FIELDS.map(f => [f[0], f[1]]));
+// Inches input helper — converts ft+in fields into total inches.
+function ftInToInches(ft, inches) {
+  const f = parseFloat(ft) || 0;
+  const i = parseFloat(inches) || 0;
+  return Math.round((f * 12 + i) * 10) / 10;
+}
+function inchesToFtIn(total) {
+  if (!total) return { ft: "", in: "" };
+  const ft = Math.floor(total / 12);
+  const inch = +(total - ft * 12).toFixed(1);
+  return { ft, in: inch };
+}
 // Hyalo's per-pound protein multiplier (factored out for reuse by planner).
 function proteinMultiplier(p) {
   let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
@@ -2900,6 +3368,21 @@ function bodyCheckSubtext() {
   if (w === 0) return "Updated this week";
   if (w === 1) return "Updated 1 week ago";
   return `Updated ${w} weeks ago`;
+}
+// Settings-row summary for the body measurements entry. Friendly when empty,
+// concise when not — last entry's date + BF% + WHR if available.
+function bodyMeasurementsSummary() {
+  const entries = state.bodyMeasurements || [];
+  if (!entries.length) return "Track circumferences over time · Navy method body fat %";
+  const latest = entries.slice().sort((a, b) => b.ts.localeCompare(a.ts))[0];
+  const d = new Date(latest.ts);
+  const dateLabel = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const whr = computeWHR(latest.waist, latest.hip);
+  const bits = [];
+  if (latest.bodyFatPct) bits.push(`${latest.bodyFatPct}% BF`);
+  if (whr) bits.push(`${whr.toFixed(2)} WHR`);
+  const stats = bits.length ? " · " + bits.join(" · ") : "";
+  return `${entries.length} ${entries.length === 1 ? "entry" : "entries"} · last ${dateLabel}${stats}`;
 }
 
 function computeProteinGoal(p) {
@@ -3237,8 +3720,16 @@ function initOnboarding() {
 
   $("#onb-age").value = onbDraft.age || "";
   $("#onb-weight").value = onbDraft.weight_lb || "";
+  const initialHt = inchesToFtIn(onbDraft.height_in);
+  $("#onb-height-ft").value = initialHt.ft || "";
+  $("#onb-height-in").value = initialHt.in || "";
   $("#onb-age").addEventListener("input", e => { onbDraft.age = +e.target.value || 0; });
   $("#onb-weight").addEventListener("input", e => { onbDraft.weight_lb = +e.target.value || 0; });
+  const onHeightChange = () => {
+    onbDraft.height_in = ftInToInches($("#onb-height-ft").value, $("#onb-height-in").value);
+  };
+  $("#onb-height-ft").addEventListener("input", onHeightChange);
+  $("#onb-height-in").addEventListener("input", onHeightChange);
 
   // Standard data-next / data-prev for non-conditional transitions
   $$("[data-next]").forEach(b => b.addEventListener("click", () => {
@@ -3246,6 +3737,10 @@ function initOnboarding() {
     if (b.id === "step2-next") {
       if (!onbDraft.age || !onbDraft.weight_lb) {
         showToast("Age and weight needed to continue");
+        return;
+      }
+      if (!onbDraft.height_in || onbDraft.height_in < 48 || onbDraft.height_in > 84) {
+        showToast("Enter a valid height (4'0\" to 7'0\")");
         return;
       }
     }
@@ -3330,7 +3825,16 @@ function refreshBodyFatRanges() {
   });
 }
 function goToStep(n) {
-  if (n === 4) refreshBodyFatRanges();   // ranges depend on sex chosen on step 2
+  if (n === 4) {
+    refreshBodyFatRanges();   // ranges depend on sex chosen on step 2
+    // Rebuild the Navy calculator each time we land on step 4 — it depends on
+    // sex (and possibly height) which may have changed since onboarding init.
+    const navyHost = $("#onb-bodyfat-navy");
+    if (navyHost) {
+      navyHost.innerHTML = navyCalcWidget("onb-bodyfat", { sex: onbDraft.sex, height_in: onbDraft.height_in });
+      wireNavyCalc("onb-bodyfat", { sex: onbDraft.sex, height_in: onbDraft.height_in });
+    }
+  }
   $$(".onb-step").forEach(s => s.classList.toggle("active", +s.dataset.step === n));
   $("#onb-bar").style.width = (n / 7 * 100) + "%";
   window.scrollTo({ top: 0, behavior: "instant" });
@@ -4675,7 +5179,7 @@ function renderSettings() {
         <button class="settings-row" data-edit="basics">
           <div class="settings-row-info">
             <div class="settings-row-label">Basics</div>
-            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age} · ${p.weight_lb} lb${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
+            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age} · ${p.weight_lb} lb${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""}${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -4697,6 +5201,13 @@ function renderSettings() {
           <div class="settings-row-info">
             <div class="settings-row-label">Body composition</div>
             <div class="settings-row-value">${bodyCompSummary(p)} · refines protein${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+        <button class="settings-row" id="edit-measurements">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Body measurements</div>
+            <div class="settings-row-value">${bodyMeasurementsSummary()}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -4804,6 +5315,7 @@ function wireSettingsHandlers() {
   });
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#edit-bodycomp")?.addEventListener("click", openBodyCompModal);
+  $("#edit-measurements")?.addEventListener("click", openBodyMeasurementsModal);
   $("#edit-daily-window")?.addEventListener("click", openDailyWindowModal);
   $("#open-install")?.addEventListener("click", openInstallModal);
   $("#share-app")?.addEventListener("click", shareApp);
@@ -5002,6 +5514,7 @@ function openProfileEdit(section) {
   const p = JSON.parse(JSON.stringify(state.profile));
   let inner = "";
   if (section === "basics") {
+    const ht = inchesToFtIn(p.height_in);
     inner = `
       <div class="modal-title">Basics</div>
       <div class="field">
@@ -5017,6 +5530,13 @@ function openProfileEdit(section) {
         <div class="input-row">
           <div class="input-box"><label>Age</label><input type="number" id="ed-age" value="${p.age}" /></div>
           <div class="input-box"><label>Weight (lb)</label><input type="number" id="ed-weight" value="${p.weight_lb}" /></div>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">Height</span>
+        <div class="input-row">
+          <div class="input-box"><label>Feet</label><input type="number" id="ed-height-ft" value="${ht.ft}" /></div>
+          <div class="input-box"><label>Inches</label><input type="number" id="ed-height-in" step="0.5" value="${ht.in}" /></div>
         </div>
       </div>`;
   } else if (section === "activity") {
@@ -5103,6 +5623,8 @@ function openProfileEdit(section) {
     if (section === "basics") {
       p.age = +$("#ed-age").value || p.age;
       p.weight_lb = +$("#ed-weight").value || p.weight_lb;
+      const newHt = ftInToInches($("#ed-height-ft").value, $("#ed-height-in").value);
+      if (newHt >= 48 && newHt <= 84) p.height_in = newHt;
     }
     if (p.sex !== "F") p.pregnancy = "none";
     state.profile = p;
@@ -5531,7 +6053,7 @@ function renderBodyCheckBanner() {
   `;
 }
 function wireBodyCheckBanner() {
-  $("#bodycheck-update")?.addEventListener("click", openBodyCheckModal);
+  $("#bodycheck-update")?.addEventListener("click", () => openMeasurementEntryModal(null));
   $("#bodycheck-skip")?.addEventListener("click", () => {
     resetBodyCheckTimer();
     save();
@@ -5765,6 +6287,19 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body measurements tracker</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>Settings → Body measurements is a new place to log circumferences over time and watch them trend. The required Navy method fields (height + neck + waist, plus hip for women) auto-compute body fat % on save; optional accessory fields (chest, biceps, thighs, calves, shoulders) track how individual muscle groups change.</p>
+      <p>Each field has anatomical guidance on exactly where to put the tape — same site each session, end of a normal exhale, not pulled tight. Consistency is what makes the trend honest.</p>
+      <p>The trend chart shows <strong>body fat %</strong> and <strong>waist-to-hip ratio</strong> together — the two derivatives that capture shape change. WHR (waist ÷ hip) is what reveals the recomp signature: when waist barely moves but the hips grow, WHR drops sharply. It's also an independent WHO health risk marker (women: &lt;0.80 low risk; men: &lt;0.90 low risk). Tap the ⓘ next to WHR for the full explanation.</p>
+      <p>Hip is now available as a field for everyone (optional for men, since Navy BF % doesn't need it, but useful for WHR).</p>
+      <p>The body check-in prompt that fires every 6 / 12 weeks now routes here. Logging a fresh entry with the "apply to my profile" box checked refreshes your weight and body fat % automatically, so your daily goals stay in sync.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Navy method in body composition</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>Don't know your body fat %? The Settings → Body composition modal and onboarding both now have a <em>"Calculate from measurements →"</em> expandable section. Enter your neck and waist (plus hip for women), and Hyalo computes body fat % using the US Navy circumference formula. The number drops straight into the exact-% field.</p>
+      <p>This also added a height field to your profile (collected in onboarding step 2 or editable in Settings → Basics) since Navy needs it.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">History day detail · goals & swipe</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>Tap a bar on the history chart to open that day's log — now showing the goal you were actually working toward that day, alongside what you logged. Swipe left/right (or use the ‹ › chevrons) to move between days without bouncing back to the chart.</p>
@@ -5870,12 +6405,13 @@ function openBodyCompModal() {
     <div class="field" style="margin-top:14px">
       <span class="field-label">Or enter exact body fat %</span>
       <div class="input-box"><label>Body fat %</label><input type="number" id="bc-exact" inputmode="decimal" placeholder="—" value="${p.bodyComp === "exact" && p.bodyFatPct ? p.bodyFatPct : ""}" /></div>
+      ${navyCalcWidget("bc-exact", { sex: p.sex, height_in: state.profile.height_in })}
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Save</button>
     </div>
-  `);
+  `, "modal-tall");
   let pick = p.bodyComp;
   setupCardGroup("#bc-cards", v => { pick = v; $("#bc-exact").value = ""; }, p.bodyComp === "exact" ? "" : p.bodyComp);
   $("#bc-exact").addEventListener("input", () => {
@@ -5884,6 +6420,7 @@ function openBodyCompModal() {
       $$("#bc-cards .card-option").forEach(x => x.classList.remove("selected"));
     }
   });
+  wireNavyCalc("bc-exact", { sex: p.sex, height_in: state.profile.height_in });
   $("#m-cancel").addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
     const exactVal = $("#bc-exact").value.trim();
@@ -5925,6 +6462,447 @@ function maybeShowBodyCompNotice() {
   });
   $("#bc-now").addEventListener("click", () => {
     state.bodyCompNoticeSeen = true; save(); openBodyCompModal();
+  });
+}
+
+/* ============ Body measurements tracker ============
+   List view + add/edit entry + trend chart. Profile-level height (not per
+   entry) is the Navy method's third input. Saving an entry can optionally
+   apply weight + computed BF% back to the profile, keeping goal math in sync
+   without forcing duplicate edits across two surfaces. */
+let _bmEditingId = null;          // id of entry being edited, null = new
+
+function openBodyMeasurementsModal() {
+  const entries = (state.bodyMeasurements || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
+  openModal(`
+    <div class="modal-title">Body measurements</div>
+    <div class="modal-sub">Track circumferences over time. Hyalo computes body fat % (Navy method) and waist-to-hip ratio from your inputs.</div>
+    <button class="bm-add-btn" id="bm-add">+ New entry</button>
+    ${renderBmChart(entries)}
+    <div id="bm-list">${renderBmList(entries)}</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
+    </div>
+  `, "modal-tall");
+  $("#m-close")?.addEventListener("click", closeModal);
+  $("#bm-add")?.addEventListener("click", () => openMeasurementEntryModal(null));
+  $$("[data-bm-edit]").forEach(b => b.addEventListener("click", () => openMeasurementEntryModal(b.dataset.bmEdit)));
+  $("#bm-info-whr")?.addEventListener("click", openWHRInfoModal);
+}
+
+function renderBmList(entries) {
+  if (!entries.length) {
+    return `<div style="text-align:center;color:var(--ink-muted);font-size:13px;padding:24px 0;font-style:italic">No measurements yet — tap <em>+ New entry</em> to start.</div>`;
+  }
+  return entries.map(e => {
+    const d = new Date(e.ts);
+    const dateLabel = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    const whr = computeWHR(e.waist, e.hip);
+    const metrics = [];
+    if (e.weight_lb) metrics.push(`${e.weight_lb} lb`);
+    if (e.waist) metrics.push(`waist ${e.waist}″`);
+    if (e.hip) metrics.push(`hip ${e.hip}″`);
+    if (e.neck) metrics.push(`neck ${e.neck}″`);
+    const optional = [];
+    if (e.chest) optional.push(`chest ${e.chest}″`);
+    if (e.biceps) optional.push(`biceps ${e.biceps}″`);
+    if (e.thighs) optional.push(`thigh ${e.thighs}″`);
+    if (e.shoulders) optional.push(`shoulders ${e.shoulders}″`);
+    if (e.calves) optional.push(`calf ${e.calves}″`);
+    return `
+      <button class="bm-entry" data-bm-edit="${e.id}">
+        <div class="bm-entry-head">
+          <div class="bm-entry-date">${dateLabel}</div>
+          <div class="bm-entry-derived">
+            ${e.bodyFatPct ? `<span class="bf">${e.bodyFatPct}%<small> BF</small></span>` : ""}
+            ${whr ? `<span class="whr">${whr.toFixed(2)}<small> WHR</small></span>` : ""}
+          </div>
+        </div>
+        <div class="bm-entry-metrics">${metrics.join(" · ") || "—"}</div>
+        ${optional.length ? `<div class="bm-entry-metrics" style="opacity:0.75">${optional.join(" · ")}</div>` : ""}
+        ${e.notes ? `<div class="bm-entry-notes">${escapeHtml(e.notes)}</div>` : ""}
+      </button>`;
+  }).join("");
+}
+
+// Two-line trend chart: BF% (left axis tinted protein) + WHR (right axis
+// tinted water). Sparkline aesthetic — no gridlines, just labeled endpoints.
+function renderBmChart(entries) {
+  // Compute derived series. WHR uses waist+hip from each entry.
+  const bfPoints = entries.filter(e => e.bodyFatPct).map(e => ({ ts: e.ts, v: e.bodyFatPct }));
+  const whrPoints = entries
+    .map(e => ({ ts: e.ts, v: computeWHR(e.waist, e.hip) }))
+    .filter(p => p.v != null);
+  bfPoints.sort((a, b) => a.ts.localeCompare(b.ts));
+  whrPoints.sort((a, b) => a.ts.localeCompare(b.ts));
+  if (bfPoints.length < 2 && whrPoints.length < 2) {
+    return `
+      <div class="bm-chart-wrap">
+        <div class="bm-chart-head">
+          <div class="bm-chart-title">Trend</div>
+        </div>
+        <div class="bm-chart-empty">Add at least two entries to see a trend.</div>
+      </div>`;
+  }
+  const W = 600, H = 130, padX = 24, padY = 18;
+  const innerW = W - padX * 2, innerH = H - padY * 2;
+  const allTs = [...bfPoints, ...whrPoints].map(p => +new Date(p.ts));
+  const tMin = Math.min(...allTs), tMax = Math.max(...allTs);
+  const xOf = t => padX + ((t - tMin) / (tMax - tMin || 1)) * innerW;
+  const pathFor = (pts) => {
+    if (pts.length < 2) return null;
+    const vMin = Math.min(...pts.map(p => p.v));
+    const vMax = Math.max(...pts.map(p => p.v));
+    const span = (vMax - vMin) || 1;
+    const pad = span * 0.15;
+    const yOf = v => padY + (1 - (v - (vMin - pad)) / (span + 2 * pad)) * innerH;
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${xOf(+new Date(p.ts)).toFixed(1)},${yOf(p.v).toFixed(1)}`).join(" ");
+    const dots = pts.map(p => `<circle cx="${xOf(+new Date(p.ts)).toFixed(1)}" cy="${yOf(p.v).toFixed(1)}" r="3" />`).join("");
+    return { d, dots, latest: pts[pts.length - 1].v };
+  };
+  const bf = pathFor(bfPoints);
+  const whr = pathFor(whrPoints);
+  return `
+    <div class="bm-chart-wrap">
+      <div class="bm-chart-head">
+        <div class="bm-chart-title">Trend</div>
+        <div class="bm-chart-legend">
+          ${bf ? `<span><span class="swatch" style="background:var(--protein)"></span>BF ${bf.latest}%</span>` : ""}
+          ${whr ? `<span><span class="swatch" style="background:var(--water)"></span>WHR ${whr.latest.toFixed(2)}<button class="info-btn" id="bm-info-whr" aria-label="What is WHR?">i</button></span>` : ""}
+        </div>
+      </div>
+      <svg class="bm-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        ${bf ? `<path d="${bf.d}" fill="none" stroke="var(--protein)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--protein)">${bf.dots}</g>` : ""}
+        ${whr ? `<path d="${whr.d}" fill="none" stroke="var(--water)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--water)">${whr.dots}</g>` : ""}
+      </svg>
+    </div>`;
+}
+
+function openWHRInfoModal() {
+  openModal(`
+    <div class="modal-title">Waist-to-hip ratio</div>
+    <div class="goals-update-body">
+      <p>WHR divides your waist circumference by your hip circumference. It captures something neither number alone can: the <em>relative</em> distribution of mass.</p>
+      <p>It's the recomp signature. When you lose belly fat and build glutes, your waist might barely move while your hips grow — and WHR drops sharply. That ratio drop reflects a real visible shape change that "waist alone" would miss.</p>
+      <p>It's also independently meaningful for health. The WHO classifies WHR as a separate cardiovascular and metabolic risk marker, distinct from BMI:</p>
+      <p style="margin-left:8px;line-height:1.7">
+        <strong>Women:</strong> &lt;0.80 low risk · 0.80–0.85 moderate · &gt;0.85 high<br/>
+        <strong>Men:</strong> &lt;0.90 low risk · 0.90–1.00 moderate · &gt;1.00 high
+      </p>
+      <p>These thresholds reflect visceral fat distribution — the metabolically active fat around your organs. Two people with the same BMI can have very different visceral fat depending on their shape.</p>
+      <p style="font-style:italic;font-size:12.5px;color:var(--ink-muted)">Waist alone matters too: above 35″ (women) or 40″ (men) signals elevated risk regardless of hip. WHR layers shape information on top of that.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="m-close" style="width:100%">Got it</button>
+    </div>
+  `);
+  $("#m-close").addEventListener("click", openBodyMeasurementsModal);
+}
+
+function openMeasurementEntryModal(editId) {
+  _bmEditingId = editId;
+  const existing = editId ? (state.bodyMeasurements || []).find(m => m.id === editId) : null;
+  const isEdit = !!existing;
+  const p = state.profile;
+  const sex = p.sex;
+  const needsHip = navyNeedsHip(sex);
+  const today = new Date();
+  const initialDate = existing ? existing.ts.slice(0, 10) : todayKey();
+  const ht = inchesToFtIn(p.height_in);
+  const heightNeeded = !p.height_in;     // ask only if profile is missing it
+
+  const inputFor = (key) => {
+    const f = MEASUREMENT_FIELDS.find(x => x[0] === key);
+    if (!f) return "";
+    const [_, label, group, hintFn] = f;
+    if (group === "navy-f" && !needsHip) return "";
+    // 'weight' UI key maps to 'weight_lb' in storage; all others match.
+    const storageKey = key === "weight" ? "weight_lb" : key;
+    const val = existing ? (existing[storageKey] || "") : "";
+    const placeholder = key === "weight" ? "lb" : "inches";
+    const inputId = `bm-${key}`;
+    return `
+      <div class="navy-input-row">
+        <label>${label}</label>
+        <div class="input-box" style="margin:0"><label>${placeholder}</label><input type="number" inputmode="decimal" step="0.1" id="${inputId}" value="${val}" placeholder="—" /></div>
+        <div class="navy-hint">${hintFn(sex)}</div>
+      </div>`;
+  };
+
+  const heightField = heightNeeded ? `
+    <div class="navy-input-row">
+      <label>Height (one-time)</label>
+      <div class="input-row">
+        <div class="input-box"><label>Feet</label><input type="number" id="bm-ht-ft" value="" /></div>
+        <div class="input-box"><label>Inches</label><input type="number" id="bm-ht-in" step="0.5" value="" /></div>
+      </div>
+      <div class="navy-hint">Barefoot, standing tall against a wall. Heels together, eyes level forward. Saved to your profile.</div>
+    </div>` : "";
+
+  openModal(`
+    <div class="modal-title">${isEdit ? "Edit measurement" : "New measurement"}</div>
+    <div class="modal-sub">${isEdit ? "" : "Tape at end-of-exhale, snug but not compressing. Same time of day each session keeps the numbers comparable."}</div>
+
+    <div class="field">
+      <span class="field-label">Date</span>
+      <div class="input-box"><label>When</label><input type="date" id="bm-date" max="${todayKey()}" value="${initialDate}" /></div>
+    </div>
+
+    <div class="bm-section">
+      <div class="bm-section-title">Core</div>
+      ${heightField}
+      ${inputFor("weight")}
+    </div>
+
+    <div class="bm-section">
+      <div class="bm-section-title">Navy method + waist-to-hip ratio</div>
+      <div class="bm-section-sub">${needsHip
+        ? "Neck + waist + hip — computes both body fat % (Navy) and WHR."
+        : "Neck + waist — computes body fat % (Navy). Add hip to also get waist-to-hip ratio."}</div>
+      ${inputFor("neck")}
+      ${inputFor("waist")}
+      ${inputFor("hip")}
+    </div>
+
+    <div class="bm-section">
+      <div class="bm-section-title">Optional accessory</div>
+      <div class="bm-section-sub">For tracking muscle change. None of these affect the BF% calculation.</div>
+      ${inputFor("chest")}
+      ${inputFor("biceps")}
+      ${inputFor("thighs")}
+      ${inputFor("calves")}
+      ${inputFor("shoulders")}
+    </div>
+
+    <div class="bm-section">
+      <div class="bm-section-title">Notes</div>
+      <textarea id="bm-notes" placeholder="Anything to remember (time of day, hydration, etc.)" style="width:100%;min-height:56px;border-radius:10px;border:1px solid var(--border);background:var(--card);padding:10px;font-family:inherit;font-size:13px;color:var(--ink);box-sizing:border-box;resize:vertical">${existing?.notes ? escapeHtml(existing.notes) : ""}</textarea>
+    </div>
+
+    <div class="bm-derived-row" id="bm-derived-row">
+      <div class="bm-derived">
+        <small>Body fat</small>
+        <strong id="bm-bf-value">—</strong>
+      </div>
+      <div class="bm-derived">
+        <small>Waist-to-hip<button type="button" class="info-btn" id="bm-whr-info" aria-label="What is WHR?">i</button></small>
+        <strong id="bm-whr-value">—</strong>
+        <span class="bm-whr-band" id="bm-whr-band"></span>
+      </div>
+    </div>
+    <div class="bm-derived-note" id="bm-derived-note"></div>
+
+    <label class="bm-apply-row" id="bm-apply-wrap" style="display:none">
+      <input type="checkbox" id="bm-apply" checked />
+      <div class="bm-apply-row-text">
+        Apply to my profile
+        <small>Updates your profile weight and body fat %, refreshing your daily goals to match.</small>
+      </div>
+    </label>
+
+    <div class="modal-actions">
+      ${isEdit ? `<button class="btn btn-secondary" id="bm-delete" style="background:var(--protein);color:white;border-color:transparent">Delete</button>` : `<button class="btn btn-secondary" id="m-cancel">Cancel</button>`}
+      <button class="btn btn-primary" id="bm-save">${isEdit ? "Save changes" : "Save"}</button>
+    </div>
+  `);
+
+  const recomputeDerived = () => {
+    const get = (id) => {
+      const v = parseFloat($("#" + id)?.value);
+      return isNaN(v) ? null : v;
+    };
+    const neck = get("bm-neck");
+    const waist = get("bm-waist");
+    const hip = get("bm-hip");
+    const heightIn = heightNeeded
+      ? ftInToInches($("#bm-ht-ft")?.value, $("#bm-ht-in")?.value)
+      : p.height_in;
+    const bf = navyBodyFat(sex, heightIn, neck, waist, hip);
+    const whr = computeWHR(waist, hip);
+    // BF%
+    if (bf == null) {
+      $("#bm-bf-value").textContent = "—";
+    } else {
+      $("#bm-bf-value").textContent = bf + "%";
+    }
+    // WHR
+    if (whr == null) {
+      $("#bm-whr-value").textContent = "—";
+      $("#bm-whr-band").textContent = "";
+    } else {
+      $("#bm-whr-value").textContent = whr.toFixed(2);
+      const band = whrRiskBand(sex, whr);
+      $("#bm-whr-band").textContent = band ? `${band} risk` : "";
+      $("#bm-whr-band").className = "bm-whr-band band-" + (band || "");
+    }
+    // Combined note + apply visibility
+    const note = $("#bm-derived-note");
+    if (bf == null && whr == null) {
+      note.textContent = needsHip
+        ? "Fill height, neck, waist, and hip to compute."
+        : "Fill height, neck, and waist for BF%; add hip for WHR.";
+    } else if (bf != null && whr == null) {
+      note.textContent = "Add hip to also compute waist-to-hip ratio.";
+    } else if (bf == null && whr != null) {
+      note.textContent = needsHip
+        ? "Fill height and neck for body fat %."
+        : "Fill height and neck for body fat %.";
+    } else {
+      note.textContent = "Navy method estimate.";
+    }
+    $("#bm-apply-wrap").style.display = (bf != null) ? "flex" : "none";
+  };
+  ["bm-neck", "bm-waist", "bm-hip", "bm-ht-ft", "bm-ht-in"].forEach(id => {
+    $("#" + id)?.addEventListener("input", recomputeDerived);
+  });
+  recomputeDerived();
+  $("#bm-whr-info")?.addEventListener("click", openWHRInfoModal);
+
+  const close = () => openBodyMeasurementsModal();
+  $("#m-cancel")?.addEventListener("click", close);
+
+  $("#bm-delete")?.addEventListener("click", () => {
+    if (!confirm("Delete this measurement entry? This can't be undone.")) return;
+    state.bodyMeasurements = (state.bodyMeasurements || []).filter(m => m.id !== editId);
+    save();
+    showToast("Measurement deleted");
+    close();
+  });
+
+  $("#bm-save").addEventListener("click", () => {
+    const get = (id) => {
+      const v = parseFloat($("#" + id)?.value);
+      return isNaN(v) ? null : Math.round(v * 10) / 10;
+    };
+    const dateStr = $("#bm-date").value || todayKey();
+    if (dateStr > todayKey()) { showToast("Date can't be in the future"); return; }
+    // Save height to profile if user filled it.
+    if (heightNeeded) {
+      const hIn = ftInToInches($("#bm-ht-ft")?.value, $("#bm-ht-in")?.value);
+      if (hIn >= 48 && hIn <= 84) state.profile.height_in = hIn;
+    }
+    const weight = get("bm-weight");
+    if (weight != null && (weight < 50 || weight > 700)) { showToast("Weight must be between 50 and 700 lb"); return; }
+    const neck = get("bm-neck");
+    const waist = get("bm-waist");
+    const hip = get("bm-hip");
+    const bf = navyBodyFat(sex, state.profile.height_in, neck, waist, hip);
+
+    const entry = {
+      id: existing?.id || cryptoId(),
+      ts: new Date(dateStr + "T12:00:00").toISOString(),
+      weight_lb: weight,
+      neck, waist, hip,
+      chest: get("bm-chest"),
+      biceps: get("bm-biceps"),
+      thighs: get("bm-thighs"),
+      calves: get("bm-calves"),
+      shoulders: get("bm-shoulders"),
+      bodyFatPct: bf,
+      notes: $("#bm-notes").value.trim() || null,
+    };
+
+    if (!state.bodyMeasurements) state.bodyMeasurements = [];
+    if (existing) {
+      state.bodyMeasurements = state.bodyMeasurements.map(m => m.id === existing.id ? entry : m);
+    } else {
+      state.bodyMeasurements.push(entry);
+    }
+
+    // Optional: push to profile (weight + computed BF%) and reset the body-check
+    // timer since this counts as a fresh refresh of those inputs.
+    if (bf != null && $("#bm-apply").checked) {
+      if (weight) state.profile.weight_lb = Math.round(weight);
+      state.profile.bodyComp = "exact";
+      state.profile.bodyFatPct = bf;
+      resetBodyCheckTimer();
+    }
+    save();
+    showToast(isEdit ? "Measurement updated" : "Measurement saved");
+    close();
+  });
+}
+
+/* Reusable Navy calculator widget used inside the body-comp modals (Settings
+   and onboarding step 4). Expands inline; live-fills the linked exact-% input
+   as the user types. Returns the HTML string and a wireFn to attach handlers. */
+function navyCalcWidget(targetInputId, opts) {
+  const { sex, height_in } = opts;
+  const needsHip = navyNeedsHip(sex);
+  const heightKnown = !!height_in && height_in >= 48;
+  const fieldRow = (id, label, hint) => `
+    <div class="navy-input-row">
+      <label>${label}</label>
+      <div class="input-box" style="margin:0"><label>inches</label><input type="number" inputmode="decimal" step="0.1" id="${id}" placeholder="—" /></div>
+      <div class="navy-hint">${hint}</div>
+    </div>`;
+  return `
+    <button type="button" class="navy-calc-toggle" id="${targetInputId}-navy-toggle">
+      <span class="arrow">›</span><span>Calculate from measurements</span>
+    </button>
+    <div class="navy-calc-body" id="${targetInputId}-navy-body">
+      ${heightKnown ? "" : `
+        <div class="navy-input-row">
+          <label>Height (one-time)</label>
+          <div class="input-row">
+            <div class="input-box"><label>Feet</label><input type="number" id="${targetInputId}-navy-ht-ft" /></div>
+            <div class="input-box"><label>Inches</label><input type="number" step="0.5" id="${targetInputId}-navy-ht-in" /></div>
+          </div>
+          <div class="navy-hint">Barefoot, standing tall against a wall. Heels together, eyes level forward. Saved to your profile.</div>
+        </div>`}
+      ${fieldRow(`${targetInputId}-navy-neck`, "Neck", MEASUREMENT_FIELDS.find(f => f[0] === "neck")[3](sex))}
+      ${fieldRow(`${targetInputId}-navy-waist`, "Waist", MEASUREMENT_FIELDS.find(f => f[0] === "waist")[3](sex))}
+      ${needsHip ? fieldRow(`${targetInputId}-navy-hip`, "Hip", MEASUREMENT_FIELDS.find(f => f[0] === "hip")[3](sex)) : ""}
+      <div class="navy-calc-result empty" id="${targetInputId}-navy-result">Fill the fields above to compute body fat %.</div>
+    </div>
+  `;
+}
+function wireNavyCalc(targetInputId, opts) {
+  const { sex } = opts;
+  let heightIn = opts.height_in;
+  const needsHip = navyNeedsHip(sex);
+  const toggle = $("#" + targetInputId + "-navy-toggle");
+  const body = $("#" + targetInputId + "-navy-body");
+  toggle?.addEventListener("click", () => {
+    toggle.classList.toggle("expanded");
+    body.classList.toggle("open");
+  });
+  const recompute = () => {
+    const get = id => { const v = parseFloat($("#" + id)?.value); return isNaN(v) ? null : v; };
+    const neck = get(`${targetInputId}-navy-neck`);
+    const waist = get(`${targetInputId}-navy-waist`);
+    const hip = needsHip ? get(`${targetInputId}-navy-hip`) : null;
+    let h = heightIn;
+    if (!h || h < 48) {
+      h = ftInToInches($(`#${targetInputId}-navy-ht-ft`)?.value, $(`#${targetInputId}-navy-ht-in`)?.value);
+    }
+    const result = $("#" + targetInputId + "-navy-result");
+    const targetInput = $("#" + targetInputId);
+    const bf = navyBodyFat(sex, h, neck, waist, hip);
+    if (bf == null) {
+      result.classList.add("empty");
+      result.innerHTML = needsHip
+        ? "Fill height, neck, waist, and hip to compute."
+        : "Fill height, neck, and waist to compute.";
+    } else {
+      result.classList.remove("empty");
+      result.innerHTML = `<span style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-muted)">Computed</span><strong>${bf}%</strong>`;
+      if (targetInput) {
+        targetInput.value = bf;
+        // Trigger the input's own listener so dependent UI updates.
+        targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      // Persist the user-entered height to profile so future visits skip the ask.
+      if (!opts.height_in && h >= 48 && h <= 84) {
+        state.profile.height_in = h;
+        save();
+        heightIn = h;
+      }
+    }
+  };
+  [`${targetInputId}-navy-neck`, `${targetInputId}-navy-waist`, `${targetInputId}-navy-hip`,
+   `${targetInputId}-navy-ht-ft`, `${targetInputId}-navy-ht-in`].forEach(id => {
+    $("#" + id)?.addEventListener("input", recompute);
   });
 }
 
