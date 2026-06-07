@@ -5266,17 +5266,15 @@ function renderSettings() {
     <div class="settings-section">
       <div class="section-head"><span class="section-title">About</span></div>
       <div class="about-card">${ABOUT_HTML}</div>
-      ${state.priorVersionUser ? `
-        <div class="settings-card" style="margin-top:12px">
-          <button class="settings-row" id="recent-updates">
-            <div class="settings-row-info">
-              <div class="settings-row-label">Recent updates</div>
-              <div class="settings-row-value">What's changed in Hyalo lately</div>
-            </div>
-            <div class="settings-row-chev">›</div>
-          </button>
-        </div>
-      ` : ""}
+      <div class="settings-card" style="margin-top:12px">
+        <button class="settings-row" id="recent-updates">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Recent updates</div>
+            <div class="settings-row-value">What's changed in Hyalo lately</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -6294,32 +6292,22 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition tools</p>
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body measurements</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Hyalo has a complete set of features for understanding and tracking body composition. Here's the current state of all of it.</p>
-      <p><strong>Settings → Body composition.</strong> Pick a band (lower / average / higher body fat) or enter your exact percentage. Protein goals adjust to track lean mass — leaner builds get a slightly higher target, higher body fat a slightly lower one. Water goals are never affected. Don't know your body fat %? Tap <em>"Calculate from measurements →"</em> inside the modal to use the US Navy circumference formula.</p>
-      <p><strong>Settings → Body measurements.</strong> Log circumferences over time. Required Navy fields (neck + waist + hip) compute body fat % on save; optional accessory fields (chest, biceps, thighs, calves, shoulders) track muscle change. Each field has anatomical guidance for tape placement.</p>
-      <p>The trend chart shows <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together — the two derivatives that capture composition change. WHR reveals the recomp signature: when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker. Hip is available for everyone (optional for men, used for WHR). Tap the ⓘ next to WHR for details.</p>
-      <p><strong>Goal-based planner.</strong> Settings → Protein goal → Customize → <em>"Plan around a body composition goal"</em>. Project the protein your future self needs at a target body composition. Useful for active recomp — calibrates your daily protein for the body you're building rather than the body you have.</p>
-      <p><strong>Body check-in.</strong> Every 6 weeks (active goals) or 12 weeks (maintenance), Hyalo prompts you to refresh your measurements. The banner routes into the entry modal — log a fresh entry with <em>"apply to profile"</em> checked, and your goals update automatically.</p>
+      <p>Settings → Body measurements logs circumferences over time. Navy method fields (height + neck + waist + hip) compute body fat % on save; optional fields track muscle groups (chest, biceps, thighs, calves, shoulders). Each field has anatomical guidance for tape placement.</p>
+      <p>The trend chart shows <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together. WHR reveals the recomp signature — when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker (tap the ⓘ for thresholds). The body check-in prompt now routes here — log an entry with <em>apply to profile</em> checked to refresh your daily goals.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">History day detail · goals & swipe</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Tap a bar on the history chart to open that day's log — now showing the goal you were actually working toward that day, alongside what you logged. Swipe left/right (or use the ‹ › chevrons) to move between days without bouncing back to the chart.</p>
-      <p>Goals you change going forward won't retroactively rewrite past days — Hyalo locks in the day's base goal the first time you log to it. Older days from before this change fall back to your current profile.</p>
+      <p>Tap a bar on the history chart to open that day's log — now showing the goal you were actually working toward that day, alongside what you logged. Swipe left/right (or use the ‹ › chevrons) between days. Goals you change going forward won't retroactively rewrite past days; Hyalo locks in each day's goal the first time you log to it.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Water goal: a more honest baseline</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
-      <p>We've dialed the baseline from ×0.5 to ×0.4 of bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
-      <p>If you preferred the higher target, you can override it in Settings → Your goals. Your body's the best feedback signal here — pale yellow pee means you're well hydrated, regardless of the number on the ring.</p>
+      <p>Hyalo's water baseline changed from ×0.5 to ×0.4 of bodyweight — better aligned with research. Your water target may have dropped 15–20 oz. Override in Settings → Your goals if you preferred the old number. Pale yellow pee is the real signal here.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Protein goals refined</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
-      <p>Hyalo's protein targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were set a bit higher than current sports-nutrition evidence supports.</p>
-      <p>We've brought them into the well-established range for building and recomposition — roughly 1.6–2.2 g of protein per kg of bodyweight — so your daily target may have come down slightly.</p>
-      <p>This is about accuracy, not eating less: the muscle-building benefit levels off near the top of that range, so the new target lets you hit your goal without overshooting.</p>
-      <p>Your water target hasn't changed. And you can always set your own target by hand in Settings → Your goals.</p>
+      <p>Targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were calibrated down to the well-established 1.6–2.2 g/kg range. The muscle-building benefit levels off near the top of that range, so the new target is accurate without overshooting. Water unchanged. Override in Settings → Your goals.</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="ru-close" style="width:100%">Got it</button>
