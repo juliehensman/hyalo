@@ -1499,6 +1499,15 @@
     max-height: none;
     overflow-y: auto;
   }
+  /* Day-detail modal: inner wrapper is itself a flex column so the log list
+     scrolls inside it and the pinned Close button at modal bottom stays in view. */
+  .modal.modal-tall > #day-modal-inner {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .modal-title {
@@ -5540,15 +5549,21 @@ let _dayModalKey = null;
 function openDayLogModal(dayKey) {
   if (!dayKey) return;
   _dayModalKey = dayKey;
-  const initialHtml = renderDayModalShell();
-  openModal(initialHtml, "modal-tall");
+  openModal(renderDayModalShell(), "modal-tall");
   renderDayModalContent();
   wireDayModalNav();
+  $("#m-close")?.addEventListener("click", closeModal);
 }
 
 function renderDayModalShell() {
-  // The modal contents get fully redrawn on nav; this is just the outer shell.
-  return `<div id="day-modal-inner"></div>`;
+  // Two flex children of modal-tall: the swappable inner (grows + scrolls)
+  // and the pinned Close button (stays visible regardless of entry count).
+  return `
+    <div id="day-modal-inner"></div>
+    <div class="modal-actions" style="flex-shrink:0">
+      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
+    </div>
+  `;
 }
 
 function renderDayModalContent() {
@@ -5611,14 +5626,10 @@ function renderDayModalContent() {
     </div>
     ${bumpNote}
     <div class="log-list" style="margin-top:14px">${entriesHtml}</div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
-    </div>
   `;
 
   $("#day-prev")?.addEventListener("click", () => navigateDay(-1));
   $("#day-next")?.addEventListener("click", () => navigateDay(1));
-  $("#m-close")?.addEventListener("click", closeModal);
 }
 
 function navigateDay(direction) {
