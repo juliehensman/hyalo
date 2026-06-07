@@ -1892,6 +1892,105 @@
   .bm-goal-togo { font-size: 11.5px; color: var(--ink-muted); font-style: italic; }
 
   /* Body-composition goal summary band (tappable to edit) — end */
+
+  /* Goals & body hub */
+  .hub-section-label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 18px 2px 8px;
+  }
+  .hub-section-label:first-of-type { margin-top: 4px; }
+  .hub-card {
+    background: var(--card);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .hub-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    color: var(--ink);
+  }
+  .hub-card .hub-row:last-child { border-bottom: none; }
+  .hub-row.tappable { cursor: pointer; transition: background 0.15s; }
+  .hub-row.tappable:hover { background: var(--card-strong); }
+  .hub-row-label {
+    font-size: 14px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .hub-row-val {
+    margin-left: auto;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+    text-align: right;
+    line-height: 1.15;
+  }
+  .hub-row-sub {
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .hub-row-empty .hub-row-label { color: var(--ink-soft); font-size: 13.5px; }
+  .hub-chev { color: var(--ink-muted); font-size: 18px; flex-shrink: 0; margin-left: 2px; }
+  .hub-hint {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    color: var(--water);
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 8px 4px 2px;
+    cursor: pointer;
+  }
+  .hub-hint:hover { text-decoration: underline; }
+  .hub-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 13.5px;
+    padding: 14px 2px 4px;
+    cursor: pointer;
+  }
+  .hub-link:hover { color: var(--ink); }
+  .hub-link .hub-chev { margin-left: auto; }
+  .hub-revert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 13px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .hub-revert:hover { background: var(--card-strong); color: var(--ink); }
+  .hub-revert-glyph { font-size: 15px; opacity: 0.7; }
+  /* Goals & body hub — end */
+
   .bm-derived-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2950,7 +3049,7 @@ const DEFAULT_STATE = () => ({
     sex: "X", age: 35, weight_lb: 150, height_in: 0,
     activity: "moderate", goal: "maintain",
     climate: "temperate", pregnancy: "none",
-    bodyComp: "unset", bodyFatPct: null,
+    bodyComp: "unset", bodyFatPct: null, bodyFatSource: null,   // source: "navy" | "entered" | null
     dayStart: 7, windDown: 20,
   },
   goalsOverride: { water_oz: null, protein_g: null, protein_meta: null },
@@ -2999,9 +3098,11 @@ function normalizeState(data) {
     library: data.library?.length ? data.library : [...DEFAULT_LIBRARY],
     log: data.log || {},
   };
-  // Seed the shared body-fat goal from a prior planner override, so existing
-  // users who planned protein around a target BF keep that as their tracked goal.
-  if (s.bodyGoals.bodyFatPct == null && s.goalsOverride.protein_meta?.goalBFPct) {
+  // Seed the shared body-fat goal from a prior planner override — but only for
+  // users whose stored data predates the bodyGoals feature entirely. Once
+  // bodyGoals exists in saved data, respect it (including an explicit null, so a
+  // deliberately-cleared goal isn't resurrected on the next load).
+  if (data.bodyGoals === undefined && s.goalsOverride.protein_meta?.goalBFPct) {
     s.bodyGoals.bodyFatPct = s.goalsOverride.protein_meta.goalBFPct;
   }
   // Migration: old single `workout` → new `workouts: []` array
@@ -3169,6 +3270,26 @@ function bodyCompSummary(p) {
   if (p.bodyComp === "exact" && p.bodyFatPct) return `${p.bodyFatPct}% body fat`;
   if (p.bodyComp && p.bodyComp !== "unset") return BODYCOMP_LABELS[p.bodyComp];
   return "Not set";
+}
+// How the current body-fat value was set, for the hub label.
+//   exact + navy → "Navy method" · exact + entered → "entered" · band → band name
+function bodyFatSourceLabel(p) {
+  if (p.bodyComp === "exact") return p.bodyFatSource === "navy" ? "Navy method" : "entered";
+  if (p.bodyComp && p.bodyComp !== "unset") return BODYCOMP_LABELS[p.bodyComp].toLowerCase() + " estimate";
+  return null;
+}
+// Where the protein goal came from, for plain-language sourcing in the hub.
+//   no override → calculated · override + meta → planned for X% BF · else → manual
+function proteinGoalSource() {
+  if (state.goalsOverride.protein_g == null) return { key: "calculated", label: "calculated" };
+  const meta = state.goalsOverride.protein_meta;
+  if (meta?.goalBFPct) return { key: "planned", label: `planned for ${meta.goalBFPct}% BF` };
+  return { key: "manual", label: "manual" };
+}
+function waterGoalSource() {
+  return state.goalsOverride.water_oz == null
+    ? { key: "calculated", label: "calculated" }
+    : { key: "manual", label: "manual" };
 }
 
 /* ============ Breakdown row builders (shared by explainer + customize modals) ============
@@ -4284,8 +4405,6 @@ function renderToday() {
   $("#main-content").innerHTML = html;
   wireTodayHandlers();
   wireInstallBanner();
-  wireGoalsUpdateBanner();
-  wirePlannerOnbBanner();
   wireBodyCheckBanner();
   wireWindDownBanner();
   $("#open-goals-why")?.addEventListener("click", openGoalsExplainerModal);
@@ -5208,31 +5327,15 @@ function renderSettings() {
   const goals = getBaseGoals();
   const html = `
     <div class="settings-section">
-      <div class="section-head"><span class="section-title">Your goals</span></div>
+      <div class="section-head"><span class="section-title">Goals &amp; body</span></div>
       <div class="settings-card">
-        <button class="settings-row" id="edit-water-goal">
+        <button class="settings-row" id="open-goals-body">
           <div class="settings-row-info">
-            <div class="settings-row-label">Water goal</div>
-            <div class="settings-row-value">${goals.water} oz${state.goalsOverride.water_oz !== null ? " (manual)" : ""}</div>
+            <div class="settings-row-label">Goals &amp; body</div>
+            <div class="settings-row-value">${goals.water} oz · ${goals.protein} g${(state.bodyGoals.bodyFatPct != null || state.bodyGoals.whr != null) ? " · goals set" : ""}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
-        <button class="settings-row" id="edit-protein-goal">
-          <div class="settings-row-info">
-            <div class="settings-row-label">Protein goal</div>
-            <div class="settings-row-value">${goals.protein} g${state.goalsOverride.protein_g !== null ? " (manual)" : ""}</div>
-          </div>
-          <div class="settings-row-chev">›</div>
-        </button>
-        ${(state.goalsOverride.water_oz !== null || state.goalsOverride.protein_g !== null) ? `
-          <button class="settings-row settings-row-action" id="reset-goals">
-            <div class="settings-row-info">
-              <div class="settings-row-label">Use calculated goals</div>
-              <div class="settings-row-value">Revert to profile-based numbers</div>
-            </div>
-            <div class="settings-row-action-glyph">↺</div>
-          </button>
-        ` : ""}
       </div>
     </div>
 
@@ -5257,20 +5360,6 @@ function renderSettings() {
           <div class="settings-row-info">
             <div class="settings-row-label">Climate ${p.sex === "F" ? "& condition" : ""}</div>
             <div class="settings-row-value">${CLIMATE_LABELS[p.climate]}${p.sex === "F" && p.pregnancy !== "none" ? " · " + PREG_LABELS[p.pregnancy] : ""}</div>
-          </div>
-          <div class="settings-row-chev">›</div>
-        </button>
-        <button class="settings-row" id="edit-bodycomp">
-          <div class="settings-row-info">
-            <div class="settings-row-label">Body composition</div>
-            <div class="settings-row-value">${bodyCompSummary(p)} · refines protein${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
-          </div>
-          <div class="settings-row-chev">›</div>
-        </button>
-        <button class="settings-row" id="edit-measurements">
-          <div class="settings-row-info">
-            <div class="settings-row-label">Body measurements</div>
-            <div class="settings-row-value">${bodyMeasurementsSummary()}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -5366,12 +5455,8 @@ function renderSettings() {
 }
 
 function wireSettingsHandlers() {
-  $("#edit-water-goal")?.addEventListener("click", () => openGoalOverride("water"));
-  $("#edit-protein-goal")?.addEventListener("click", () => openGoalOverride("protein"));
-  $("#reset-goals")?.addEventListener("click", confirmUseCalculatedGoals);
+  $("#open-goals-body")?.addEventListener("click", () => { _bmReturnTo = openGoalsBodyHub; openGoalsBodyHub(); });
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
-  $("#edit-bodycomp")?.addEventListener("click", openBodyCompModal);
-  $("#edit-measurements")?.addEventListener("click", openBodyMeasurementsModal);
   $("#edit-daily-window")?.addEventListener("click", openDailyWindowModal);
   $("#open-install")?.addEventListener("click", openInstallModal);
   $("#share-app")?.addEventListener("click", shareApp);
@@ -5384,6 +5469,112 @@ function wireSettingsHandlers() {
     render();
   }));
   $("#recent-updates")?.addEventListener("click", openRecentUpdatesModal);
+}
+
+/* ============ Goals & body hub ============
+   One view that tells the whole story: where you are (current body comp) →
+   where you're headed (goal body comp) → your daily targets (water + protein,
+   each with its source labeled). Replaces the scattered goal/body rows; each
+   line opens its focused editor and returns here so the picture stays whole. */
+function openGoalsBodyHub() {
+  const p = state.profile;
+  const goals = getBaseGoals();
+  const g = state.bodyGoals || {};
+  const entries = (state.bodyMeasurements || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
+  const latest = entries[0] || null;
+  const curWHR = latest ? computeWHR(latest.waist, latest.hip) : null;
+  const wSrc = waterGoalSource();
+  const pSrc = proteinGoalSource();
+
+  // Current body fat value + source label.
+  let curBFval, curBFsub = "";
+  if (p.bodyComp === "exact" && p.bodyFatPct) { curBFval = `${p.bodyFatPct}%`; curBFsub = bodyFatSourceLabel(p); }
+  else if (p.bodyComp && p.bodyComp !== "unset") { curBFval = BODYCOMP_LABELS[p.bodyComp]; curBFsub = "estimate band"; }
+  else { curBFval = "Not set"; }
+
+  // Subtle nudge if the latest measurement disagrees with the profile value
+  // that actually drives goals — keeps the chart and the goal math from drifting.
+  let bfHint = "";
+  if (p.bodyComp === "exact" && p.bodyFatPct && latest?.bodyFatPct != null
+      && Math.abs(latest.bodyFatPct - p.bodyFatPct) >= 0.5) {
+    bfHint = `<button class="hub-hint" id="hub-apply-bf">Latest measurement ${latest.bodyFatPct}% — apply to profile?</button>`;
+  }
+
+  const row = (label, valHtml, { tap = "", chev = true } = {}) => `
+    <div class="hub-row${tap ? " tappable" : ""}"${tap ? ` data-hub-tap="${tap}"` : ""}>
+      <div class="hub-row-label">${label}</div>
+      <div class="hub-row-val">${valHtml}</div>
+      ${tap && chev ? `<div class="hub-chev">›</div>` : ""}
+    </div>`;
+  const valWithSub = (main, sub, tint) => `<span${tint ? ` style="color:var(--${tint})"` : ""}>${main}</span>${sub ? `<span class="hub-row-sub"> · ${sub}</span>` : ""}`;
+
+  // "Where you're headed" — either the set goals, or a prompt to set one.
+  const hasGoal = g.bodyFatPct != null || g.whr != null;
+  const goalRows = hasGoal ? `
+    ${row("Goal body fat", g.bodyFatPct != null ? valWithSub(`${g.bodyFatPct}%`, "", "protein") : `<span class="hub-row-sub">not set</span>`, { tap: "goals" })}
+    ${row("Goal waist-to-hip", g.whr != null ? valWithSub(g.whr.toFixed(2), "", "water") : `<span class="hub-row-sub">not set</span>`, { tap: "goals" })}
+  ` : `
+    <div class="hub-row tappable hub-row-empty" data-hub-tap="goals">
+      <div class="hub-row-label">Set a body fat % or WHR goal</div>
+      <div class="hub-chev">›</div>
+    </div>`;
+
+  openModal(`
+    <div class="modal-title">Goals &amp; body</div>
+
+    <div class="hub-section-label">Where you are</div>
+    <div class="hub-card">
+      ${row("Weight", `${p.weight_lb} lb`, { tap: "basics" })}
+      ${row("Body fat", valWithSub(curBFval, curBFsub), { tap: "bodycomp" })}
+      ${row("Waist-to-hip", curWHR != null ? curWHR.toFixed(2) : `<span class="hub-row-sub">log a measurement</span>`, { tap: "measurements" })}
+    </div>
+    ${bfHint}
+
+    <div class="hub-section-label">Where you're headed</div>
+    <div class="hub-card">
+      ${goalRows}
+    </div>
+
+    <div class="hub-section-label">Your daily targets</div>
+    <div class="hub-card">
+      ${row("Water", valWithSub(`${goals.water} oz`, wSrc.label, "water"), { tap: "water" })}
+      ${row("Protein", valWithSub(`${goals.protein} g`, pSrc.label, "protein"), { tap: "protein" })}
+      ${(state.goalsOverride.water_oz !== null || state.goalsOverride.protein_g !== null) ? `
+        <button class="hub-revert" id="hub-revert"><span class="hub-revert-glyph">↺</span>Use calculated goals</button>
+      ` : ""}
+    </div>
+
+    <button class="hub-link" id="hub-measurements">Measurement log &amp; trend <span class="hub-chev">›</span></button>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
+    </div>
+  `, "modal-tall");
+
+  $("#m-close")?.addEventListener("click", closeModal);
+  $("#hub-measurements")?.addEventListener("click", () => { _bmReturnTo = openGoalsBodyHub; openBodyMeasurementsModal(); });
+  $("#hub-revert")?.addEventListener("click", () => confirmUseCalculatedGoals(openGoalsBodyHub));
+  $("#hub-apply-bf")?.addEventListener("click", () => {
+    if (latest?.bodyFatPct != null) {
+      state.profile.bodyComp = "exact";
+      state.profile.bodyFatPct = latest.bodyFatPct;
+      state.profile.bodyFatSource = "navy";
+      resetBodyCheckTimer();
+      save();
+      render();
+      showToast("Profile body fat updated");
+      openGoalsBodyHub();
+    }
+  });
+  $$("[data-hub-tap]").forEach(el => el.addEventListener("click", () => {
+    const dest = el.dataset.hubTap;
+    if (dest === "bodycomp") openBodyCompModal(openGoalsBodyHub);
+    else if (dest === "goals") openBodyGoalsModal(openGoalsBodyHub);
+    else if (dest === "water") openGoalOverride("water", { returnTo: openGoalsBodyHub });
+    else if (dest === "protein") openGoalOverride("protein", { returnTo: openGoalsBodyHub });
+    else if (dest === "measurements") { _bmReturnTo = openGoalsBodyHub; openBodyMeasurementsModal(); }
+    else if (dest === "basics") openProfileEdit("basics", openGoalsBodyHub);
+  }));
 }
 
 function openGoalOverride(kind, opts = {}) {
@@ -5482,7 +5673,8 @@ function openGoalOverride(kind, opts = {}) {
   $("#inc").addEventListener("click", () => { input.value = +input.value + step; syncResetVisibility(); });
   input.addEventListener("input", syncResetVisibility);
   resetLink.addEventListener("click", () => { input.value = suggested; syncResetVisibility(); });
-  $("#m-cancel").addEventListener("click", closeModal);
+  const back = opts.returnTo || closeModal;
+  $("#m-cancel").addEventListener("click", back);
 
   // Planner wiring. lastPlannerResult tracks the currently-displayed projection
   // so we can match it against the saved value to decide whether to persist meta.
@@ -5564,13 +5756,14 @@ function openGoalOverride(kind, opts = {}) {
       }
     }
     save();
-    closeModal();
     render();
     showToast(`${title} updated`);
+    back();
   });
 }
 
-function openProfileEdit(section) {
+function openProfileEdit(section, returnTo) {
+  const back = returnTo || closeModal;
   const p = JSON.parse(JSON.stringify(state.profile));
   let inner = "";
   if (section === "basics") {
@@ -5676,7 +5869,7 @@ function openProfileEdit(section) {
     setupCardGroup("#ed-climate", v => { p.climate = v; }, p.climate);
     if (p.sex === "F") setupCardGroup("#ed-preg", v => { p.pregnancy = v; }, p.pregnancy);
   }
-  $("#m-cancel").addEventListener("click", closeModal);
+  $("#m-cancel").addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const prevWeight = state.profile.weight_lb;
     const prevGoal = state.profile.goal;
@@ -5692,9 +5885,9 @@ function openProfileEdit(section) {
     // one of the inputs the prompt would have asked about).
     if (p.weight_lb !== prevWeight || p.goal !== prevGoal) resetBodyCheckTimer();
     save();
-    closeModal();
     render();
     showToast("Profile updated");
+    back();
   });
 }
 
@@ -5721,20 +5914,21 @@ function confirmResetAll() {
 // Confirm reverting manual goal overrides back to calculated numbers. Previews
 // exactly what changes so the user sees the calculated values before losing
 // their manual ones (and only mentions the goals actually overridden).
-function confirmUseCalculatedGoals() {
+function confirmUseCalculatedGoals(returnTo) {
+  const back = returnTo || closeModal;
   const p = state.profile;
   const calcWater = computeWaterGoal(p);
   const calcProtein = computeProteinGoal(p);
   const rows = [];
   if (state.goalsOverride.water_oz !== null) {
-    rows.push(`<li>Water: <strong>${state.goalsOverride.water_oz} oz</strong> (manual) → <strong>${calcWater} oz</strong> (calculated)</li>`);
+    rows.push(`<li>Water: <strong>${state.goalsOverride.water_oz} oz</strong> (${waterGoalSource().label}) → <strong>${calcWater} oz</strong> (calculated)</li>`);
   }
   if (state.goalsOverride.protein_g !== null) {
-    rows.push(`<li>Protein: <strong>${state.goalsOverride.protein_g} g</strong> (manual) → <strong>${calcProtein} g</strong> (calculated)</li>`);
+    rows.push(`<li>Protein: <strong>${state.goalsOverride.protein_g} g</strong> (${proteinGoalSource().label}) → <strong>${calcProtein} g</strong> (calculated)</li>`);
   }
   openModal(`
     <div class="modal-title">Use calculated goals?</div>
-    <div class="modal-sub">Your manual ${rows.length > 1 ? "targets" : "target"} will be replaced by the numbers Hyalo calculates from your profile.</div>
+    <div class="modal-sub">Your ${rows.length > 1 ? "current targets" : "current target"} will be replaced by the numbers Hyalo calculates from your profile.</div>
     <ul style="margin:14px 0;padding-left:20px;line-height:1.9;font-size:14px;color:var(--ink)">${rows.join("")}</ul>
     <div class="modal-sub" style="font-size:12.5px">You can always customize again later.</div>
     <div class="modal-actions">
@@ -5742,13 +5936,13 @@ function confirmUseCalculatedGoals() {
       <button class="btn btn-primary" id="m-confirm">Use calculated</button>
     </div>
   `);
-  $("#m-cancel").addEventListener("click", closeModal);
+  $("#m-cancel").addEventListener("click", back);
   $("#m-confirm").addEventListener("click", () => {
     state.goalsOverride = { water_oz: null, protein_g: null };
     save();
-    closeModal();
     render();
     showToast("Goals reverted to calculated");
+    back();
   });
 }
 function backupData() {
@@ -6055,8 +6249,6 @@ function renderBanners(totals, goals) {
   return [
     renderWindDownBanner(totals, goals),   // time-critical: evening cram avoidance
     renderBodyCheckBanner(),                // cyclical: refresh weight/body comp
-    renderPlannerOnbBanner(),               // one-time: announce planner to existing users
-    renderGoalsUpdateBanner(),              // one-time: math notice for legacy users
     renderInstallBanner(),                  // persistent: PWA install prompt
   ].filter(html => html && html.trim()).slice(0, 2).join("");
 }
@@ -6366,7 +6558,7 @@ function openGoalsUpdateModal() {
     <div class="goals-update-body">
       <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
       <p>We've dialed the baseline from ×0.5 to ×0.4 of your bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
-      <p>If you preferred the higher target, you can override it in Settings → Your goals. And pale yellow pee is the best feedback signal there is, regardless of what the number says.</p>
+      <p>If you preferred the higher target, you can override it in Settings → Goals &amp; body. And pale yellow pee is the best feedback signal there is, regardless of what the number says.</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="gu-close" style="width:100%">Got it</button>
@@ -6379,10 +6571,14 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Goals &amp; body, in one place</p>
+      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
+      <p>Settings → <strong>Goals &amp; body</strong> now gathers everything in one view: where you are (weight, body fat %, WHR), where you're headed (goal body fat % and WHR), and your daily water and protein targets. Each target shows where its number came from — <em>calculated</em>, <em>planned for a goal body fat %</em>, or <em>manual</em> — so you can see at a glance how it all lines up instead of cross-checking separate screens. Tap any line to edit it.</p>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body measurements</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Settings → Body measurements logs circumferences over time. Navy method fields (height + neck + waist + hip) compute body fat % on save; optional fields track muscle groups (chest, biceps, thighs, calves, shoulders). Each field has anatomical guidance for tape placement.</p>
-      <p>The trend chart shows <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together. WHR reveals the recomp signature — when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker (tap the ⓘ for thresholds). The body check-in prompt now routes here — log an entry with <em>apply to profile</em> checked to refresh your daily goals.</p>
+      <p>Inside Goals &amp; body, the measurement log tracks circumferences over time. Navy method fields (height + neck + waist + hip) compute body fat % on save; optional fields track muscle groups (chest, biceps, thighs, calves, shoulders), each with anatomical guidance for tape placement.</p>
+      <p>The trend chart plots <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together, with dashed lines for any goals you set. WHR reveals the recomp signature — when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker (tap the ⓘ for thresholds).</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">History day detail · goals & swipe</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
@@ -6390,11 +6586,11 @@ function openRecentUpdatesModal() {
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Water goal: a more honest baseline</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Hyalo's water baseline changed from ×0.5 to ×0.4 of bodyweight — better aligned with research. Your water target may have dropped 15–20 oz. Override in Settings → Your goals if you preferred the old number. Pale yellow pee is the real signal here.</p>
+      <p>Hyalo's water baseline changed from ×0.5 to ×0.4 of bodyweight — better aligned with research. Your water target may have dropped 15–20 oz. Override it in Settings → Goals &amp; body if you preferred the old number. Pale yellow pee is the real signal here.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Protein goals refined</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
-      <p>Targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were calibrated down to the well-established 1.6–2.2 g/kg range. The muscle-building benefit levels off near the top of that range, so the new target is accurate without overshooting. Water unchanged. Override in Settings → Your goals.</p>
+      <p>Targets for <em>Build muscle</em> and <em>Lose fat + build muscle</em> were calibrated down to the well-established 1.6–2.2 g/kg range. The muscle-building benefit levels off near the top of that range, so the new target is accurate without overshooting. Water unchanged.</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="ru-close" style="width:100%">Got it</button>
@@ -6441,7 +6637,8 @@ function openDailyWindowModal() {
 }
 
 // Shared body-composition editor (used by Settings and the one-time notice).
-function openBodyCompModal() {
+function openBodyCompModal(returnTo) {
+  const back = returnTo || closeModal;
   const p = JSON.parse(JSON.stringify(state.profile));
   const r = bodyFatRangeLabels(p.sex);
   const cards = [
@@ -6472,15 +6669,17 @@ function openBodyCompModal() {
     </div>
   `);
   let pick = p.bodyComp;
+  let exactSource = p.bodyFatSource || "entered";   // how the exact % was set
   setupCardGroup("#bc-cards", v => { pick = v; $("#bc-exact").value = ""; }, p.bodyComp === "exact" ? "" : p.bodyComp);
   $("#bc-exact").addEventListener("input", () => {
     if ($("#bc-exact").value.trim() !== "") {
       pick = "exact";
+      exactSource = "entered";   // typing marks it entered; Navy onFill overrides below
       $$("#bc-cards .card-option").forEach(x => x.classList.remove("selected"));
     }
   });
-  wireNavyCalc("bc-exact", { sex: p.sex, height_in: state.profile.height_in });
-  $("#m-cancel").addEventListener("click", closeModal);
+  wireNavyCalc("bc-exact", { sex: p.sex, height_in: state.profile.height_in, onFill: () => { exactSource = "navy"; } });
+  $("#m-cancel").addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const exactVal = $("#bc-exact").value.trim();
     if (exactVal !== "") {
@@ -6488,16 +6687,18 @@ function openBodyCompModal() {
       if (!pct || pct < 3 || pct > 60) { showToast("Enter a body fat % between 3 and 60"); return; }
       state.profile.bodyComp = "exact";
       state.profile.bodyFatPct = Math.round(pct * 10) / 10;
+      state.profile.bodyFatSource = exactSource;
     } else {
       state.profile.bodyComp = pick || "unset";
       state.profile.bodyFatPct = null;
+      state.profile.bodyFatSource = null;
     }
     state.bodyCompNoticeSeen = true;
     resetBodyCheckTimer();
     save();
-    closeModal();
     render();
     showToast("Body composition saved");
+    back();
   });
 }
 
@@ -6530,6 +6731,7 @@ function maybeShowBodyCompNotice() {
    apply weight + computed BF% back to the profile, keeping goal math in sync
    without forcing duplicate edits across two surfaces. */
 let _bmEditingId = null;          // id of entry being edited, null = new
+let _bmReturnTo = null;           // where the measurements modal's Close returns to
 
 function openBodyMeasurementsModal() {
   const entries = (state.bodyMeasurements || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
@@ -6541,10 +6743,10 @@ function openBodyMeasurementsModal() {
     ${renderBmChart(entries)}
     <div id="bm-list">${renderBmList(entries)}</div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
+      <button class="btn btn-secondary" id="m-close" style="width:100%">${_bmReturnTo ? "Back" : "Close"}</button>
     </div>
   `, "modal-tall");
-  $("#m-close")?.addEventListener("click", closeModal);
+  $("#m-close")?.addEventListener("click", () => { (_bmReturnTo || closeModal)(); });
   $("#bm-add")?.addEventListener("click", () => openMeasurementEntryModal(null));
   $("#bm-goals")?.addEventListener("click", openBodyGoalsModal);
   $$("[data-bm-edit]").forEach(b => b.addEventListener("click", () => openMeasurementEntryModal(b.dataset.bmEdit)));
@@ -6590,7 +6792,8 @@ function fmtToGo(delta, unit) {
   return `· ${rounded}${unit} to go`;
 }
 
-function openBodyGoalsModal() {
+function openBodyGoalsModal(returnTo) {
+  const back = returnTo || openBodyMeasurementsModal;
   const g = state.bodyGoals || {};
   const p = state.profile;
   openModal(`
@@ -6611,7 +6814,7 @@ function openBodyGoalsModal() {
       <button class="btn btn-primary" id="m-save">Save goals</button>
     </div>
   `);
-  $("#m-cancel").addEventListener("click", openBodyMeasurementsModal);
+  $("#m-cancel").addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const bfRaw = $("#bg-bf").value.trim();
     const whrRaw = $("#bg-whr").value.trim();
@@ -6629,7 +6832,7 @@ function openBodyGoalsModal() {
     state.bodyGoals = { bodyFatPct: bf, whr };
     save();
     showToast("Goals saved");
-    openBodyMeasurementsModal();
+    back();
   });
 }
 
@@ -6969,6 +7172,7 @@ function openMeasurementEntryModal(editId) {
       if (weight) state.profile.weight_lb = Math.round(weight);
       state.profile.bodyComp = "exact";
       state.profile.bodyFatPct = bf;
+      state.profile.bodyFatSource = "navy";   // computed from circumferences
       resetBodyCheckTimer();
     }
     save();
@@ -7045,6 +7249,9 @@ function wireNavyCalc(targetInputId, opts) {
         targetInput.value = bf;
         // Trigger the input's own listener so dependent UI updates.
         targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+        // Fire after the synthetic input event so callers can mark the value's
+        // source as Navy (the input listener above may have set it to "entered").
+        if (opts.onFill) opts.onFill(bf);
       }
       // Persist the user-entered height to profile so future visits skip the ask.
       if (!opts.height_in && h >= 48 && h <= 84) {
