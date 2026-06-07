@@ -2963,7 +2963,7 @@ const CALC_VERSION = 3;
 const LATEST_UPDATE_DATE = "June 2026";
 const RECENT_UPDATE_DATE = "May 2026";
 // Bumped when default-library content changes, to top-up existing users once.
-const LIBRARY_SEED_VERSION = 4;
+const LIBRARY_SEED_VERSION = 5;
 const MS_PER_DAY = 86400000;
 
 const DEFAULT_LIBRARY = [
@@ -2982,7 +2982,6 @@ const DEFAULT_LIBRARY = [
   { id: "beef-tend-6oz", name: "Beef tenderloin", serving: "6 oz cooked", g: 45 },
   { id: "beef-rib-8oz", name: "Beef ribeye", serving: "8 oz cooked", g: 50 },
   { id: "beef-rib-10oz", name: "Beef ribeye", serving: "10 oz cooked", g: 62 },
-  { id: "salmon-4oz", name: "Salmon", serving: "4 oz cooked", g: 23 },
   { id: "salmon-fillet", name: "Salmon fillet", serving: "1 typical fillet, ~5 oz cooked", g: 35 },
   { id: "halibut-4oz", name: "Halibut", serving: "4 oz cooked", g: 24 },
   { id: "halibut-6oz", name: "Halibut", serving: "6 oz cooked", g: 36 },
@@ -2997,8 +2996,9 @@ const DEFAULT_LIBRARY = [
   { id: "snow-crab-1", name: "Snow crab", serving: "1 crab (no body)", g: 30 },
   { id: "king-crab-1", name: "King crab", serving: "1 crab (no body)", g: 180 },
   { id: "turkey-4oz", name: "Turkey", serving: "4 oz cooked", g: 24 },
-  { id: "pork-4oz", name: "Pork", serving: "4 oz cooked", g: 26 },
-  { id: "shrimp-4oz", name: "Shrimp", serving: "4 oz cooked", g: 24 },
+  { id: "pork-4oz", name: "Pork tenderloin", serving: "4 oz cooked", g: 26 },
+  { id: "pork-chop-4oz", name: "Pork chop", serving: "4 oz cooked", g: 28 },
+  { id: "pork-ground-4oz", name: "Ground pork", serving: "4 oz cooked", g: 24 },
   { id: "tofu-firm", name: "Tofu, firm", serving: "½ cup", g: 10 },
   { id: "lentils-1c", name: "Lentils", serving: "1 cup cooked", g: 18 },
   { id: "blackbeans-1c", name: "Black beans", serving: "1 cup cooked", g: 15 },
@@ -3174,6 +3174,29 @@ function normalizeState(data) {
         it.serving = it.serving.replace(/,\s*medium\s*$/i, "");
       }
     }
+    // v5: protein library cleanup. The generic 4 oz "Salmon" and "Shrimp"
+    // duplicated more specific entries (the 5 oz fillet and the per-shrimp
+    // sizes); drop them. Rename the bare "Pork" entry to "Pork tenderloin"
+    // (the lean cut its protein density actually matches) and add the two
+    // pork cuts most people log separately.
+    const drop = new Set(["salmon-4oz", "shrimp-4oz"]);
+    s.library = s.library.filter(it => !drop.has(it.id));
+    const pork = s.library.find(i => i.id === "pork-4oz");
+    if (pork && pork.name === "Pork") pork.name = "Pork tenderloin";
+    // Quick-add favorite rename: a "Pork / 26 g" favorite was almost certainly
+    // logged from the old generic entry — keep it in sync. User-customized
+    // pork favorites with other gram values are left alone.
+    if (s.favorites?.protein) {
+      for (const f of s.favorites.protein) {
+        if (f.name === "Pork" && f.g === 26) f.name = "Pork tenderloin";
+      }
+    }
+    const v5adds = [
+      { id: "pork-chop-4oz", name: "Pork chop", serving: "4 oz cooked", g: 28 },
+      { id: "pork-ground-4oz", name: "Ground pork", serving: "4 oz cooked", g: 24 },
+    ];
+    const v5ById = new Set(s.library.map(i => i.id));
+    for (const it of v5adds) if (!v5ById.has(it.id)) s.library.push(it);
     s.librarySeedVersion = LIBRARY_SEED_VERSION;
   }
   return s;
@@ -5346,7 +5369,7 @@ function renderSettings() {
         <button class="settings-row" data-edit="basics">
           <div class="settings-row-info">
             <div class="settings-row-label">Basics</div>
-            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age}${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""}</div>
+            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age}${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""}${p.sex === "F" && p.pregnancy !== "none" ? " · " + PREG_LABELS[p.pregnancy] : ""}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -5359,8 +5382,8 @@ function renderSettings() {
         </button>
         <button class="settings-row" data-edit="climate">
           <div class="settings-row-info">
-            <div class="settings-row-label">Climate ${p.sex === "F" ? "& condition" : ""}</div>
-            <div class="settings-row-value">${CLIMATE_LABELS[p.climate]}${p.sex === "F" && p.pregnancy !== "none" ? " · " + PREG_LABELS[p.pregnancy] : ""}</div>
+            <div class="settings-row-label">Climate</div>
+            <div class="settings-row-value">${CLIMATE_LABELS[p.climate]}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -5792,7 +5815,23 @@ function openProfileEdit(section, returnTo) {
           <div class="input-box"><label>Feet</label><input type="number" id="ed-height-ft" value="${ht.ft}" /></div>
           <div class="input-box"><label>Inches</label><input type="number" id="ed-height-in" step="0.5" value="${ht.in}" /></div>
         </div>
-      </div>`;
+      </div>
+      ${p.sex === "F" ? `
+        <div class="field">
+          <span class="field-label">Currently</span>
+          <div id="ed-preg">
+            <button class="card-option ${p.pregnancy==='none'?'selected':''}" data-val="none">
+              <div class="card-option-title">Neither</div>
+            </button>
+            <button class="card-option ${p.pregnancy==='pregnant'?'selected':''}" data-val="pregnant">
+              <div class="card-option-title">Pregnant</div>
+            </button>
+            <button class="card-option ${p.pregnancy==='breastfeeding'?'selected':''}" data-val="breastfeeding">
+              <div class="card-option-title">Breastfeeding</div>
+            </button>
+          </div>
+        </div>
+      ` : ""}`;
   } else if (section === "activity") {
     inner = `
       <div class="modal-title">Activity & goal</div>
@@ -5827,7 +5866,7 @@ function openProfileEdit(section, returnTo) {
       </div>`;
   } else if (section === "climate") {
     inner = `
-      <div class="modal-title">Climate & condition</div>
+      <div class="modal-title">Climate</div>
       <div class="field">
         <span class="field-label">Climate</span>
         <div id="ed-climate">
@@ -5838,23 +5877,7 @@ function openProfileEdit(section, returnTo) {
             <div class="card-option-title">Hot or humid</div>
           </button>
         </div>
-      </div>
-      ${p.sex === "F" ? `
-        <div class="field">
-          <span class="field-label">Currently</span>
-          <div id="ed-preg">
-            <button class="card-option ${p.pregnancy==='none'?'selected':''}" data-val="none">
-              <div class="card-option-title">Neither</div>
-            </button>
-            <button class="card-option ${p.pregnancy==='pregnant'?'selected':''}" data-val="pregnant">
-              <div class="card-option-title">Pregnant</div>
-            </button>
-            <button class="card-option ${p.pregnancy==='breastfeeding'?'selected':''}" data-val="breastfeeding">
-              <div class="card-option-title">Breastfeeding</div>
-            </button>
-          </div>
-        </div>
-      ` : ""}`;
+      </div>`;
   }
   openModal(inner + `
     <div class="modal-actions">
@@ -5863,12 +5886,12 @@ function openProfileEdit(section, returnTo) {
     </div>`);
   if (section === "basics") {
     setupChipGroup("#ed-sex", v => { p.sex = v; }, p.sex);
+    if (p.sex === "F") setupCardGroup("#ed-preg", v => { p.pregnancy = v; }, p.pregnancy);
   } else if (section === "activity") {
     setupCardGroup("#ed-activity", v => { p.activity = v; }, p.activity);
     setupCardGroup("#ed-goal", v => { p.goal = v; }, p.goal);
   } else if (section === "climate") {
     setupCardGroup("#ed-climate", v => { p.climate = v; }, p.climate);
-    if (p.sex === "F") setupCardGroup("#ed-preg", v => { p.pregnancy = v; }, p.pregnancy);
   }
   $("#m-cancel").addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
@@ -6831,8 +6854,30 @@ function openBodyGoalsModal(returnTo) {
       whr = Math.round(whr * 100) / 100;
     }
     state.bodyGoals = { bodyFatPct: bf, whr };
+    // Single source of truth: if the protein goal is planner-based, re-plan it
+    // for the new goal BF so the protein target and the goal never disagree.
+    // (Calculated or manually-typed protein goals are left alone.)
+    let proteinReplanned = false;
+    const meta = state.goalsOverride.protein_meta;
+    if (bf != null && meta?.goalBFPct != null && meta.goalBFPct !== bf) {
+      const result = projectedProteinGoal(state.profile, bf, meta.tier);
+      if (result) {
+        state.goalsOverride.protein_g = result.protein;
+        state.goalsOverride.protein_meta = {
+          goalBFPct: bf,
+          tier: meta.tier,
+          leanMass: result.leanMass,
+          muscleGain: result.muscleGain,
+          goalWeight: result.goalWeight,
+          mult: result.mult,
+          protein: result.protein,
+        };
+        proteinReplanned = true;
+      }
+    }
     save();
-    showToast("Goals saved");
+    render();
+    showToast(proteinReplanned ? `Goals saved · protein re-planned for ${bf}% BF` : "Goals saved");
     back();
   });
 }
