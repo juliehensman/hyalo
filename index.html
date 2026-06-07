@@ -1912,6 +1912,8 @@
     align-items: center;
     gap: 10px;
     padding: 13px 16px;
+    min-height: 56px;
+    box-sizing: border-box;
     border-bottom: 1px solid var(--border);
     width: 100%;
     background: none;
@@ -5327,7 +5329,6 @@ function renderSettings() {
   const goals = getBaseGoals();
   const html = `
     <div class="settings-section">
-      <div class="section-head"><span class="section-title">Goals &amp; body</span></div>
       <div class="settings-card">
         <button class="settings-row" id="open-goals-body">
           <div class="settings-row-info">
@@ -5345,7 +5346,7 @@ function renderSettings() {
         <button class="settings-row" data-edit="basics">
           <div class="settings-row-info">
             <div class="settings-row-label">Basics</div>
-            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age} · ${p.weight_lb} lb${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""}${state.lastBodyCheckTs ? ` · <span style="color:var(--ink-muted)">${bodyCheckSubtext()}</span>` : ""}</div>
+            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age}${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
