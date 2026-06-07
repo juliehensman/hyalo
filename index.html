@@ -1508,6 +1508,13 @@
     min-height: 0;
     overflow: hidden;
   }
+  /* Body measurements list: same pattern — chart pinned on top, entries scroll,
+     Close button stays visible regardless of entry count. */
+  .modal.modal-tall > #bm-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .modal-title {
@@ -6287,48 +6294,25 @@ function openRecentUpdatesModal() {
   openModal(`
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body measurements tracker</p>
+      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition tools</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Settings → Body measurements is a new place to log circumferences over time and watch them trend. The required Navy method fields (height + neck + waist, plus hip for women) auto-compute body fat % on save; optional accessory fields (chest, biceps, thighs, calves, shoulders) track how individual muscle groups change.</p>
-      <p>Each field has anatomical guidance on exactly where to put the tape — same site each session, end of a normal exhale, not pulled tight. Consistency is what makes the trend honest.</p>
-      <p>The trend chart shows <strong>body fat %</strong> and <strong>waist-to-hip ratio</strong> together — the two derivatives that capture shape change. WHR (waist ÷ hip) is what reveals the recomp signature: when waist barely moves but the hips grow, WHR drops sharply. It's also an independent WHO health risk marker (women: &lt;0.80 low risk; men: &lt;0.90 low risk). Tap the ⓘ next to WHR for the full explanation.</p>
-      <p>Hip is now available as a field for everyone (optional for men, since Navy BF % doesn't need it, but useful for WHR).</p>
-      <p>The body check-in prompt that fires every 6 / 12 weeks now routes here. Logging a fresh entry with the "apply to my profile" box checked refreshes your weight and body fat % automatically, so your daily goals stay in sync.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Navy method in body composition</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Don't know your body fat %? The Settings → Body composition modal and onboarding both now have a <em>"Calculate from measurements →"</em> expandable section. Enter your neck and waist (plus hip for women), and Hyalo computes body fat % using the US Navy circumference formula. The number drops straight into the exact-% field.</p>
-      <p>This also added a height field to your profile (collected in onboarding step 2 or editable in Settings → Basics) since Navy needs it.</p>
+      <p>Hyalo has a complete set of features for understanding and tracking body composition. Here's the current state of all of it.</p>
+      <p><strong>Settings → Body composition.</strong> Pick a band (lower / average / higher body fat) or enter your exact percentage. Protein goals adjust to track lean mass — leaner builds get a slightly higher target, higher body fat a slightly lower one. Water goals are never affected. Don't know your body fat %? Tap <em>"Calculate from measurements →"</em> inside the modal to use the US Navy circumference formula.</p>
+      <p><strong>Settings → Body measurements.</strong> Log circumferences over time. Required Navy fields (neck + waist + hip) compute body fat % on save; optional accessory fields (chest, biceps, thighs, calves, shoulders) track muscle change. Each field has anatomical guidance for tape placement.</p>
+      <p>The trend chart shows <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together — the two derivatives that capture composition change. WHR reveals the recomp signature: when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker. Hip is available for everyone (optional for men, used for WHR). Tap the ⓘ next to WHR for details.</p>
+      <p><strong>Goal-based planner.</strong> Settings → Protein goal → Customize → <em>"Plan around a body composition goal"</em>. Project the protein your future self needs at a target body composition. Useful for active recomp — calibrates your daily protein for the body you're building rather than the body you have.</p>
+      <p><strong>Body check-in.</strong> Every 6 weeks (active goals) or 12 weeks (maintenance), Hyalo prompts you to refresh your measurements. The banner routes into the entry modal — log a fresh entry with <em>"apply to profile"</em> checked, and your goals update automatically.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">History day detail · goals & swipe</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>Tap a bar on the history chart to open that day's log — now showing the goal you were actually working toward that day, alongside what you logged. Swipe left/right (or use the ‹ › chevrons) to move between days without bouncing back to the chart.</p>
       <p>Goals you change going forward won't retroactively rewrite past days — Hyalo locks in the day's base goal the first time you log to it. Older days from before this change fall back to your current profile.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition & goal planning in onboarding</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>New users can now set body composition and optionally use the goal-based planner during initial setup, before climate. Both steps are skippable — defaults are unchanged.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Plan around a body composition goal</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Settings → Protein goal → Customize now has an optional planner that targets your protein based on a future body composition instead of just your current weight. Set a goal body fat % and a muscle gain tier (Maintain / Toned / Athletic / Built), and the planner projects what your weight would be at that composition, then applies your normal goal + activity multiplier from there.</p>
-      <p>Useful if you're in active body recomp and want protein calibrated for the body you're building, not the body you have today.</p>
-      <p>The breakdown also shows up in <em>Why these goals?</em> so you can revisit how your number was built, and an <em>Edit →</em> link there opens the planner directly. Body composition must be set in your profile first (the planner needs a body fat estimate to compute lean mass). Muscle gain ranges are estimates — people vary widely.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Water goal: a more honest baseline</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
       <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
       <p>We've dialed the baseline from ×0.5 to ×0.4 of bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
       <p>If you preferred the higher target, you can override it in Settings → Your goals. Your body's the best feedback signal here — pale yellow pee means you're well hydrated, regardless of the number on the ring.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body check-in</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>If you're working toward an active goal (building, losing fat, or recomp), Hyalo will quietly check in every 6 weeks to refresh your weight and body composition — those drive the math, and they drift over time. For maintenance, it's every 12 weeks. For the "general" goal, it doesn't happen at all.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body composition setting added</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
-      <p>You can now optionally tell Hyalo about your body composition — a band (lower / average / higher body fat) or your exact percentage — in Settings → Body composition.</p>
-      <p>Protein needs track lean mass, so this fine-tunes your protein goal: it eases the target down if you carry more body fat than average, and nudges it up if you're leaner. It's entirely optional and never changes your water goal.</p>
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Protein goals refined</p>
       <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${RECENT_UPDATE_DATE}</p>
@@ -6411,7 +6395,7 @@ function openBodyCompModal() {
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Save</button>
     </div>
-  `, "modal-tall");
+  `);
   let pick = p.bodyComp;
   setupCardGroup("#bc-cards", v => { pick = v; $("#bc-exact").value = ""; }, p.bodyComp === "exact" ? "" : p.bodyComp);
   $("#bc-exact").addEventListener("input", () => {
