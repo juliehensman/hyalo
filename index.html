@@ -1362,6 +1362,14 @@
     font-size: 18px;
     flex-shrink: 0;
   }
+  /* Action rows (e.g. "Use calculated goals") fire an action rather than
+     navigate — a revert glyph instead of a chevron signals that difference. */
+  .settings-row-action-glyph {
+    color: var(--ink-muted);
+    font-size: 17px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
   .about-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -5169,12 +5177,12 @@ function renderSettings() {
           <div class="settings-row-chev">›</div>
         </button>
         ${(state.goalsOverride.water_oz !== null || state.goalsOverride.protein_g !== null) ? `
-          <button class="settings-row" id="reset-goals">
+          <button class="settings-row settings-row-action" id="reset-goals">
             <div class="settings-row-info">
               <div class="settings-row-label">Use calculated goals</div>
               <div class="settings-row-value">Revert to profile-based numbers</div>
             </div>
-            <div class="settings-row-chev">›</div>
+            <div class="settings-row-action-glyph">↺</div>
           </button>
         ` : ""}
       </div>
@@ -5312,12 +5320,7 @@ function renderSettings() {
 function wireSettingsHandlers() {
   $("#edit-water-goal")?.addEventListener("click", () => openGoalOverride("water"));
   $("#edit-protein-goal")?.addEventListener("click", () => openGoalOverride("protein"));
-  $("#reset-goals")?.addEventListener("click", () => {
-    state.goalsOverride = { water_oz: null, protein_g: null };
-    save();
-    render();
-    showToast("Goals reverted to calculated");
-  });
+  $("#reset-goals")?.addEventListener("click", confirmUseCalculatedGoals);
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#edit-bodycomp")?.addEventListener("click", openBodyCompModal);
   $("#edit-measurements")?.addEventListener("click", openBodyMeasurementsModal);
@@ -5663,7 +5666,39 @@ function confirmResetAll() {
   });
 }
 
-/* ============ Backup / restore ============ */
+// Confirm reverting manual goal overrides back to calculated numbers. Previews
+// exactly what changes so the user sees the calculated values before losing
+// their manual ones (and only mentions the goals actually overridden).
+function confirmUseCalculatedGoals() {
+  const p = state.profile;
+  const calcWater = computeWaterGoal(p);
+  const calcProtein = computeProteinGoal(p);
+  const rows = [];
+  if (state.goalsOverride.water_oz !== null) {
+    rows.push(`<li>Water: <strong>${state.goalsOverride.water_oz} oz</strong> (manual) → <strong>${calcWater} oz</strong> (calculated)</li>`);
+  }
+  if (state.goalsOverride.protein_g !== null) {
+    rows.push(`<li>Protein: <strong>${state.goalsOverride.protein_g} g</strong> (manual) → <strong>${calcProtein} g</strong> (calculated)</li>`);
+  }
+  openModal(`
+    <div class="modal-title">Use calculated goals?</div>
+    <div class="modal-sub">Your manual ${rows.length > 1 ? "targets" : "target"} will be replaced by the numbers Hyalo calculates from your profile.</div>
+    <ul style="margin:14px 0;padding-left:20px;line-height:1.9;font-size:14px;color:var(--ink)">${rows.join("")}</ul>
+    <div class="modal-sub" style="font-size:12.5px">You can always customize again later.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="m-confirm">Use calculated</button>
+    </div>
+  `);
+  $("#m-cancel").addEventListener("click", closeModal);
+  $("#m-confirm").addEventListener("click", () => {
+    state.goalsOverride = { water_oz: null, protein_g: null };
+    save();
+    closeModal();
+    render();
+    showToast("Goals reverted to calculated");
+  });
+}
 function backupData() {
   const payload = {
     app: "hyalo",
