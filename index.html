@@ -6091,7 +6091,7 @@ function openDataInfoModal() {
 /* ============ Share the app ============ */
 function shareApp() {
   const url = location.origin + location.pathname;
-  const text = "Hyalo is a quiet tracker for water and protein. It's a web app — nothing to download. Open the link in your browser, and add it to your home screen if you want it to work like a regular app.";
+  const text = "Hyalo helps you tend to water and protein — the two essentials that form most of the body. Open the link in any browser, and add it to your home screen if you'd like it to work like any other app.";
   if (navigator.share) {
     navigator.share({ title: "Hyalo", text, url }).catch(() => {});
   } else if (navigator.clipboard) {
