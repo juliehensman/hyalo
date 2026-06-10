@@ -140,6 +140,45 @@
     margin-bottom: 12px;
   }
   .onb-welcome h1 { font-size: 64px; margin-top: 80px; }
+
+  /* App-opening splash overlay — sized to cover the whole viewport, sitting
+     above everything. Visible by default; init() either hides it instantly
+     (subsequent opens, not-yet-onboarded) or plays splash-anim once and
+     then removes it. The animation holds the brand briefly then fades. */
+  #splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  #splash.splash-show {
+    animation: splash-anim 1.4s ease forwards;
+  }
+  @keyframes splash-anim {
+    0% { opacity: 1; }
+    78% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .splash-inner { text-align: center; padding: 0 24px; }
+  .splash-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 64px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .splash-dot { color: var(--protein); }
+  .splash-tag {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+  }
   .onb-welcome .tagline {
     font-family: var(--font-display);
     font-style: italic;
@@ -147,6 +186,18 @@
     color: var(--ink-soft);
     margin-top: 8px;
     margin-bottom: auto;
+  }
+  /* The welcome's etymology paragraph echoes the About card: italic display
+     face for emphasized terms, normal-upright display face for the Greek. */
+  .onb-welcome .onb-sub em {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--ink);
+  }
+  .onb-welcome .onb-sub .greek {
+    font-family: var(--font-display);
+    font-style: normal;
+    color: var(--ink);
   }
   .onb-sub {
     font-size: 15px;
@@ -2642,6 +2693,20 @@
 </style>
 </head>
 <body>
+
+<!-- App-opening splash: a daily brand moment. Visible by default; the JS in
+     init() decides to play the fade animation (first open of the day) or
+     hide immediately (subsequent opens within the same day, and for any
+     not-yet-onboarded user — for them, the welcome page is the brand
+     moment). Built as an overlay so the main app shell is hidden underneath
+     while it's on. -->
+<div id="splash" aria-hidden="true">
+  <div class="splash-inner">
+    <div class="splash-title">Hyalo<span class="splash-dot">.</span></div>
+    <div class="splash-tag">Clarity, one glass at a time.</div>
+  </div>
+</div>
+
 <div class="app">
 
 <!-- ============ ONBOARDING ============ -->
@@ -2653,7 +2718,8 @@
     <div class="onb-step onb-welcome active" data-step="1">
       <h1>Hyalo<span style="color:var(--protein)">.</span></h1>
       <div class="tagline">Clarity, one glass at a time.</div>
-      <p class="onb-sub" style="margin-bottom:0">Water and protein — the two essentials that form most of the body. Hyalo helps you tend to both. A few questions to set your goals, and then it steps aside.</p>
+      <p class="onb-sub" style="margin-bottom:0"><em>Hyalo</em> — from the Greek <span class="greek">ὕαλος</span> (hyalos), meaning <em>glass</em>. The same root behind <em>hyaloplasm</em> — the clear water-and-protein matrix at the center of every cell — the two essentials that form most of the body itself.</p>
+      <p class="onb-sub" style="margin-top:18px;margin-bottom:0">A few questions to set your goals.</p>
       <div class="onb-actions">
         <button class="btn btn-primary" data-next="2">Begin</button>
       </div>
@@ -2938,6 +3004,10 @@
       <button class="tab" data-tab="history">
         <svg viewBox="0 0 24 24"><path d="M4 19V9m6 10V5m6 14v-6m6 6V11"/></svg>
         History
+      </button>
+      <button class="tab" data-tab="body">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="2.5"/><path d="M7 22v-6.5L5.5 14V11a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v3l-1.5 1.5V22"/></svg>
+        Body
       </button>
       <button class="tab" data-tab="settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -3236,18 +3306,28 @@ function save() {
 }
 
 /* ============ Calculator ============ */
+// Reference weight (lb) the original flat-oz adders were calibrated for.
+// Multiplying activity + climate bumps by (weight_lb / WATER_BUMP_REF)
+// keeps the 150-lb numbers identical and scales honestly for other
+// weights — a 250-lb athlete really does need more than a 100-lb one.
+// Pregnancy/breastfeeding bumps stay flat: those are life-stage demands.
+const WATER_BUMP_REF = 150;
 function computeWaterGoal(p) {
   let oz = p.weight_lb * 0.4;
-  oz += { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
-  if (p.climate === "hot") oz += 16;
+  const scale = p.weight_lb / WATER_BUMP_REF;
+  const activity150 = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
+  oz += activity150 * scale;
+  if (p.climate === "hot") oz += 16 * scale;
   if (p.pregnancy === "pregnant") oz += 24;
   if (p.pregnancy === "breastfeeding") oz += 32;
   return Math.round(oz);
 }
 function waterBreakdown(p) {
   const baseline = Math.round(p.weight_lb * 0.4);
-  const activityBump = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
-  const climateBump = p.climate === "hot" ? 16 : 0;
+  const scale = p.weight_lb / WATER_BUMP_REF;
+  const activity150 = { sedentary: 0, light: 4, moderate: 8, high: 12, athlete: 16 }[p.activity];
+  const activityBump = Math.round(activity150 * scale);
+  const climateBump = p.climate === "hot" ? Math.round(16 * scale) : 0;
   const pregBump = p.pregnancy === "pregnant" ? 24 : (p.pregnancy === "breastfeeding" ? 32 : 0);
   const parts = [`Baseline ${baseline}oz (weight × 0.4)`];
   if (activityBump) parts.push(`Activity +${activityBump}oz (${ACTIVITY_LABELS[p.activity].toLowerCase()})`);
@@ -5495,7 +5575,7 @@ function renderSettings() {
 }
 
 function wireSettingsHandlers() {
-  $("#open-goals-body")?.addEventListener("click", () => { _bmReturnTo = openGoalsBodyHub; openGoalsBodyHub(); });
+  $("#open-goals-body")?.addEventListener("click", () => openGoalsBodyHub());
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#edit-daily-window")?.addEventListener("click", openDailyWindowModal);
   $("#open-install")?.addEventListener("click", openInstallModal);
@@ -5592,7 +5672,7 @@ function openGoalsBodyHub() {
   `);
 
   $("#m-close")?.addEventListener("click", closeModal);
-  $("#hub-measurements")?.addEventListener("click", () => { _bmReturnTo = openGoalsBodyHub; openBodyMeasurementsModal(); });
+  $("#hub-measurements")?.addEventListener("click", () => { closeModal(); switchTab("body"); });
   $("#hub-revert")?.addEventListener("click", () => confirmUseCalculatedGoals(openGoalsBodyHub));
   $("#hub-apply-bf")?.addEventListener("click", () => {
     if (latest?.bodyFatPct != null) {
@@ -5612,7 +5692,7 @@ function openGoalsBodyHub() {
     else if (dest === "goals") openBodyGoalsModal(openGoalsBodyHub);
     else if (dest === "water") openGoalOverride("water", { returnTo: openGoalsBodyHub });
     else if (dest === "protein") openGoalOverride("protein", { returnTo: openGoalsBodyHub });
-    else if (dest === "measurements") { _bmReturnTo = openGoalsBodyHub; openBodyMeasurementsModal(); }
+    else if (dest === "measurements") { closeModal(); switchTab("body"); }
     else if (dest === "basics") openProfileEdit("basics", openGoalsBodyHub);
   }));
 }
@@ -6759,24 +6839,25 @@ function maybeShowBodyCompNotice() {
    apply weight + computed BF% back to the profile, keeping goal math in sync
    without forcing duplicate edits across two surfaces. */
 let _bmEditingId = null;          // id of entry being edited, null = new
-let _bmReturnTo = null;           // where the measurements modal's Close returns to
 
-function openBodyMeasurementsModal() {
+/* ============ Render: Body ============
+   Full-page measurements view (promoted from a Settings modal). Shows the
+   goal-summary band, a + New entry button, the trend chart, and the
+   measurement log taking the bulk of the screen. The list breathes on a
+   real page in a way it never could in a modal. */
+function renderBody() {
   const entries = (state.bodyMeasurements || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
-  openModal(`
-    <div class="modal-title">Body measurements</div>
-    <div class="modal-sub">Track circumferences over time. Hyalo computes body fat % (Navy method) and waist-to-hip ratio from your inputs.</div>
-    ${renderBmGoalSummary(entries)}
-    <button class="bm-add-btn" id="bm-add">+ New entry</button>
-    ${renderBmChart(entries)}
-    <div id="bm-list">${renderBmList(entries)}</div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="m-close" style="width:100%">${_bmReturnTo ? "Back" : "Close"}</button>
+  const html = `
+    <div class="body-page">
+      ${renderBmGoalSummary(entries)}
+      <button class="bm-add-btn" id="bm-add">+ New entry</button>
+      ${renderBmChart(entries)}
+      <div id="bm-list">${renderBmList(entries)}</div>
     </div>
-  `, "modal-tall");
-  $("#m-close")?.addEventListener("click", () => { (_bmReturnTo || closeModal)(); });
+  `;
+  $("#main-content").innerHTML = html;
   $("#bm-add")?.addEventListener("click", () => openMeasurementEntryModal(null));
-  $("#bm-goals")?.addEventListener("click", openBodyGoalsModal);
+  $("#bm-goals")?.addEventListener("click", () => openBodyGoalsModal());
   $$("[data-bm-edit]").forEach(b => b.addEventListener("click", () => openMeasurementEntryModal(b.dataset.bmEdit)));
   $("#bm-info-whr")?.addEventListener("click", openWHRInfoModal);
 }
@@ -6821,7 +6902,7 @@ function fmtToGo(delta, unit) {
 }
 
 function openBodyGoalsModal(returnTo) {
-  const back = returnTo || openBodyMeasurementsModal;
+  const back = returnTo || (() => { closeModal(); render(); });
   const g = state.bodyGoals || {};
   const p = state.profile;
   openModal(`
@@ -7003,7 +7084,7 @@ function openWHRInfoModal() {
       <button class="btn btn-primary" id="m-close" style="width:100%">Got it</button>
     </div>
   `);
-  $("#m-close").addEventListener("click", openBodyMeasurementsModal);
+  $("#m-close").addEventListener("click", closeModal);
 }
 
 function openMeasurementEntryModal(editId) {
@@ -7165,7 +7246,7 @@ function openMeasurementEntryModal(editId) {
   recomputeDerived();
   $("#bm-whr-info")?.addEventListener("click", openWHRInfoModal);
 
-  const close = () => openBodyMeasurementsModal();
+  const close = () => { closeModal(); render(); };
   $("#m-cancel")?.addEventListener("click", close);
 
   $("#bm-delete")?.addEventListener("click", () => {
@@ -7322,11 +7403,12 @@ function render() {
   // Header bits
   $("#greeting").textContent = greetingText();
   $("#header-date").textContent = fmtDateLong();
-  const titleMap = { today: "Today", history: "History", settings: "Settings" };
+  const titleMap = { today: "Today", history: "History", body: "Body", settings: "Settings" };
   $("#page-title").textContent = titleMap[state.currentTab] || "Today";
   // Tab content
   if (state.currentTab === "today") renderToday();
   else if (state.currentTab === "history") renderHistory();
+  else if (state.currentTab === "body") renderBody();
   else if (state.currentTab === "settings") renderSettings();
 }
 
@@ -7358,6 +7440,7 @@ if (window.matchMedia) {
 function init() {
   load();
   applyTheme();
+  maybeShowSplash();
   if (!state.hasOnboarded) {
     switchView("onboarding");
     initOnboarding();
@@ -7380,12 +7463,36 @@ function init() {
     window.visualViewport.addEventListener("resize", syncModalViewport);
     window.visualViewport.addEventListener("scroll", syncModalViewport);
   }
-  // Refresh on visibility change (e.g., next morning)
+  // Refresh on visibility change (e.g., next morning). If a new day has rolled
+  // over while the app was backgrounded, the splash plays again — the daily
+  // ritual lands at the user's first foreground glance of the day.
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && state.hasOnboarded) render();
+    if (!document.hidden && state.hasOnboarded) {
+      maybeShowSplash();
+      render();
+    }
   });
   // Auto-refresh every minute so day rollovers and greetings stay accurate
   setInterval(() => { if (state.hasOnboarded) render(); }, 60000);
+}
+
+/* ============ App-opening splash ============
+   Plays the brand moment once per day on the user's first foreground glance.
+   Skips entirely for not-yet-onboarded users (the welcome page is their
+   brand moment) and for any subsequent opens within the same day. */
+function maybeShowSplash() {
+  const splash = document.getElementById("splash");
+  if (!splash) return;
+  if (!state.hasOnboarded) { splash.style.display = "none"; return; }
+  const today = todayKey();
+  const last = localStorage.getItem("hyalo-splash-date");
+  if (last === today) { splash.style.display = "none"; return; }
+  localStorage.setItem("hyalo-splash-date", today);
+  splash.style.display = "flex";
+  splash.classList.remove("splash-show");
+  void splash.offsetWidth;                       // restart the animation
+  splash.classList.add("splash-show");
+  setTimeout(() => { splash.style.display = "none"; }, 1450);
 }
 init();
 </script>
