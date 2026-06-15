@@ -413,6 +413,36 @@
   .header {
     padding: calc(20px + env(safe-area-inset-top)) 24px 4px;
   }
+  /* Persistent health-disclaimer banner — sits under the header until the
+     user acknowledges. Hidden by default; .show reveals it. */
+  .disclaimer-banner {
+    display: none;
+    width: calc(100% - 32px);
+    margin: 10px 16px 0;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--protein);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .disclaimer-banner.show { display: block; }
+  .disclaimer-banner:hover { background: var(--card-hover); }
+  .disclaimer-banner-text {
+    display: block;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+  .disclaimer-banner-cta {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--protein);
+  }
   .header-eyebrow {
     font-size: 11.5px;
     text-transform: uppercase;
@@ -3098,6 +3128,11 @@
     <div class="header-date" id="header-date">—</div>
   </header>
 
+  <button class="disclaimer-banner" id="disclaimer-banner">
+    <span class="disclaimer-banner-text">Hyalo provides general information, not medical advice.</span>
+    <span class="disclaimer-banner-cta">Review &amp; acknowledge ›</span>
+  </button>
+
   <main id="main-content"></main>
 
   <div class="footer-blip" id="footer-blip">Clarity, one glass at a time.</div>
@@ -4750,7 +4785,7 @@ function skipOnboarding() {
   save();
   switchView("main");
   render();
-  showDisclaimerGate();
+  updateDisclaimerBanner();
 }
 
 /* ============ View switching ============ */
@@ -7272,7 +7307,15 @@ function openLearnTopicModal(topicId, returnTo) {
 }
 
 /* ============ Health disclaimer ============ */
-// One-time acknowledgment gate — non-dismissable, requires the explicit tap.
+// Mark acknowledged, persist, hide the banner, and close the modal.
+function acknowledgeDisclaimer() {
+  state.disclaimerAck = true;
+  save();
+  updateDisclaimerBanner();
+  closeModal();
+}
+// One-time acknowledgment gate — non-dismissable. Shown once, immediately
+// after onboarding completes.
 function showDisclaimerGate() {
   openModal(`
     <div class="modal-title">Before you start</div>
@@ -7282,29 +7325,31 @@ function showDisclaimerGate() {
       <button class="btn btn-primary" id="disc-ack" style="width:100%">I understand</button>
     </div>
   `, "", { noBackdropClose: true });
-  $("#disc-ack")?.addEventListener("click", () => {
-    state.disclaimerAck = true;
-    save();
-    closeModal();
-  });
+  $("#disc-ack")?.addEventListener("click", acknowledgeDisclaimer);
 }
-// Reference view, opened any time from Settings → About. Dismissable.
+// Dismissable disclosure, opened from the persistent banner or Settings → About.
+// Offers acknowledgment until accepted; afterward it's just a reference view.
 function openDisclaimerModal(returnTo) {
   const back = returnTo || closeModal;
+  const acked = state.disclaimerAck;
   openModal(`
     <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Health disclaimer</div>
     <div class="goals-update-body">${DISCLAIMER_FULL_HTML}</div>
     <div class="modal-actions">
-      <button class="btn btn-primary" id="m-close" style="width:100%">Got it</button>
+      <button class="btn btn-primary" id="disc-ack" style="width:100%">${acked ? "Got it" : "I understand"}</button>
     </div>
   `);
   $("#top-back")?.addEventListener("click", back);
-  $("#m-close")?.addEventListener("click", back);
+  $("#disc-ack")?.addEventListener("click", () => {
+    if (!state.disclaimerAck) acknowledgeDisclaimer(); else back();
+  });
 }
-// Show the gate once, after onboarding, if not yet acknowledged.
-function maybeShowDisclaimerGate() {
-  if (state.hasOnboarded && !state.disclaimerAck) showDisclaimerGate();
+// Show/hide the persistent top banner based on acknowledgment state.
+function updateDisclaimerBanner() {
+  const b = document.getElementById("disclaimer-banner");
+  if (!b) return;
+  b.classList.toggle("show", !!state.hasOnboarded && !state.disclaimerAck);
 }
 
 // Daily-window editor — controls dayStart/windDown used for pacing.
@@ -8021,6 +8066,7 @@ function render() {
   else if (state.currentTab === "history") renderHistory();
   else if (state.currentTab === "body") renderBody();
   else if (state.currentTab === "settings") renderSettings();
+  updateDisclaimerBanner();
 }
 
 /* ============ Theme (light / dark / system) ============ */
@@ -8058,14 +8104,11 @@ function init() {
   } else {
     switchView("main");
     render();
-    // Health disclaimer takes priority: show the one-time gate before any other
-    // notice. Other notices resume on the next open, once acknowledged.
-    if (!state.disclaimerAck) {
-      showDisclaimerGate();
-    } else {
-      setTimeout(maybeShowBodyCompNotice, 600);
-    }
+    setTimeout(maybeShowBodyCompNotice, 600);
   }
+  // Persistent health-disclaimer banner: wire its tap and set initial state.
+  $("#disclaimer-banner")?.addEventListener("click", () => openDisclaimerModal());
+  updateDisclaimerBanner();
   // Tab navigation
   $$(".tab").forEach(t => t.addEventListener("click", () => switchTab(t.dataset.tab)));
   // Toast: tap anywhere to dismiss; tap Undo to undo (event delegation)
