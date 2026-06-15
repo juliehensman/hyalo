@@ -1450,6 +1450,68 @@
     font-size: 18px;
     color: var(--ink);
   }
+
+  /* Learn: glossary list + topic cards */
+  .learn-cat-label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 22px 2px 10px;
+  }
+  .learn-list > .learn-cat-label:first-child { margin-top: 4px; }
+  .learn-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 15px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .learn-card:hover { background: var(--card-strong); border-color: var(--ink-faint, var(--border)); }
+  .learn-card-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+  .learn-card-summary {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .learn-card-more {
+    font-size: 12.5px;
+    color: var(--protein);
+    margin-top: 9px;
+  }
+
+  /* Inline info icon — tappable ⓘ next to labels/values that have a
+     corresponding Learn topic. Small, unobtrusive, stops row propagation. */
+  .info-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 1px solid var(--ink-muted);
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-style: italic;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1;
+    background: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .info-dot:hover { color: var(--ink); border-color: var(--ink); }
   .danger-btn {
     width: 100%;
     padding: 12px;
@@ -1576,6 +1638,21 @@
   }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  /* Top back affordance for long-form modals (e.g. measurement entry) so
+     users don't have to scroll to the bottom Cancel button just to exit. */
+  .modal-back {
+    background: none;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink-muted);
+    padding: 0;
+    margin: 0 0 14px;
+    cursor: pointer;
+    display: inline-block;
+  }
+  .modal-back:hover { color: var(--ink); }
+
   .modal-title {
     font-family: var(--font-display);
     font-style: italic;
@@ -1853,6 +1930,16 @@
     color: var(--ink-muted);
     line-height: 1.4;
   }
+  .bm-entry-risk {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+    text-align: right;
+    margin: -2px 0 6px;
+    text-transform: lowercase;
+  }
+  .bm-entry-risk.band-low  { color: var(--sage, #6b8e6b); }
+  .bm-entry-risk.band-high { color: var(--protein); }
   .bm-entry-notes {
     font-size: 11.5px;
     color: var(--ink-muted);
@@ -3112,6 +3199,348 @@ const ABOUT_HTML = `
   The same root behind <em>hyaloplasm</em> — the clear water-and-protein matrix at the center of every cell — the two essentials that form most of the body itself.
   <span class="closer">Clarity, one glass at a time.</span>
 `;
+
+/* ============ Learn: glossary / topic library ============
+   Two-tier reference content. Each topic shows a concise summary on the Learn
+   list; "Learn more" opens a medium-depth explanation. Content is educational
+   and general — it describes the science the app is built on, not personal
+   medical advice. Ranges are typical, not prescriptive; individual needs vary.
+   Detail HTML reuses the .goals-update-body prose style. */
+const LEARN_CATEGORIES = [
+  {
+    name: "Water",
+    topics: [
+      {
+        id: "water-why",
+        title: "Why water matters",
+        summary: "Water is about 60% of your body and the medium nearly every process runs in — circulation, temperature, joints, waste removal. Even mild dehydration measurably dents energy, focus, and performance.",
+        detail: `
+          <p>Water is the solvent of life. Roughly 60% of an adult's body weight is water, and it's the medium in which nearly every biochemical reaction takes place. Blood, which carries oxygen and nutrients to every cell, is about 90% water.</p>
+          <p>It regulates temperature. When you heat up — from exercise, weather, or simply living — you sweat, and the evaporation cools you. That cooling costs water, which is why heat and activity raise your needs.</p>
+          <p>It cushions and lubricates. Water-based fluid protects your joints, surrounds your organs, and keeps tissues like the discs in your spine pliable. It also moves waste out, through the kidneys and the digestive tract.</p>
+          <p>The cost of running low is real and quick. A fluid loss of just 1–2% of body weight — the point where you'd start feeling thirsty — is enough to measurably reduce concentration, mood, and physical output. You don't have to be severely dehydrated to feel it.</p>
+          <p>How much you actually need isn't a fixed number. It shifts with your size, your activity, the climate, and even how much water-rich food you eat. A target is a starting point; your body's signals are the real gauge.</p>
+        `,
+      },
+      {
+        id: "water-goal",
+        title: "How your water goal is calculated",
+        summary: "Hyalo starts from 0.4 ounces per pound of bodyweight, then adds for activity and hot climates — both scaled to your size. It's a research-aligned baseline, not a rigid rule.",
+        detail: `
+          <p>The baseline is your bodyweight in pounds times 0.4, in ounces. For a 150-lb person that's 60 oz. This sits in the middle of mainstream guidance and replaced an earlier, higher 0.5 multiplier that tended to overshoot for most people.</p>
+          <p>It scales with bodyweight because larger bodies genuinely hold and turn over more water — more blood volume, more tissue, more surface area losing moisture. A flat "eight glasses for everyone" ignores that a 120-lb and a 220-lb person have very different needs.</p>
+          <p>Activity adds to the baseline, and that addition also scales to your size, because a heavier body sweats more for the same effort. Harder and longer training pushes the number up; a sedentary day leaves it at baseline.</p>
+          <p>Hot or humid climate adds more still, since you lose water faster through sweat and breathing. Pregnancy and breastfeeding add a fixed amount on top, reflecting the extra demand of those stages rather than anything weight-driven.</p>
+          <p>None of this is a rule you must hit to the ounce. The most honest hydration signal is pale-straw urine — if it's consistently darker, drink more; if it's clear all day, you can ease off. The number is scaffolding; your body has the final say.</p>
+        `,
+      },
+      {
+        id: "water-exercise",
+        title: "Hydration and exercise",
+        summary: "Exercise raises water needs through sweat, which varies hugely by person, intensity, and heat. A practical target during sustained activity is roughly 16–32 oz per hour — replacing what you lose, not overdrinking.",
+        detail: `
+          <p>Sweat rate is highly individual. Two people doing the same workout in the same room can lose very different amounts of fluid — anywhere from under a pint to over a quart per hour depending on body size, fitness, acclimatization, and heat.</p>
+          <p>During sustained activity, a workable range is about 16–32 oz per hour, leaning toward the higher end in heat or for harder efforts. Sports-medicine guidance often frames this as small, frequent sips — on the order of 6–10 oz every 15 minutes — rather than one large drink.</p>
+          <p>The goal is replacement, not flooding. Drinking far beyond what you lose doesn't improve performance and, in extreme cases over many hours, can dilute blood sodium dangerously. Match intake to output rather than chasing a big number.</p>
+          <p>For efforts under about an hour, plain water is usually enough. Beyond that — or in serious heat with heavy sweating — replacing electrolytes alongside fluid starts to matter, because you're losing salts as well as water.</p>
+          <p>A simple feedback loop: weigh yourself before and after a long session. A drop of about a pound equals roughly 16 oz of fluid lost. Over time that tells you your personal sweat rate better than any formula.</p>
+        `,
+      },
+      {
+        id: "water-dehydration",
+        title: "Signs of dehydration",
+        summary: "Thirst, dark urine, fatigue, headache, and trouble concentrating are the early signals. Urine color — pale straw is the goal — is the most practical day-to-day gauge.",
+        detail: `
+          <p>Thirst is the first and most obvious cue, but it lags slightly behind actual need — by the time you feel it, you're often already mildly down. It's a reliable prompt, just not an early-warning system.</p>
+          <p>Urine color is the most practical everyday gauge. Pale straw or light yellow means well-hydrated; dark amber means drink more. (Some vitamins and foods can tint it temporarily, so it's a trend signal, not a single-reading verdict.)</p>
+          <p>Mild dehydration shows up as fatigue, headache, reduced concentration, and a dip in mood or motivation — effects that appear before any dramatic symptoms. People often misread these as tiredness or low blood sugar when the fix is simply water.</p>
+          <p>More pronounced dehydration brings dizziness, a dry mouth, rapid heartbeat, and dark, infrequent urination. This is a signal to rehydrate steadily rather than chug, especially if it followed heavy sweating.</p>
+          <p>Context matters: heat, illness with fever or stomach upset, alcohol, and intense exercise all accelerate fluid loss. If symptoms are severe, persistent, or paired with confusion, that's beyond a hydration tip and worth medical attention.</p>
+        `,
+      },
+      {
+        id: "water-electrolytes",
+        title: "Electrolytes",
+        summary: "Sodium, potassium, and magnesium let your body actually use the water you drink. For most days plain water is fine, but heavy sweating, long efforts, or hot weather can warrant replacing them too.",
+        detail: `
+          <p>Electrolytes are minerals that carry an electrical charge in solution — chiefly sodium, potassium, magnesium, calcium, and chloride. They govern fluid balance, nerve signaling, and muscle contraction, including your heartbeat.</p>
+          <p>Hydration isn't just water volume; it's water plus the right mineral balance. Sodium in particular helps your body hold and distribute fluid. Drinking large amounts of plain water while losing lots of salt through sweat can actually leave you worse off.</p>
+          <p>For an ordinary day, a normal diet replaces what you use and plain water is entirely sufficient. The case for added electrolytes is specific: prolonged or intense exercise, heavy sweating, hot and humid conditions, or illness with fluid loss.</p>
+          <p>When you do need them, the amounts are modest — this isn't a reason to over-supplement. Most people get ample potassium and magnesium from food (fruit, vegetables, nuts, dairy), and the main thing sweat depletes acutely is sodium.</p>
+          <p>Signs that electrolytes, not just water, are off can include muscle cramps, persistent fatigue despite drinking, or headaches during long hot efforts. As with everything here, these are general patterns; medical conditions and medications can change the picture.</p>
+        `,
+      },
+    ],
+  },
+  {
+    name: "Protein",
+    topics: [
+      {
+        id: "protein-what",
+        title: "What protein does",
+        summary: "Protein supplies the amino acids your body uses to build and repair nearly everything — muscle, enzymes, hormones, immune cells, skin, hair. Unlike fat and carbs, the body stores no surplus, so it needs a steady daily supply.",
+        detail: `
+          <p>Protein is the body's structural and functional material. Broken down into amino acids, it becomes muscle and connective tissue, but also enzymes that drive reactions, hormones that signal, antibodies that defend, and the keratin in skin, hair, and nails.</p>
+          <p>It's in constant turnover. Your body is always breaking down and rebuilding its own proteins, recycling some amino acids and losing others. That ongoing loss is why protein is a daily requirement, not something you can load once and forget.</p>
+          <p>Crucially, there's no storage depot. Fat banks energy in adipose tissue and carbohydrate banks as glycogen, but there's no equivalent reserve for protein beyond your functional tissues themselves. Fall short for long enough and the body borrows from muscle.</p>
+          <p>It's also satiating. Gram for gram, protein tends to keep you fuller than carbohydrate or fat, and digesting it burns slightly more energy. That's part of why adequate protein helps with body composition, not just muscle.</p>
+          <p>"Adequate" depends on you — body size, activity, age, and goals all move the target. The baseline to prevent deficiency is low; the amount to build or preserve muscle while active is meaningfully higher.</p>
+        `,
+      },
+      {
+        id: "protein-mps",
+        title: "Muscle protein synthesis",
+        summary: "Muscle is in constant turnover — built up (synthesis) and broken down. Net growth happens when synthesis outpaces breakdown over time, driven mainly by resistance training plus enough protein, especially the amino acid leucine.",
+        detail: `
+          <p>Muscle protein synthesis (MPS) is the process of building new muscle protein. Its counterpart is muscle protein breakdown. At any moment both are happening; what matters is the balance between them over days and weeks.</p>
+          <p>You gain muscle when synthesis exceeds breakdown on net. You lose it when the reverse holds. Training and protein are the two biggest levers that tip the balance toward building.</p>
+          <p>Resistance training is the primary trigger — it signals the muscle that it needs to adapt and become stronger, and it sensitizes the muscle to protein for roughly a day afterward. Without that stimulus, extra protein alone won't build much.</p>
+          <p>Protein supplies the raw material, and one amino acid — leucine — acts as a kind of on-switch for the synthesis machinery. A meal needs a threshold of leucine (and total protein) to maximally stimulate MPS, which is why a small protein snack does less than a proper serving.</p>
+          <p>The effect of a meal is also temporary, rising and falling over a few hours. That's the rationale for spreading protein across the day rather than relying on a single large dose — though, as the timing topic covers, total daily intake still matters most.</p>
+        `,
+      },
+      {
+        id: "protein-goal",
+        title: "How your protein goal is calculated",
+        summary: "Hyalo targets protein to your lean mass and goal, landing in the well-established 1.6–2.2 g/kg range for most people. It scales to muscle, not total weight, because fat tissue doesn't need feeding.",
+        detail: `
+          <p>The headline ranges come from sports-nutrition research: roughly 1.6–2.2 grams of protein per kilogram of bodyweight per day supports building and maintaining muscle for active people. Hyalo's multipliers sit inside this evidence-based window.</p>
+          <p>The target scales to lean mass, not gross weight, when you've entered a body-fat figure. Muscle and organs use protein; fat tissue largely doesn't. Two people at the same weight but different body compositions don't need the same protein, and adjusting for that makes the number more honest.</p>
+          <p>Your goal shifts the multiplier. Building muscle and losing fat while training both push protein higher — the latter because, in a calorie deficit, ample protein is what protects muscle from being burned alongside fat. Simple maintenance sits a little lower.</p>
+          <p>Activity nudges it up too, and there's a floor for older adults, who need more protein than the young to achieve the same muscle response — a hedge against age-related muscle loss. There's also a sensible cap, because benefit plateaus and more isn't better past a point.</p>
+          <p>Workouts add a daily bump on top of the baseline, scaled to how hard and long you trained, with a one-time bonus on any day you do resistance work. And you can always override the whole thing with a number of your own.</p>
+        `,
+      },
+      {
+        id: "protein-timing",
+        title: "Protein timing",
+        summary: "Total daily protein matters far more than timing. That said, spreading intake across 3–4 meals of roughly 25–40g each appears to support muscle synthesis slightly better than the same total in one or two sittings.",
+        detail: `
+          <p>The big rock is total daily intake. If you hit your day's protein target, the exact clock times matter much less than the marketing around "anabolic windows" once suggested. Consistency over weeks beats precision within a day.</p>
+          <p>That said, distribution has a modest edge. Because a meal's muscle-building response rises and falls over a few hours, spreading protein across three or four feedings tends to keep synthesis elevated more of the day than loading it all at once.</p>
+          <p>Each feeding benefits from clearing a threshold — very roughly 25–40 grams of quality protein, depending on body size — to maximally switch on synthesis. Much smaller servings still contribute to your total but stimulate the building response less per sitting.</p>
+          <p>The post-workout "window" is real but generous. Rather than minutes, think in terms of getting a solid protein meal within a few hours either side of training. If you trained fasted, sooner is slightly better; otherwise there's no rush.</p>
+          <p>Practically: aim for your daily number first, then, if it's easy, split it into a few balanced meals. Don't let timing rules add stress or cause you to undereat protein overall — the total is what moves the needle.</p>
+        `,
+      },
+      {
+        id: "protein-complete",
+        title: "Complete protein and amino acids",
+        summary: "Of 20 amino acids, nine are essential — your body can't make them. A complete protein supplies all nine in usable amounts; animal sources are complete, and most plant sources become complete when varied across the day.",
+        detail: `
+          <p>Proteins are built from 20 amino acids. Your body can synthesize 11 of them on its own; the other nine are essential, meaning they must come from food. A protein source is judged partly on whether it delivers all nine in good proportion.</p>
+          <p>A complete protein contains all nine essential amino acids in amounts that support the body's needs. Animal sources — meat, fish, eggs, dairy — are complete, as is soy among plants. They also tend to be rich in leucine, the amino acid that most strongly triggers muscle synthesis.</p>
+          <p>Most individual plant proteins are "incomplete" only in the sense of being lower in one or two essentials — grains tend to be light on lysine, legumes on methionine. The classic pairing of, say, beans and rice covers the gaps.</p>
+          <p>You don't have to combine them in the same meal. Eating a variety of plant proteins across the day lets your body pool the amino acids it needs. The old rule about strict meal-by-meal pairing has been relaxed by later evidence.</p>
+          <p>The practical upshot: omnivores get complete protein easily; plant-based eaters do too with a bit of variety, and may aim slightly higher in total since some plant sources are less concentrated and a touch less digestible.</p>
+        `,
+      },
+      {
+        id: "protein-max",
+        title: "How much protein is too much",
+        summary: "For healthy people, very high protein is safe but offers diminishing returns past roughly 2.2 g/kg for muscle. The old worry that protein harms healthy kidneys isn't supported by evidence — though those with kidney disease should follow medical guidance.",
+        detail: `
+          <p>For building muscle, benefit plateaus. Past roughly 1.6–2.2 grams per kilogram of bodyweight, additional protein adds little to the muscle-building response. It isn't harmful, it's just not doing much extra work — which is why Hyalo caps the target rather than chasing ever-higher numbers.</p>
+          <p>During fat loss, the useful range can run a bit higher, because more protein helps preserve muscle in a deficit and keeps you full. Even so, there's a ceiling beyond which you're mostly displacing other nutrients for no added benefit.</p>
+          <p>The persistent fear that high protein damages healthy kidneys is not supported by the evidence in people with normal kidney function. Studies of higher-protein diets in healthy adults haven't shown the harm the myth predicts.</p>
+          <p>The genuine exception is existing kidney disease. For people with compromised kidney function, protein does need to be managed, and that's a matter for a doctor, not a general guideline. Certain other medical conditions warrant individualized advice too.</p>
+          <p>Very high intakes also bump up against practicality and balance — protein crowds out room for the carbohydrates and fats that fuel training and overall health. More isn't better here; enough, consistently, is the goal.</p>
+        `,
+      },
+    ],
+  },
+  {
+    name: "Body composition",
+    topics: [
+      {
+        id: "bf-meaning",
+        title: "What body fat % means",
+        summary: "Body fat percentage is the share of your weight that's fat, with the rest being lean mass — muscle, bone, organs, water. It describes what your weight is made of, which the scale and BMI can't.",
+        detail: `
+          <p>Body fat percentage splits your weight into two buckets: fat mass, and everything else — muscle, bone, organs, connective tissue, and water, collectively called lean mass. If you're 150 lb at 25% body fat, that's about 37 lb of fat and 113 lb of lean tissue.</p>
+          <p>It answers a question the scale can't: not how much you weigh, but what that weight is. Two people at the identical weight and height can look and function completely differently depending on how much of them is muscle versus fat.</p>
+          <p>That's also where it improves on BMI. BMI uses only height and weight, so it can't distinguish a muscular athlete from someone carrying excess fat — both can land in the same BMI category despite very different health profiles. Body fat percentage sees the difference.</p>
+          <p>Not all fat is optional. A baseline amount — "essential fat" — is required for hormones, brain function, and organ protection, and it's higher in women than men for reproductive reasons. Below that baseline, health suffers; this is not a number to minimize without limit.</p>
+          <p>Any practical method of measuring it is an estimate with a margin of error. The most useful way to use the figure is as a trend over time under consistent conditions, rather than fixating on a single decimal.</p>
+        `,
+      },
+      {
+        id: "bf-ranges",
+        title: "Body fat ranges",
+        summary: "Healthy ranges differ by sex: very roughly 10–20% for men and 18–28% for women, with athletes often lower. Both extremes carry risk — too high strains metabolism, too low disrupts hormones.",
+        detail: `
+          <p>Healthy body fat differs by sex because women carry more essential fat for reproductive function. As broad reference bands, fitness-and-health sources often place men around 10–20% and women around 18–28% as a healthy, sustainable range, with "athletic" categories sitting below that.</p>
+          <p>These bands are approximate and depend on the source and measurement method. They're orientation, not precise cutoffs — the boundary between "fit" and "average" is a gradient, not a line, and where you feel and perform best may sit anywhere within a healthy span.</p>
+          <p>Higher body fat, particularly around the midsection, is associated with greater metabolic and cardiovascular risk. The concern isn't appearance; it's that excess fat — especially the visceral kind around the organs — is metabolically active in ways that strain health.</p>
+          <p>Lower is not automatically better, and there's a floor. Pushing body fat very low disrupts hormones, mood, sleep, immunity, and — in women especially — menstrual and bone health. The lean physiques seen in peak-condition athletes are often not sustainable year-round, even for them.</p>
+          <p>A healthy target is one you can maintain while feeling strong, sleeping well, and training consistently — not the lowest number you can briefly force. If thinking about these ranges starts to feel preoccupying or punishing, that's a sign to step back and, if needed, talk to someone.</p>
+        `,
+      },
+      {
+        id: "visceral-fat",
+        title: "Visceral vs subcutaneous fat",
+        summary: "Subcutaneous fat sits under the skin; visceral fat wraps around your organs. Visceral fat is the metabolically dangerous kind — it drives inflammation and insulin resistance — which is why waist size predicts health risk.",
+        detail: `
+          <p>Subcutaneous fat is the layer just under the skin — the fat you can pinch. It's the majority of body fat and is relatively benign; it's largely a storage depot and even produces some helpful signals.</p>
+          <p>Visceral fat is different. It sits deep in the abdomen, packed around the liver, intestines, and other organs. You can't pinch it, but it's what pushes the belly outward from within and makes a waist measurement meaningful.</p>
+          <p>The trouble is that visceral fat is metabolically active in harmful ways. It releases inflammatory signals and free fatty acids directly toward the liver, promoting insulin resistance, unfavorable cholesterol shifts, and chronic low-grade inflammation.</p>
+          <p>That's why where you carry fat matters as much as how much. Two people at the same body fat percentage can have very different risk profiles depending on how much of it is visceral — and why waist circumference and waist-to-hip ratio predict cardiometabolic risk on their own.</p>
+          <p>The encouraging part: visceral fat tends to be among the first fat lost when you improve diet, activity, and sleep. A shrinking waist is often a sign that the most metabolically important fat is going first, even before the scale moves much.</p>
+        `,
+      },
+      {
+        id: "lean-mass",
+        title: "Lean mass",
+        summary: "Lean mass is everything that isn't fat — muscle, bone, organs, water. It's the engine of your metabolism and the tissue protein maintains, which is why Hyalo targets protein to lean mass rather than total weight.",
+        detail: `
+          <p>Lean body mass is your total weight minus fat mass: muscle, bone, organs, connective tissue, and the water within them. When people talk about preserving or building "lean mass," they usually mean skeletal muscle, the part that's most trainable.</p>
+          <p>It drives your metabolism. Lean tissue — muscle especially — is metabolically active and accounts for much of the energy you burn at rest. More muscle means a slightly higher resting burn and, more importantly, a body that handles fuel better.</p>
+          <p>It's the tissue protein supports. Because muscle and organs are what use dietary protein, basing your protein target on lean mass rather than total weight is more accurate — it feeds the part of you that actually needs feeding.</p>
+          <p>Protecting it is the quiet goal of good fat loss. Lose weight carelessly and a chunk of what you shed can be muscle; lose it with enough protein and resistance training, and you keep the lean mass while the fat leaves. That difference is what separates looking "smaller" from looking "leaner."</p>
+          <p>It also tends to decline with age unless defended. From midlife onward, muscle is gradually lost without a stimulus to keep it — a process that resistance training and adequate protein meaningfully slow, which is part of why both matter more, not less, over time.</p>
+        `,
+      },
+      {
+        id: "recomp",
+        title: "Body recomposition",
+        summary: "Recomposition means losing fat and gaining muscle at the same time, so weight barely moves while your shape changes. It's most achievable for beginners, those returning to training, or anyone with higher body fat.",
+        detail: `
+          <p>Recomp is the simultaneous loss of fat and gain of muscle. Because the two roughly offset on the scale, your weight can stay nearly flat while your body visibly changes — firmer, leaner, different proportions. It's the case where the scale is least useful.</p>
+          <p>Traditionally these were treated as separate phases — a "cut" to lose fat, a "bulk" to gain muscle — because doing both at once is harder than doing either alone. Recomp threads the needle by training hard and eating around maintenance with high protein.</p>
+          <p>It works best in specific situations: beginners, whose muscles respond strongly to any training; people returning after a layoff, who regain lost muscle quickly ("muscle memory"); and those with higher body fat, who have ample stored energy to fuel muscle growth while losing fat.</p>
+          <p>For lean, well-trained people, recomp slows to a crawl, and the classic cut-or-bulk approach usually makes faster progress. The closer you are to your limits, the harder it is to push fat down and muscle up at the same time.</p>
+          <p>The two ingredients are non-negotiable: a real resistance-training stimulus and enough protein to build with while in a slight deficit. This is also where measurements beat the scale — a steady weight with a shrinking waist and a dropping waist-to-hip ratio is recomp happening in plain sight.</p>
+        `,
+      },
+      {
+        id: "scale-lies",
+        title: "Why the scale lies",
+        summary: "Bodyweight swings daily with water, food, and glycogen — often by several pounds that have nothing to do with fat. It also can't tell muscle from fat, so it misses real progress during recomposition.",
+        detail: `
+          <p>Daily weight is noisy. It moves with the water you're holding, the food and fluid still in your system, your glycogen stores, sodium intake, and — for women — the menstrual cycle. Swings of a few pounds day to day are normal and have nothing to do with fat gained or lost.</p>
+          <p>A single weigh-in is a snapshot in a storm. That's why the trend over a week or two tells the truth where any one morning can mislead — the noise averages out and the real direction emerges.</p>
+          <p>More fundamentally, the scale can't tell tissue apart. A pound of muscle and a pound of fat weigh the same; the scale sees only the sum. Gain muscle and lose fat in equal measure and it won't budge, even though your body has meaningfully changed.</p>
+          <p>This is exactly when people get discouraged for no reason — doing everything right, seeing a flat number, and concluding it isn't working. Often it's working precisely as intended, just invisibly to a bathroom scale.</p>
+          <p>The fix isn't to abandon the scale but to pair it with measures that see composition: a tape measure, waist-to-hip ratio, body-fat estimates, progress photos, and how clothes fit. Together they tell a story a single number never could.</p>
+        `,
+      },
+    ],
+  },
+  {
+    name: "Measurements",
+    topics: [
+      {
+        id: "navy-method",
+        title: "The Navy method",
+        summary: "The Navy method estimates body fat from a few tape measurements — neck, waist, and (for women) hips, plus height. It's not as precise as a lab scan, but it's free, repeatable, and good at tracking change over time.",
+        detail: `
+          <p>The Navy method (developed by the U.S. Navy) estimates body fat from circumferences. For men it uses neck, waist, and height; for women it adds the hip measurement. A formula turns those tape readings into a percentage.</p>
+          <p>The logic is that fat distributes in patterns that circumferences capture. A larger waist relative to neck and height, for instance, implies more abdominal fat. It's an indirect estimate of an unseen quantity, inferred from the shape it produces on the outside.</p>
+          <p>Its strengths are accessibility and repeatability. It needs only a tape measure, costs nothing, and — measured consistently — tracks change reliably. For watching a trend over weeks and months, that repeatability is exactly what you want.</p>
+          <p>Its limit is absolute accuracy. Against a gold standard like a DEXA scan, any circumference method carries a margin of error and can read several points off for a given individual, especially at the extremes or with unusual proportions.</p>
+          <p>So treat the number as a consistent yardstick rather than a verdict. Measure the same way each time — same spots, same tension, same time of day — and trust the direction of travel more than the precise figure. That's how Hyalo uses it.</p>
+        `,
+      },
+      {
+        id: "whr",
+        title: "Waist-to-hip ratio",
+        summary: "WHR divides waist circumference by hip circumference, capturing where your body stores fat. It reveals the recomp signature — when waist shrinks and hips hold, the ratio drops even if weight doesn't.",
+        detail: `
+          <p>Waist-to-hip ratio is simply your waist measurement divided by your hip measurement. A waist of 30 inches and hips of 40 gives a ratio of 0.75. It distills fat distribution — your shape — into a single number.</p>
+          <p>It captures something neither measurement alone can: the relative balance between midsection and hips. Two people with the same waist can have very different ratios, and very different fat-distribution profiles, depending on their hips.</p>
+          <p>It's the recomp signature. When you lose abdominal fat while building or holding the glutes and hips, your waist shrinks while your hips don't — and the ratio drops sharply, even if your bodyweight barely changes. It catches a real shape change the scale misses entirely.</p>
+          <p>It's also an independent health marker, which the cardiometabolic-risk topic covers in depth: a waist-heavy distribution tracks with the visceral fat that drives metabolic risk, so the ratio carries information about health, not just aesthetics.</p>
+          <p>As with all of these, consistency is what makes it trustworthy — measure the waist and hips at the same landmarks each time. A ratio trending down over months is one of the clearer signs that body composition is genuinely improving.</p>
+        `,
+      },
+      {
+        id: "cardiometabolic",
+        title: "Cardiometabolic risk",
+        summary: "This is the combined risk of cardiovascular disease (heart, stroke) and metabolic disease (type 2 diabetes), which share visceral fat as a common driver. Waist-to-hip ratio predicts it because waist-heavy fat distribution tracks with visceral fat.",
+        detail: `
+          <p>Cardiometabolic risk bundles two intertwined categories: cardiovascular disease — heart disease, stroke, high blood pressure — and metabolic disease, such as type 2 diabetes, insulin resistance, and metabolic syndrome. They're grouped because they tend to travel together and share root causes.</p>
+          <p>The common thread is often visceral fat — the fat around the organs. By driving inflammation and insulin resistance and altering blood lipids, it raises risk across both categories at once, which is why one measure can speak to several conditions.</p>
+          <p>Waist-to-hip ratio predicts this risk because a waist-heavy distribution signals more visceral fat. The World Health Organization treats elevated WHR as a distinct risk marker — above roughly 0.85 for women and 0.90 for men, risk rises, with higher thresholds marking higher risk.</p>
+          <p>Notably, this works somewhat independently of overall weight or BMI. Two people of similar BMI can carry very different cardiometabolic risk depending on where their fat sits — a key reason shape-based measures add information that weight alone leaves out.</p>
+          <p>A risk marker is a statistical signal across populations, not a personal diagnosis. A given ratio nudges the odds; it doesn't determine an individual's fate, and many factors — genetics, fitness, blood markers, lifestyle — shape the full picture. For anything concerning, that's a conversation for a clinician.</p>
+        `,
+      },
+      {
+        id: "measure-consistent",
+        title: "How to measure consistently",
+        summary: "Trends matter more than any single reading, so consistency is everything: same time of day, same conditions, tape snug but not compressing. Morning, after the bathroom and before eating, is the most repeatable window.",
+        detail: `
+          <p>The goal of measuring isn't a perfect absolute number — it's a comparable one. A reading is only as useful as the one before it is similar in conditions, because what you're really tracking is the change between them.</p>
+          <p>Time of day matters because your body shifts over a day — food, fluid, and activity all move the numbers. The most repeatable window is first thing in the morning, after using the bathroom and before eating or drinking, when those variables are at their most consistent.</p>
+          <p>Technique should be identical each time. Measure at the same anatomical landmarks, keep the tape level and snug but not compressing the skin, and take the reading at the end of a normal exhale without sucking in. Hyalo's per-field hints describe exactly where each one goes.</p>
+          <p>Frequency can be modest. Bodies don't change meaningfully day to day, so measuring every week or two is plenty — frequent enough to see a trend, infrequent enough to avoid chasing noise. Daily measuring mostly adds anxiety, not information.</p>
+          <p>When in doubt, hold conditions constant and trust the direction. A waist that reads steadily smaller across several sessions is real, even if any single measurement is a touch imprecise. Consistency is what turns a tape measure into useful data.</p>
+        `,
+      },
+    ],
+  },
+  {
+    name: "Goals & planning",
+    topics: [
+      {
+        id: "how-goals",
+        title: "How Hyalo sets your goals",
+        summary: "Both goals start from your profile. Water scales from bodyweight; protein scales from lean mass and your goal. Workouts add a daily bump, and you can always override either number manually.",
+        detail: `
+          <p>Everything begins with your profile — weight, body composition, activity level, goal, and a few other details. From those, Hyalo derives two daily targets rather than handing you one-size-fits-all numbers.</p>
+          <p>Water is built from bodyweight: a baseline of 0.4 ounces per pound, plus additions for activity and hot climates that scale to your size, plus fixed amounts for pregnancy or breastfeeding. The dedicated water topic walks through the reasoning.</p>
+          <p>Protein is built from lean mass and your goal, landing in the research-backed 1.6–2.2 g/kg range, with adjustments for activity, an older-adult floor, and a sensible cap. Basing it on lean mass rather than total weight keeps it honest. The protein topic covers the details.</p>
+          <p>Workouts then add a same-day bump to both numbers, scaled to how hard and long you trained, with a one-time protein bonus on resistance days. These are additions on top of your baseline, applied only to the day you log them.</p>
+          <p>None of it is locked. You can override either goal with a number of your own, and a planner can set protein around a goal body-fat target. The calculations are a thoughtful starting point — the final say is yours, and past days keep whatever goal applied at the time.</p>
+        `,
+      },
+      {
+        id: "muscle-rate",
+        title: "Realistic muscle gain rates",
+        summary: "Muscle builds slowly — very roughly 1–2 lbs per month for beginners, slowing to a fraction of that for trained lifters. This is a biological ceiling that no amount of extra protein or effort can rush.",
+        detail: `
+          <p>Building muscle is genuinely slow, and that's biology, not a lack of effort. As a rough orientation, a beginner training and eating well might gain on the order of 1–2 pounds of muscle a month, and that rate is among the fastest you'll ever see.</p>
+          <p>It decelerates as you advance. After the first year or so, the body's capacity to add muscle drops sharply — an intermediate lifter might gain half that rate, and a long-trained lifter a fraction again, measured in small amounts over a year rather than a month.</p>
+          <p>The rate is also bounded by factors you don't control: genetics, age, sex, and hormones all set a ceiling. Two people doing the same program can progress at different speeds for reasons that have nothing to do with how hard they're trying.</p>
+          <p>Crucially, you can't buy speed with surplus. Beyond meeting your protein and training needs, more protein, more food, or more volume doesn't accelerate muscle gain past the biological limit — the excess energy mostly becomes fat. This is exactly why Hyalo doesn't ask you to set a muscle-gain timeframe: pace isn't a preference.</p>
+          <p>The honest expectation is patience. Real, lasting muscle accrues over months and years of consistency. Knowing the ceiling protects you from both disappointment and the temptation of extreme approaches that promise to beat it.</p>
+        `,
+      },
+      {
+        id: "goal-bf",
+        title: "Choosing a goal body fat %",
+        summary: "A good target is one that's healthy and sustainable, not the lowest possible number. For most people that's the mid-to-lower end of the healthy range; chasing extremes tends to cost muscle, hormones, and adherence.",
+        detail: `
+          <p>The best goal isn't the leanest one imaginable — it's the leanest one you can hold comfortably while feeling strong, sleeping well, and living normally. Sustainability is the real criterion, because a number you can't maintain isn't a destination, just a brief visit.</p>
+          <p>For most people, a sensible target sits somewhere in the mid-to-lower part of the healthy range for their sex, rather than at the very bottom. That's typically lean enough to look and feel fit without the cost that comes with pushing to extremes.</p>
+          <p>Those extremes carry a price. Driving body fat very low tends to eat into muscle, disrupt hormones, flatten mood and energy, and — for women especially — affect menstrual and bone health. The shredded look seen in peak-condition athletes is often a temporary, deliberately uncomfortable state, not a way to live.</p>
+          <p>It helps to anchor the goal to how you want to feel and perform, not just a mirror or a metric. Working backward from "strong, energetic, sustainable" usually lands on a more generous and more livable target than working forward from "as low as possible."</p>
+          <p>And if setting a target starts to feel preoccupying — if the number begins driving how you eat, train, or feel about yourself in a punishing way — that's worth noticing. A goal should serve your health and life, not the other way around, and there's no shame in talking it through with someone.</p>
+        `,
+      },
+      {
+        id: "recomp-cut-bulk",
+        title: "Recomp vs cut vs bulk",
+        summary: "A cut eats at a deficit to lose fat; a bulk eats at a surplus to gain muscle; recomp aims for both at maintenance. Which fits depends on your training age, body fat, and goals.",
+        detail: `
+          <p>These are three strategies defined mostly by energy balance. A cut runs a calorie deficit to lose fat. A bulk runs a surplus to build muscle. A recomp eats around maintenance and tries to do both at once. Protein stays high in all three; training stays hard in all three.</p>
+          <p>A cut suits you when body fat is higher than you'd like and leaning out is the priority. The art is losing fat while keeping muscle — which is why protein and resistance training matter most precisely when calories are low.</p>
+          <p>A bulk suits you when you're relatively lean and want to add size and strength, and you're willing to accept a little fat gain along the way. Kept modest, the surplus feeds muscle; pushed too far, it mostly adds fat without building faster, since muscle gain has a ceiling.</p>
+          <p>A recomp suits the in-between cases — beginners, returners, and those with higher body fat — where the body can pull from fat stores to build muscle at maintenance. For lean, advanced lifters it's slow going, and alternating focused cuts and bulks usually moves faster.</p>
+          <p>There's no universally right choice; it depends on your starting point and what you want. A practical rule of thumb: leaner and chasing size leans toward a bulk, higher body fat leans toward a cut, and the early or returning trainee can often recomp. Whichever you pick, consistency over months is what makes it work.</p>
+        `,
+      },
+    ],
+  },
+];
+
+function findLearnTopic(id) {
+  for (const cat of LEARN_CATEGORIES) {
+    const t = cat.topics.find(x => x.id === id);
+    if (t) return t;
+  }
+  return null;
+}
 
 /* ============ State ============ */
 const DEFAULT_STATE = () => ({
@@ -5532,6 +5961,13 @@ function renderSettings() {
       <div class="section-head"><span class="section-title">About</span></div>
       <div class="about-card">${ABOUT_HTML}</div>
       <div class="settings-card" style="margin-top:12px">
+        <button class="settings-row" id="open-learn">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Learn</div>
+            <div class="settings-row-value">The science behind water, protein &amp; body composition</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
         <button class="settings-row" id="recent-updates">
           <div class="settings-row-info">
             <div class="settings-row-label">Recent updates</div>
@@ -5588,6 +6024,7 @@ function wireSettingsHandlers() {
     setTheme(b.dataset.themeOpt);
     render();
   }));
+  $("#open-learn")?.addEventListener("click", openLearnModal);
   $("#recent-updates")?.addEventListener("click", openRecentUpdatesModal);
 }
 
@@ -5620,9 +6057,9 @@ function openGoalsBodyHub() {
     bfHint = `<button class="hub-hint" id="hub-apply-bf">Latest measurement ${latest.bodyFatPct}% — apply to profile?</button>`;
   }
 
-  const row = (label, valHtml, { tap = "", chev = true } = {}) => `
+  const row = (label, valHtml, { tap = "", chev = true, info = "" } = {}) => `
     <div class="hub-row${tap ? " tappable" : ""}"${tap ? ` data-hub-tap="${tap}"` : ""}>
-      <div class="hub-row-label">${label}</div>
+      <div class="hub-row-label">${label}${info ? ` <button class="info-dot" type="button" data-info="${info}">i</button>` : ""}</div>
       <div class="hub-row-val">${valHtml}</div>
       ${tap && chev ? `<div class="hub-chev">›</div>` : ""}
     </div>`;
@@ -5631,8 +6068,8 @@ function openGoalsBodyHub() {
   // "Where you're headed" — either the set goals, or a prompt to set one.
   const hasGoal = g.bodyFatPct != null || g.whr != null;
   const goalRows = hasGoal ? `
-    ${row("Goal body fat", g.bodyFatPct != null ? valWithSub(`${g.bodyFatPct}%`, "", "protein") : `<span class="hub-row-sub">not set</span>`, { tap: "goals" })}
-    ${row("Goal waist-to-hip", g.whr != null ? valWithSub(g.whr.toFixed(2), "", "water") : `<span class="hub-row-sub">not set</span>`, { tap: "goals" })}
+    ${row("Goal body fat", g.bodyFatPct != null ? valWithSub(`${g.bodyFatPct}%`, "", "protein") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "goal-bf" })}
+    ${row("Goal waist-to-hip", g.whr != null ? valWithSub(g.whr.toFixed(2), "", "water") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "whr" })}
   ` : `
     <div class="hub-row tappable hub-row-empty" data-hub-tap="goals">
       <div class="hub-row-label">Set a body fat % or WHR goal</div>
@@ -5645,8 +6082,8 @@ function openGoalsBodyHub() {
     <div class="hub-section-label">Where you are</div>
     <div class="hub-card">
       ${row("Weight", `${p.weight_lb} lb`, { tap: "basics" })}
-      ${row("Body fat", valWithSub(curBFval, curBFsub), { tap: "bodycomp" })}
-      ${row("Waist-to-hip", curWHR != null ? curWHR.toFixed(2) : `<span class="hub-row-sub">log a measurement</span>`, { tap: "measurements" })}
+      ${row("Body fat", valWithSub(curBFval, curBFsub), { tap: "bodycomp", info: "bf-meaning" })}
+      ${row("Waist-to-hip", curWHR != null ? curWHR.toFixed(2) : `<span class="hub-row-sub">log a measurement</span>`, { tap: "measurements", info: "whr" })}
     </div>
     ${bfHint}
 
@@ -5657,8 +6094,8 @@ function openGoalsBodyHub() {
 
     <div class="hub-section-label">Your daily targets</div>
     <div class="hub-card">
-      ${row("Water", valWithSub(`${goals.water} oz`, wSrc.label, "water"), { tap: "water" })}
-      ${row("Protein", valWithSub(`${goals.protein} g`, pSrc.label, "protein"), { tap: "protein" })}
+      ${row("Water", valWithSub(`${goals.water} oz`, wSrc.label, "water"), { tap: "water", info: "water-goal" })}
+      ${row("Protein", valWithSub(`${goals.protein} g`, pSrc.label, "protein"), { tap: "protein", info: "protein-goal" })}
       ${(state.goalsOverride.water_oz !== null || state.goalsOverride.protein_g !== null) ? `
         <button class="hub-revert" id="hub-revert"><span class="hub-revert-glyph">↺</span>Use calculated goals</button>
       ` : ""}
@@ -5686,6 +6123,12 @@ function openGoalsBodyHub() {
       openGoalsBodyHub();
     }
   });
+  // Inline ⓘ opens the matching Learn topic; stop propagation so the row's
+  // own editor doesn't also fire. Back from the topic returns to the hub.
+  $$("[data-info]").forEach(b => b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openLearnTopicModal(b.dataset.info, openGoalsBodyHub);
+  }));
   $$("[data-hub-tap]").forEach(el => el.addEventListener("click", () => {
     const dest = el.dataset.hubTap;
     if (dest === "bodycomp") openBodyCompModal(openGoalsBodyHub);
@@ -5756,6 +6199,7 @@ function openGoalOverride(kind, opts = {}) {
   `);
 
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">${title}</div>
 
     <div class="ex-block">
@@ -5795,6 +6239,7 @@ function openGoalOverride(kind, opts = {}) {
   resetLink.addEventListener("click", () => { input.value = suggested; syncResetVisibility(); });
   const back = opts.returnTo || closeModal;
   $("#m-cancel").addEventListener("click", back);
+  $("#top-back")?.addEventListener("click", back);
 
   // Planner wiring. lastPlannerResult tracks the currently-displayed projection
   // so we can match it against the saved value to decide whether to persist meta.
@@ -5975,7 +6420,7 @@ function openProfileEdit(section, returnTo) {
         </div>
       </div>`;
   }
-  openModal(inner + `
+  openModal(`<button class="modal-back" type="button" id="top-back">‹ Back</button>` + inner + `
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
       <button class="btn btn-primary" id="m-save">Save</button>
@@ -5990,6 +6435,7 @@ function openProfileEdit(section, returnTo) {
     setupCardGroup("#ed-climate", v => { p.climate = v; }, p.climate);
   }
   $("#m-cancel").addEventListener("click", back);
+  $("#top-back")?.addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const prevWeight = state.profile.weight_lb;
     const prevGoal = state.profile.goal;
@@ -6047,6 +6493,7 @@ function confirmUseCalculatedGoals(returnTo) {
     rows.push(`<li>Protein: <strong>${state.goalsOverride.protein_g} g</strong> (${proteinGoalSource().label}) → <strong>${calcProtein} g</strong> (calculated)</li>`);
   }
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Use calculated goals?</div>
     <div class="modal-sub">Your ${rows.length > 1 ? "current targets" : "current target"} will be replaced by the numbers Hyalo calculates from your profile.</div>
     <ul style="margin:14px 0;padding-left:20px;line-height:1.9;font-size:14px;color:var(--ink)">${rows.join("")}</ul>
@@ -6057,6 +6504,7 @@ function confirmUseCalculatedGoals(returnTo) {
     </div>
   `);
   $("#m-cancel").addEventListener("click", back);
+  $("#top-back")?.addEventListener("click", back);
   $("#m-confirm").addEventListener("click", () => {
     state.goalsOverride = { water_oz: null, protein_g: null };
     save();
@@ -6689,6 +7137,7 @@ function openGoalsUpdateModal() {
 
 function openRecentUpdatesModal() {
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Recent updates</div>
     <div class="goals-update-body">
       <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Goals &amp; body, in one place</p>
@@ -6705,6 +7154,49 @@ function openRecentUpdatesModal() {
     </div>
   `);
   $("#ru-close")?.addEventListener("click", closeModal);
+  $("#top-back")?.addEventListener("click", closeModal);
+}
+
+/* ============ Learn: list + topic detail ============ */
+function openLearnModal() {
+  const cats = LEARN_CATEGORIES.map(cat => `
+    <div class="learn-cat-label">${cat.name}</div>
+    ${cat.topics.map(t => `
+      <button class="learn-card" data-topic="${t.id}">
+        <div class="learn-card-title">${t.title}</div>
+        <div class="learn-card-summary">${t.summary}</div>
+        <div class="learn-card-more">Learn more →</div>
+      </button>
+    `).join("")}
+  `).join("");
+  openModal(`
+    <div class="modal-title">Learn</div>
+    <div class="modal-sub">The benchmarks, metrics, and science behind what Hyalo tracks. Each topic opens to a fuller explanation.</div>
+    <div class="learn-list">${cats}</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
+    </div>
+  `);
+  $("#m-close")?.addEventListener("click", closeModal);
+  $$("[data-topic]").forEach(b => b.addEventListener("click", () => openLearnTopicModal(b.dataset.topic, openLearnModal)));
+}
+
+// returnTo defaults to the Learn list; inline ⓘ icons pass a function that
+// reopens whatever view they were tapped from, so Back returns there.
+function openLearnTopicModal(topicId, returnTo) {
+  const t = findLearnTopic(topicId);
+  if (!t) { (returnTo || closeModal)(); return; }
+  const back = returnTo || openLearnModal;
+  openModal(`
+    <button class="modal-back" type="button" id="learn-back">‹ Back</button>
+    <div class="modal-title">${t.title}</div>
+    <div class="goals-update-body">${t.detail}</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="m-close" style="width:100%">Done</button>
+    </div>
+  `);
+  $("#learn-back")?.addEventListener("click", back);
+  $("#m-close")?.addEventListener("click", closeModal);
 }
 
 // Daily-window editor — controls dayStart/windDown used for pacing.
@@ -6712,6 +7204,7 @@ function openDailyWindowModal() {
   const p = state.profile;
   const toTimeStr = h => `${String(h).padStart(2,"0")}:00`;
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Daily window</div>
     <div class="onb-sub" style="margin-bottom:14px;font-size:13px">When you typically start and stop drinking. Used for the pace arcs on your rings and the wind-down nudge — not for goal math.</div>
     <div class="field">
@@ -6728,6 +7221,7 @@ function openDailyWindowModal() {
     </div>
   `);
   $("#m-cancel").addEventListener("click", closeModal);
+  $("#top-back")?.addEventListener("click", closeModal);
   $("#m-save").addEventListener("click", () => {
     const s = parseInt($("#dw-start").value.split(":")[0], 10);
     const e = parseInt($("#dw-end").value.split(":")[0], 10);
@@ -6756,6 +7250,7 @@ function openBodyCompModal(returnTo) {
     ["higher", "Higher body fat", r.higher + " · carrying extra weight"],
   ];
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Body composition</div>
     <div class="onb-sub" style="margin-bottom:14px;font-size:13px">Optional. Protein tracks lean mass, so this fine-tunes your protein goal — it won't change your water goal. Ranges shown are for ${SEX_LABELS[p.sex].toLowerCase()}.</div>
     <div id="bc-cards">
@@ -6788,6 +7283,7 @@ function openBodyCompModal(returnTo) {
   });
   wireNavyCalc("bc-exact", { sex: p.sex, height_in: state.profile.height_in, onFill: () => { exactSource = "navy"; } });
   $("#m-cancel").addEventListener("click", back);
+  $("#top-back")?.addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const exactVal = $("#bc-exact").value.trim();
     if (exactVal !== "") {
@@ -6859,7 +7355,8 @@ function renderBody() {
   $("#bm-add")?.addEventListener("click", () => openMeasurementEntryModal(null));
   $("#bm-goals")?.addEventListener("click", () => openBodyGoalsModal());
   $$("[data-bm-edit]").forEach(b => b.addEventListener("click", () => openMeasurementEntryModal(b.dataset.bmEdit)));
-  $("#bm-info-whr")?.addEventListener("click", openWHRInfoModal);
+  $("#bm-info-bf")?.addEventListener("click", () => openLearnTopicModal("bf-meaning", () => { closeModal(); }));
+  $("#bm-info-whr")?.addEventListener("click", () => openLearnTopicModal("whr", () => { closeModal(); }));
 }
 
 // Goal summary band: shows current → target + "to go" for each goal that's set,
@@ -6906,6 +7403,7 @@ function openBodyGoalsModal(returnTo) {
   const g = state.bodyGoals || {};
   const p = state.profile;
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Body composition goals</div>
     <div class="modal-sub">Optional targets. Both show as dashed lines on your trend chart so you can watch progress. Leave blank to clear.</div>
     <div class="field" style="margin-top:4px">
@@ -6924,6 +7422,7 @@ function openBodyGoalsModal(returnTo) {
     </div>
   `);
   $("#m-cancel").addEventListener("click", back);
+  $("#top-back")?.addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const bfRaw = $("#bg-bf").value.trim();
     const whrRaw = $("#bg-whr").value.trim();
@@ -6975,6 +7474,7 @@ function renderBmList(entries) {
     const d = new Date(e.ts);
     const dateLabel = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
     const whr = computeWHR(e.waist, e.hip);
+    const band = whr != null ? whrRiskBand(state.profile.sex, whr) : null;
     const metrics = [];
     if (e.weight_lb) metrics.push(`${e.weight_lb} lb`);
     if (e.waist) metrics.push(`waist ${e.waist}″`);
@@ -6995,6 +7495,7 @@ function renderBmList(entries) {
             ${whr ? `<span class="whr">${whr.toFixed(2)}<small> WHR</small></span>` : ""}
           </div>
         </div>
+        ${band ? `<div class="bm-entry-risk band-${band}">${band} cardiometabolic risk</div>` : ""}
         <div class="bm-entry-metrics">${metrics.join(" · ") || "—"}</div>
         ${optional.length ? `<div class="bm-entry-metrics" style="opacity:0.75">${optional.join(" · ")}</div>` : ""}
         ${e.notes ? `<div class="bm-entry-notes">${escapeHtml(e.notes)}</div>` : ""}
@@ -7053,7 +7554,7 @@ function renderBmChart(entries) {
       <div class="bm-chart-head">
         <div class="bm-chart-title">Trend</div>
         <div class="bm-chart-legend">
-          ${bf ? `<span><span class="swatch" style="background:var(--protein)"></span>BF ${bf.latest}%${g.bodyFatPct != null ? ` <span style="opacity:0.6">→ ${g.bodyFatPct}%</span>` : ""}</span>` : ""}
+          ${bf ? `<span><span class="swatch" style="background:var(--protein)"></span>BF ${bf.latest}%${g.bodyFatPct != null ? ` <span style="opacity:0.6">→ ${g.bodyFatPct}%</span>` : ""}<button class="info-btn" id="bm-info-bf" aria-label="What is body fat %?">i</button></span>` : ""}
           ${whr ? `<span><span class="swatch" style="background:var(--water)"></span>WHR ${whr.latest.toFixed(2)}${g.whr != null ? ` <span style="opacity:0.6">→ ${g.whr.toFixed(2)}</span>` : ""}<button class="info-btn" id="bm-info-whr" aria-label="What is WHR?">i</button></span>` : ""}
         </div>
       </div>
@@ -7128,6 +7629,7 @@ function openMeasurementEntryModal(editId) {
     </div>` : "";
 
   openModal(`
+    <button class="modal-back" type="button" id="bm-back">‹ Back</button>
     <div class="modal-title">${isEdit ? "Edit measurement" : "New measurement"}</div>
     <div class="modal-sub">${isEdit ? "" : "Tape at end-of-exhale, snug but not compressing. Same time of day each session keeps the numbers comparable."}</div>
 
@@ -7220,7 +7722,7 @@ function openMeasurementEntryModal(editId) {
     } else {
       $("#bm-whr-value").textContent = whr.toFixed(2);
       const band = whrRiskBand(sex, whr);
-      $("#bm-whr-band").textContent = band ? `${band} risk` : "";
+      $("#bm-whr-band").textContent = band ? `${band} cardiometabolic risk` : "";
       $("#bm-whr-band").className = "bm-whr-band band-" + (band || "");
     }
     // Combined note + apply visibility
@@ -7244,10 +7746,11 @@ function openMeasurementEntryModal(editId) {
     $("#" + id)?.addEventListener("input", recomputeDerived);
   });
   recomputeDerived();
-  $("#bm-whr-info")?.addEventListener("click", openWHRInfoModal);
+  $("#bm-whr-info")?.addEventListener("click", () => openLearnTopicModal("whr", () => { closeModal(); render(); }));
 
   const close = () => { closeModal(); render(); };
   $("#m-cancel")?.addEventListener("click", close);
+  $("#bm-back")?.addEventListener("click", close);
 
   $("#bm-delete")?.addEventListener("click", () => {
     if (!confirm("Delete this measurement entry? This can't be undone.")) return;
