@@ -7275,6 +7275,7 @@ function openLearnModal() {
     `).join("")}
   `).join("");
   openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
     <div class="modal-title">Learn</div>
     <div class="modal-sub">The benchmarks, metrics, and science behind what Hyalo tracks. Each topic opens to a fuller explanation.</div>
     <div class="learn-list">${cats}</div>
@@ -7283,6 +7284,7 @@ function openLearnModal() {
       <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
     </div>
   `);
+  $("#top-back")?.addEventListener("click", closeModal);
   $("#m-close")?.addEventListener("click", closeModal);
   $("#learn-disclaimer")?.addEventListener("click", () => openDisclaimerModal(openLearnModal));
   $$("[data-topic]").forEach(b => b.addEventListener("click", () => openLearnTopicModal(b.dataset.topic, openLearnModal)));
