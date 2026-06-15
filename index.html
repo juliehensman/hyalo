@@ -1490,6 +1490,26 @@
     color: var(--protein);
     margin-top: 9px;
   }
+  .learn-disclaimer {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    padding: 16px 2px 4px;
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    font-style: italic;
+    cursor: pointer;
+  }
+  .learn-disclaimer-more {
+    font-style: normal;
+    color: var(--protein);
+    white-space: nowrap;
+  }
 
   /* Inline info icon — tappable ⓘ next to labels/values that have a
      corresponding Learn topic. Small, unobtrusive, stops row propagation. */
@@ -3200,6 +3220,20 @@ const ABOUT_HTML = `
   <span class="closer">Clarity, one glass at a time.</span>
 `;
 
+/* ============ Health disclaimer ============
+   Shown once as an acknowledgment gate (first open), and available any time
+   from Settings → About. Conventional wellness-app language: educational only,
+   not medical advice, does not diagnose/treat/cure/prevent, consult a provider,
+   estimates are not diagnoses. */
+const DISCLAIMER_FULL_HTML = `
+  <p>Hyalo is a personal wellness and tracking tool, not a medical device or service. Everything it provides — the educational content in Learn, the calculated water and protein targets, the body-composition estimates, and metrics like body fat percentage and waist-to-hip ratio — is for general informational and educational purposes only.</p>
+  <p>This is not medical advice, and it is not a substitute for professional medical advice, diagnosis, or treatment. Hyalo does not diagnose, treat, cure, or prevent any disease or health condition. Its targets and estimates are general approximations derived from population formulas and the information you provide; they are not personalized clinical guidance and may not be right for you.</p>
+  <p>Consult a qualified healthcare provider before making any change to your diet, hydration, supplement use, exercise, or health routine — especially if you are pregnant or breastfeeding, have a health condition, or take medication. Never disregard or delay professional medical advice because of something you read here.</p>
+  <p>The body-composition figures and risk categories shown are estimates and population-level statistical markers, not diagnoses, and they do not determine your individual health. If you think you may have a medical emergency, contact a doctor or emergency services right away.</p>
+  <p>You use Hyalo at your own discretion and risk.</p>
+`;
+const DISCLAIMER_SHORT_HTML = `For general education only — not medical advice. Hyalo doesn't diagnose, treat, cure, or prevent any condition. Talk to a qualified healthcare provider before changing your diet, hydration, or exercise.`;
+
 /* ============ Learn: glossary / topic library ============
    Two-tier reference content. Each topic shows a concise summary on the Learn
    list; "Learn more" opens a medium-depth explanation. Content is educational
@@ -3215,11 +3249,13 @@ const LEARN_CATEGORIES = [
         title: "Why water matters",
         summary: "Water is about 60% of your body and the medium nearly every process runs in — circulation, temperature, joints, waste removal. Even mild dehydration measurably dents energy, focus, and performance.",
         detail: `
-          <p>Water is the solvent of life. Roughly 60% of an adult's body weight is water, and it's the medium in which nearly every biochemical reaction takes place. Blood, which carries oxygen and nutrients to every cell, is about 90% water.</p>
-          <p>It regulates temperature. When you heat up — from exercise, weather, or simply living — you sweat, and the evaporation cools you. That cooling costs water, which is why heat and activity raise your needs.</p>
-          <p>It cushions and lubricates. Water-based fluid protects your joints, surrounds your organs, and keeps tissues like the discs in your spine pliable. It also moves waste out, through the kidneys and the digestive tract.</p>
-          <p>The cost of running low is real and quick. A fluid loss of just 1–2% of body weight — the point where you'd start feeling thirsty — is enough to measurably reduce concentration, mood, and physical output. You don't have to be severely dehydrated to feel it.</p>
-          <p>How much you actually need isn't a fixed number. It shifts with your size, your activity, the climate, and even how much water-rich food you eat. A target is a starting point; your body's signals are the real gauge.</p>
+          <p>Water is the solvent of life. Roughly 55–60% of an adult's body weight is water — higher in people with more muscle, lower in those with more fat, since muscle is about three-quarters water and fat tissue holds far less. It isn't an inert filler; it's the medium in which nearly every biochemical reaction in the body takes place, and the material that gives cells their shape and pressure.</p>
+          <p>It moves everything that needs moving. Blood plasma is over 90% water, and it's the river that carries oxygen, glucose, hormones, immune cells, and nutrients to tissues and hauls carbon dioxide and metabolic waste away. When you're well-hydrated, that transport runs smoothly; when you're not, blood volume drops and thickens, and the heart has to work harder to push it.</p>
+          <p>It runs your thermostat. Humans regulate temperature largely through sweat: as water evaporates from the skin, it carries heat away. This is remarkably effective, but it spends water continuously — more in heat, more during exertion — which is why fluid needs rise precisely when you're hottest and working hardest.</p>
+          <p>It cushions and lubricates. Water-based synovial fluid lets joints glide, cerebrospinal fluid suspends and protects the brain, and the discs between your vertebrae depend on water content to stay springy. Even the eyes, mouth, and digestive tract rely on watery secretions to function and to keep tissue from drying and cracking.</p>
+          <p>It carries waste out. The kidneys filter the entire blood supply many times a day, using water to flush urea, excess salts, and other byproducts into urine. Adequate fluid keeps that filtration efficient and urine dilute; chronic shortfall concentrates it and, over time, raises the risk of kidney stones and urinary problems.</p>
+          <p>The cost of running even slightly low is real and quick. A fluid deficit of just 1–2% of body weight — about the point where healthy people first feel thirsty — is enough to measurably impair concentration, short-term memory, mood, and physical output. Reaction time slows, perceived effort rises, and endurance falls. You don't have to be dramatically dehydrated to feel duller and weaker; the early decline is subtle and easy to misattribute to tiredness or hunger.</p>
+          <p>How much you actually need is not a single universal number. It shifts with body size, activity, climate, altitude, illness, pregnancy, and even diet — fruits, vegetables, soups, and other water-rich foods can supply a meaningful share of daily intake, while caffeine and alcohol nudge it the other way. A calculated target is a sensible starting point, but your body's own signals are the better long-run gauge.</p>
         `,
       },
       {
@@ -3227,11 +3263,12 @@ const LEARN_CATEGORIES = [
         title: "How your water goal is calculated",
         summary: "Hyalo starts from 0.4 ounces per pound of bodyweight, then adds for activity and hot climates — both scaled to your size. It's a research-aligned baseline, not a rigid rule.",
         detail: `
-          <p>The baseline is your bodyweight in pounds times 0.4, in ounces. For a 150-lb person that's 60 oz. This sits in the middle of mainstream guidance and replaced an earlier, higher 0.5 multiplier that tended to overshoot for most people.</p>
-          <p>It scales with bodyweight because larger bodies genuinely hold and turn over more water — more blood volume, more tissue, more surface area losing moisture. A flat "eight glasses for everyone" ignores that a 120-lb and a 220-lb person have very different needs.</p>
-          <p>Activity adds to the baseline, and that addition also scales to your size, because a heavier body sweats more for the same effort. Harder and longer training pushes the number up; a sedentary day leaves it at baseline.</p>
-          <p>Hot or humid climate adds more still, since you lose water faster through sweat and breathing. Pregnancy and breastfeeding add a fixed amount on top, reflecting the extra demand of those stages rather than anything weight-driven.</p>
-          <p>None of this is a rule you must hit to the ounce. The most honest hydration signal is pale-straw urine — if it's consistently darker, drink more; if it's clear all day, you can ease off. The number is scaffolding; your body has the final say.</p>
+          <p>The baseline is your bodyweight in pounds multiplied by 0.4, expressed in ounces. For a 150-pound person that comes to 60 ounces a day before any adjustments. This is a deliberately moderate anchor that sits comfortably within mainstream hydration guidance and tends to track well with what healthy, lightly-active people need from fluids alone.</p>
+          <p>It scales with bodyweight because larger bodies genuinely hold and turn over more water. More body mass means more blood volume, more tissue to perfuse, more surface area losing moisture to the air, and a higher resting metabolic rate that produces more heat to dissipate. A flat recommendation — the familiar "eight glasses for everyone" — ignores that a 120-pound and a 220-pound person have meaningfully different requirements. Tying the baseline to weight builds that difference in from the start.</p>
+          <p>Activity adds to the baseline, and crucially that addition also scales to your size, because a heavier body sweats more to do the same work. Harder, longer, or more frequent training pushes the figure up; a mostly sedentary day leaves it at baseline. The adjustment is an estimate of typical sweat losses for a given effort level, not a precise accounting of any single session — for that, the hydration-and-exercise topic covers measuring your own sweat rate.</p>
+          <p>Hot or humid climate adds more still. Heat raises sweat output directly, and humidity makes sweat evaporate less efficiently, so you produce even more of it trying to cool down. The result is higher fluid turnover across the whole day, not just during exercise, which is why a warm environment nudges the target upward on its own.</p>
+          <p>Pregnancy and breastfeeding add fixed amounts on top, reflecting the genuine extra demand of those stages — expanded blood volume and amniotic fluid in pregnancy, and the water cost of producing milk while nursing. These additions are flat rather than weight-scaled because the demand comes from the physiological state, not from body size.</p>
+          <p>None of this is a quota you must hit to the ounce, and overshooting by a lot isn't virtuous. The single most honest hydration signal is the color of your urine: pale straw means you're on track, consistently dark suggests drinking more, and water-clear all day means you can ease off. Thirst, energy, and how you feel during training round out the picture. Think of the number as scaffolding that gets you in the right neighborhood — your body has the final say, and learns to tell you what it needs.</p>
         `,
       },
       {
@@ -3239,11 +3276,12 @@ const LEARN_CATEGORIES = [
         title: "Hydration and exercise",
         summary: "Exercise raises water needs through sweat, which varies hugely by person, intensity, and heat. A practical target during sustained activity is roughly 16–32 oz per hour — replacing what you lose, not overdrinking.",
         detail: `
-          <p>Sweat rate is highly individual. Two people doing the same workout in the same room can lose very different amounts of fluid — anywhere from under a pint to over a quart per hour depending on body size, fitness, acclimatization, and heat.</p>
-          <p>During sustained activity, a workable range is about 16–32 oz per hour, leaning toward the higher end in heat or for harder efforts. Sports-medicine guidance often frames this as small, frequent sips — on the order of 6–10 oz every 15 minutes — rather than one large drink.</p>
-          <p>The goal is replacement, not flooding. Drinking far beyond what you lose doesn't improve performance and, in extreme cases over many hours, can dilute blood sodium dangerously. Match intake to output rather than chasing a big number.</p>
-          <p>For efforts under about an hour, plain water is usually enough. Beyond that — or in serious heat with heavy sweating — replacing electrolytes alongside fluid starts to matter, because you're losing salts as well as water.</p>
-          <p>A simple feedback loop: weigh yourself before and after a long session. A drop of about a pound equals roughly 16 oz of fluid lost. Over time that tells you your personal sweat rate better than any formula.</p>
+          <p>Sweat rate is one of the most individually variable things in human physiology. Two people doing the identical workout in the same room can lose dramatically different amounts of fluid — from under a pint to well over a quart per hour — depending on body size, fitness, how heat-acclimatized they are, genetics, and the temperature and humidity around them. There is no universal "drink this much" that fits everyone, which is why the guidance is a range rather than a figure.</p>
+          <p>As a working target during sustained activity, roughly 16–32 ounces per hour covers most people, leaning toward the higher end in heat or during harder efforts and the lower end in cool conditions or for easier sessions. Sports-medicine guidance often translates this into small, frequent sips — on the order of 6–10 ounces every 15–20 minutes — rather than one large gulp, because the gut absorbs steady moderate amounts more comfortably than an occasional flood.</p>
+          <p>The goal is replacement, not saturation. Drinking far in excess of what you lose does not improve performance, can leave you sloshing and uncomfortable, and — in rare cases over many hours of heavy plain-water intake — can dangerously dilute blood sodium, a condition called hyponatremia that is in some ways more hazardous than mild dehydration. The aim is to roughly match output, not to drown it.</p>
+          <p>Duration is the main switch for whether electrolytes matter. For efforts under about an hour, plain water is generally sufficient and the body's reserves easily cover any salt lost. Beyond an hour — and especially in serious heat with heavy, salty sweat — replacing sodium and other electrolytes alongside fluid starts to matter, because at that point you're losing meaningful minerals, not just water.</p>
+          <p>Pre-hydration and recovery bracket the session. Starting a workout already well-hydrated (pale urine beforehand) gives you a buffer, so you're topping up rather than digging out of a deficit. Afterward, you'll typically need to replace more than you drank during exercise, since most people under-drink while training; weighing the days you can helps reveal how much.</p>
+          <p>The most useful feedback loop is your own scale. Weigh yourself before and immediately after a long session: a drop of about one pound corresponds to roughly 16 ounces of fluid lost (a pint weighs about a pound). Do this a few times across different conditions and you'll learn your personal sweat rate far more accurately than any formula can predict it — and you can then drink to match it.</p>
         `,
       },
       {
@@ -3251,11 +3289,12 @@ const LEARN_CATEGORIES = [
         title: "Signs of dehydration",
         summary: "Thirst, dark urine, fatigue, headache, and trouble concentrating are the early signals. Urine color — pale straw is the goal — is the most practical day-to-day gauge.",
         detail: `
-          <p>Thirst is the first and most obvious cue, but it lags slightly behind actual need — by the time you feel it, you're often already mildly down. It's a reliable prompt, just not an early-warning system.</p>
-          <p>Urine color is the most practical everyday gauge. Pale straw or light yellow means well-hydrated; dark amber means drink more. (Some vitamins and foods can tint it temporarily, so it's a trend signal, not a single-reading verdict.)</p>
-          <p>Mild dehydration shows up as fatigue, headache, reduced concentration, and a dip in mood or motivation — effects that appear before any dramatic symptoms. People often misread these as tiredness or low blood sugar when the fix is simply water.</p>
-          <p>More pronounced dehydration brings dizziness, a dry mouth, rapid heartbeat, and dark, infrequent urination. This is a signal to rehydrate steadily rather than chug, especially if it followed heavy sweating.</p>
-          <p>Context matters: heat, illness with fever or stomach upset, alcohol, and intense exercise all accelerate fluid loss. If symptoms are severe, persistent, or paired with confusion, that's beyond a hydration tip and worth medical attention.</p>
+          <p>Thirst is the first and most obvious cue, but it's a slightly delayed one — by the time you clearly feel it, you're often already mildly down. That doesn't make it useless; it's a perfectly good prompt to drink. It just isn't an early-warning system, so waiting until you're parched means spending part of the day a little behind.</p>
+          <p>Urine color is the most practical everyday gauge, because it reflects how hard your kidneys are working to conserve water. Pale straw or light lemonade means you're well-hydrated; deep amber or honey-colored means drink more. A few caveats: B-vitamins can turn urine bright yellow, certain foods and medications can tint it, and the first urine of the morning is normally darker after a night without fluids. So read it as a trend across the day, not a single verdict.</p>
+          <p>Mild dehydration shows up first as a cluster of vague, easily-misread symptoms: fatigue, a dull headache, difficulty concentrating, slower reactions, and a dip in mood or motivation. These appear well before any dramatic signs, and people routinely chalk them up to tiredness, stress, or low blood sugar when the actual remedy is a glass or two of water. If you feel foggy mid-afternoon, hydration is worth ruling out first.</p>
+          <p>More pronounced dehydration brings clearer physical signals: a dry or sticky mouth, dizziness or lightheadedness (especially on standing), a faster heartbeat, flushed skin, muscle cramps, and dark, scant, infrequent urination. Skin that's slow to spring back when gently pinched is a rough corroborating sign. This stage calls for steady rehydration rather than chugging, and — if it followed heavy sweating — for replacing salts as well as fluid.</p>
+          <p>Context dramatically changes how fast you can get there. Heat and humidity, intense or prolonged exercise, high altitude, illness with fever, vomiting, or diarrhea, alcohol, and some medications all accelerate fluid loss. Older adults are more vulnerable because the thirst signal weakens with age, and infants and young children dehydrate quickly. In hot weather or during illness, it's worth drinking proactively rather than waiting for thirst.</p>
+          <p>Some signs are beyond a hydration tip and warrant medical attention: confusion or disorientation, fainting, a racing heart that won't settle, no urination for many hours, or dehydration in a baby, young child, or frail older person, particularly alongside persistent vomiting or diarrhea. Severe dehydration is a genuine medical problem, and when fluid can't be kept down or symptoms escalate, that's a reason to seek care rather than tough it out.</p>
         `,
       },
       {
@@ -3263,11 +3302,12 @@ const LEARN_CATEGORIES = [
         title: "Electrolytes",
         summary: "Sodium, potassium, and magnesium let your body actually use the water you drink. For most days plain water is fine, but heavy sweating, long efforts, or hot weather can warrant replacing them too.",
         detail: `
-          <p>Electrolytes are minerals that carry an electrical charge in solution — chiefly sodium, potassium, magnesium, calcium, and chloride. They govern fluid balance, nerve signaling, and muscle contraction, including your heartbeat.</p>
-          <p>Hydration isn't just water volume; it's water plus the right mineral balance. Sodium in particular helps your body hold and distribute fluid. Drinking large amounts of plain water while losing lots of salt through sweat can actually leave you worse off.</p>
-          <p>For an ordinary day, a normal diet replaces what you use and plain water is entirely sufficient. The case for added electrolytes is specific: prolonged or intense exercise, heavy sweating, hot and humid conditions, or illness with fluid loss.</p>
-          <p>When you do need them, the amounts are modest — this isn't a reason to over-supplement. Most people get ample potassium and magnesium from food (fruit, vegetables, nuts, dairy), and the main thing sweat depletes acutely is sodium.</p>
-          <p>Signs that electrolytes, not just water, are off can include muscle cramps, persistent fatigue despite drinking, or headaches during long hot efforts. As with everything here, these are general patterns; medical conditions and medications can change the picture.</p>
+          <p>Electrolytes are minerals that carry an electrical charge once dissolved in the body's fluids — chiefly sodium, potassium, magnesium, calcium, and chloride. That charge is what lets them do their jobs: governing how water distributes between and within cells, conducting the nerve impulses that let you think and move, and triggering muscle contraction, including the steady beat of the heart. They are not optional extras; they're part of what makes the fluid in you functional.</p>
+          <p>Hydration is therefore about more than volume. Water and electrolytes work as a system: sodium in particular helps the body hold onto and properly position fluid, drawing it where it's needed. This is why drinking large amounts of plain water while losing a lot of salt through heavy sweat can paradoxically leave you feeling worse — the balance has tipped, even if total fluid is high. Replacing some sodium alongside the water restores the balance.</p>
+          <p>For an ordinary day, a normal diet replaces what you use, and plain water is entirely sufficient. Whole foods are full of electrolytes — fruits and vegetables for potassium, nuts, seeds, legumes, and leafy greens for magnesium, dairy and greens for calcium, and ordinary salted food for sodium. Most people get ample amounts without thinking about it, and the routine case does not call for supplements or sports drinks.</p>
+          <p>The case for added electrolytes is specific and situational: prolonged or intense exercise, heavy and salty sweating, hot and humid conditions, or illness with significant fluid loss from vomiting or diarrhea. In these situations you lose minerals fast enough that food and reserves may not keep pace within the timeframe, and replacing them — through an electrolyte drink, oral rehydration solution, or salted food and fluid — helps you actually retain what you drink.</p>
+          <p>Of the electrolytes, sodium is the one sweat depletes most acutely, which is why it's the centerpiece of most rehydration products. Potassium and magnesium are lost in smaller amounts and are usually well-covered by a normal diet, so the headline need during and after heavy sweating is typically sodium plus fluid, with the others playing a supporting role.</p>
+          <p>As with most things, the dose is modest and more is not better. Electrolyte needs during exercise are real but not enormous, and routinely over-supplementing — or leaning on sugary sports drinks when plain water would do — adds salt, sugar, and calories you don't need. Signs that the balance, rather than the volume, is off can include muscle cramps, persistent fatigue despite drinking, or headaches during long, hot efforts. And because conditions like high blood pressure, kidney disease, and certain medications change how the body handles sodium and potassium, anyone managing those should follow individualized medical guidance rather than general advice.</p>
         `,
       },
     ],
@@ -3280,11 +3320,12 @@ const LEARN_CATEGORIES = [
         title: "What protein does",
         summary: "Protein supplies the amino acids your body uses to build and repair nearly everything — muscle, enzymes, hormones, immune cells, skin, hair. Unlike fat and carbs, the body stores no surplus, so it needs a steady daily supply.",
         detail: `
-          <p>Protein is the body's structural and functional material. Broken down into amino acids, it becomes muscle and connective tissue, but also enzymes that drive reactions, hormones that signal, antibodies that defend, and the keratin in skin, hair, and nails.</p>
-          <p>It's in constant turnover. Your body is always breaking down and rebuilding its own proteins, recycling some amino acids and losing others. That ongoing loss is why protein is a daily requirement, not something you can load once and forget.</p>
-          <p>Crucially, there's no storage depot. Fat banks energy in adipose tissue and carbohydrate banks as glycogen, but there's no equivalent reserve for protein beyond your functional tissues themselves. Fall short for long enough and the body borrows from muscle.</p>
-          <p>It's also satiating. Gram for gram, protein tends to keep you fuller than carbohydrate or fat, and digesting it burns slightly more energy. That's part of why adequate protein helps with body composition, not just muscle.</p>
-          <p>"Adequate" depends on you — body size, activity, age, and goals all move the target. The baseline to prevent deficiency is low; the amount to build or preserve muscle while active is meaningfully higher.</p>
+          <p>Protein is the body's structural and functional building material. Once digested, it breaks down into amino acids, which the body reassembles into tens of thousands of different proteins, each folded into a specific shape for a specific job. Muscle and connective tissue are the most visible products, but the same amino acids become the enzymes that drive virtually every chemical reaction, the antibodies that fight infection, many hormones that carry signals, the transporters that ferry substances through the blood, and the keratin and collagen in skin, hair, nails, and the scaffolding that holds tissues together.</p>
+          <p>It exists in constant turnover. Your body is perpetually breaking down its own proteins and rebuilding them, recycling much of the amino acid content but inevitably losing some to waste, energy use, and the shedding of cells. This continuous churn — protein synthesis on one side, breakdown on the other — is why protein is a genuine daily requirement rather than something you can stockpile. The losses are ongoing, so the supply must be too.</p>
+          <p>Crucially, there is no dedicated storage depot. The body banks energy as fat in adipose tissue and as carbohydrate in the form of glycogen in muscle and liver, and it can draw on those reserves between meals. There is no equivalent reserve for protein beyond your functional tissues themselves. When dietary protein runs short for long enough, the body begins breaking down its own muscle to liberate amino acids for more urgent needs — which is part of why adequate intake matters for keeping the muscle you have, not only for building more.</p>
+          <p>Protein is also unusually satiating. Gram for gram, it tends to keep you fuller for longer than carbohydrate or fat, influencing appetite hormones in ways that reduce later hunger. On top of that, digesting and processing protein burns more energy than the other macronutrients — its thermic effect is higher — so a portion of its calories is spent simply handling it. Together these properties are part of why adequate protein supports body composition broadly, helping with fat loss and appetite control, not just muscle.</p>
+          <p>It supports far more than the gym. Protein is central to immune function, wound healing, the maintenance of bone (which has a protein matrix beneath its minerals), the production of enzymes for digestion, and the constant renewal of the gut lining and skin. Shortfalls show up not as a single dramatic symptom but as slower recovery, weaker immunity, thinning hair, and gradual loss of strength.</p>
+          <p>What counts as "adequate" depends heavily on you. The baseline required merely to avoid deficiency is fairly low, but the amount that supports building or preserving muscle while active, recovering from training, ageing well, or losing fat without losing muscle is meaningfully higher. Body size, activity level, age, and goals all move the target — which is exactly why a personalized figure beats a one-size-fits-all rule, a logic the protein-goal topic unpacks in detail.</p>
         `,
       },
       {
@@ -3292,11 +3333,12 @@ const LEARN_CATEGORIES = [
         title: "Muscle protein synthesis",
         summary: "Muscle is in constant turnover — built up (synthesis) and broken down. Net growth happens when synthesis outpaces breakdown over time, driven mainly by resistance training plus enough protein, especially the amino acid leucine.",
         detail: `
-          <p>Muscle protein synthesis (MPS) is the process of building new muscle protein. Its counterpart is muscle protein breakdown. At any moment both are happening; what matters is the balance between them over days and weeks.</p>
-          <p>You gain muscle when synthesis exceeds breakdown on net. You lose it when the reverse holds. Training and protein are the two biggest levers that tip the balance toward building.</p>
-          <p>Resistance training is the primary trigger — it signals the muscle that it needs to adapt and become stronger, and it sensitizes the muscle to protein for roughly a day afterward. Without that stimulus, extra protein alone won't build much.</p>
-          <p>Protein supplies the raw material, and one amino acid — leucine — acts as a kind of on-switch for the synthesis machinery. A meal needs a threshold of leucine (and total protein) to maximally stimulate MPS, which is why a small protein snack does less than a proper serving.</p>
-          <p>The effect of a meal is also temporary, rising and falling over a few hours. That's the rationale for spreading protein across the day rather than relying on a single large dose — though, as the timing topic covers, total daily intake still matters most.</p>
+          <p>Muscle protein synthesis, or MPS, is the process by which the body builds new muscle protein. Its constant counterpart is muscle protein breakdown, in which existing muscle protein is dismantled. Both run continuously, every hour of every day. What determines whether you gain, hold, or lose muscle is not whether one of them happens but the balance between them, summed over days and weeks — the net protein balance.</p>
+          <p>You gain muscle when synthesis exceeds breakdown on net over time. You hold steady when they're roughly even, and you lose muscle when breakdown wins. The two biggest levers you can pull to tip that balance toward building are resistance training and protein intake — and they work best together, each amplifying the effect of the other.</p>
+          <p>Resistance training is the primary trigger and the indispensable signal. Challenging a muscle with meaningful load creates the stimulus that tells it to adapt and grow back stronger, and it sensitizes the muscle to protein for roughly 24–48 hours afterward, a window in which the same meal builds more than it otherwise would. Without that mechanical stimulus, extra protein alone produces very little growth — the body has no reason to build what it isn't being asked to use. This is why nutrition and training are partners; protein is the raw material, but training is the instruction.</p>
+          <p>Protein supplies the amino acids that synthesis is built from, and one amino acid stands out: leucine. Leucine acts as a kind of molecular on-switch, activating the cellular machinery (the mTOR pathway) that initiates synthesis. A meal needs to clear a leucine threshold — and a sufficient total protein dose — to maximally stimulate MPS, which is why a few bites of a protein source do far less than a proper serving. Animal proteins and soy are particularly leucine-rich, part of why they're efficient stimulators.</p>
+          <p>The response to a meal is powerful but temporary. After you eat protein, synthesis rises, peaks within a couple of hours, and then returns toward baseline even if amino acids are still present — a phenomenon sometimes called the "muscle full" effect. Because the elevation fades, a single enormous dose doesn't keep synthesis high all day; the muscle can only be maximally stimulated so much at once. This is the physiological basis for spreading protein across several meals rather than relying on one, though as the timing topic explains, total daily intake still matters most of all.</p>
+          <p>Several factors modulate the whole system. Age blunts the response — older adults need more protein per meal to achieve the same synthetic effect, a phenomenon called anabolic resistance that underlies recommendations for higher intake with age. Adequate energy, sleep, and overall recovery all support the process, while a large calorie deficit, poor sleep, and excessive stress work against it. Muscle is built in the quiet hours of recovery, not during the workout itself; training provides the signal, and protein, rest, and time do the construction.</p>
         `,
       },
       {
@@ -3304,11 +3346,12 @@ const LEARN_CATEGORIES = [
         title: "How your protein goal is calculated",
         summary: "Hyalo targets protein to your lean mass and goal, landing in the well-established 1.6–2.2 g/kg range for most people. It scales to muscle, not total weight, because fat tissue doesn't need feeding.",
         detail: `
-          <p>The headline ranges come from sports-nutrition research: roughly 1.6–2.2 grams of protein per kilogram of bodyweight per day supports building and maintaining muscle for active people. Hyalo's multipliers sit inside this evidence-based window.</p>
-          <p>The target scales to lean mass, not gross weight, when you've entered a body-fat figure. Muscle and organs use protein; fat tissue largely doesn't. Two people at the same weight but different body compositions don't need the same protein, and adjusting for that makes the number more honest.</p>
-          <p>Your goal shifts the multiplier. Building muscle and losing fat while training both push protein higher — the latter because, in a calorie deficit, ample protein is what protects muscle from being burned alongside fat. Simple maintenance sits a little lower.</p>
-          <p>Activity nudges it up too, and there's a floor for older adults, who need more protein than the young to achieve the same muscle response — a hedge against age-related muscle loss. There's also a sensible cap, because benefit plateaus and more isn't better past a point.</p>
-          <p>Workouts add a daily bump on top of the baseline, scaled to how hard and long you trained, with a one-time bonus on any day you do resistance work. And you can always override the whole thing with a number of your own.</p>
+          <p>The headline ranges come from a large body of sports-nutrition research: for active people aiming to build or maintain muscle, roughly 1.6–2.2 grams of protein per kilogram of bodyweight per day captures where the benefit lives. Below that range, muscle-building is often under-supported; above it, the returns flatten out. Hyalo's multipliers are designed to land inside this evidence-based window, adjusted for your particular situation rather than applied as a blanket number.</p>
+          <p>The target scales to lean mass, not gross bodyweight, whenever you've entered a body-fat figure. The reasoning is mechanical: muscle, organs, and other lean tissue use protein, while fat tissue is largely metabolically inert in this respect and doesn't need feeding. Two people at the same weight but different body compositions don't have the same protein requirement, and basing the figure on the tissue that actually uses protein makes it both more accurate and, often, more achievable than scaling off total weight.</p>
+          <p>Your stated goal shifts the multiplier, because different objectives place different demands on protein. Actively building muscle raises the target to supply the raw material for growth. Losing fat raises it too — arguably most of all — because in a calorie deficit, ample protein is the single most important dietary factor protecting muscle from being broken down for energy alongside the fat you're trying to lose. Simple maintenance sits a little lower, since you're sustaining rather than constructing.</p>
+          <p>Activity level nudges the figure up further, reflecting the greater repair and turnover that training demands. There's also a deliberate floor for older adults, because ageing muscle responds less readily to protein — the anabolic resistance described in the muscle-synthesis topic — so the same result requires a higher intake. Raising the minimum for older users is a hedge against the gradual, often silent muscle loss that otherwise accompanies ageing.</p>
+          <p>There's a sensible cap at the top end, because benefit plateaus. Past a certain point, additional protein does little for muscle and mostly displaces the carbohydrates and fats that fuel training and overall health. Capping the target keeps the recommendation honest and practical rather than chasing an ever-higher number that delivers diminishing value, a point the upper-limit topic develops.</p>
+          <p>Finally, training days add a same-day bump on top of the baseline, scaled to how hard and how long you trained, with a one-time bonus applied on any day you do resistance work — reflecting the elevated synthesis and repair that follow a real session. And none of this is locked: you can override the whole calculation with a figure of your own, or have the planner set protein around a specific goal body-fat target. The math is a well-reasoned starting point, but the final number is yours.</p>
         `,
       },
       {
@@ -3316,11 +3359,12 @@ const LEARN_CATEGORIES = [
         title: "Protein timing",
         summary: "Total daily protein matters far more than timing. That said, spreading intake across 3–4 meals of roughly 25–40g each appears to support muscle synthesis slightly better than the same total in one or two sittings.",
         detail: `
-          <p>The big rock is total daily intake. If you hit your day's protein target, the exact clock times matter much less than the marketing around "anabolic windows" once suggested. Consistency over weeks beats precision within a day.</p>
-          <p>That said, distribution has a modest edge. Because a meal's muscle-building response rises and falls over a few hours, spreading protein across three or four feedings tends to keep synthesis elevated more of the day than loading it all at once.</p>
-          <p>Each feeding benefits from clearing a threshold — very roughly 25–40 grams of quality protein, depending on body size — to maximally switch on synthesis. Much smaller servings still contribute to your total but stimulate the building response less per sitting.</p>
-          <p>The post-workout "window" is real but generous. Rather than minutes, think in terms of getting a solid protein meal within a few hours either side of training. If you trained fasted, sooner is slightly better; otherwise there's no rush.</p>
-          <p>Practically: aim for your daily number first, then, if it's easy, split it into a few balanced meals. Don't let timing rules add stress or cause you to undereat protein overall — the total is what moves the needle.</p>
+          <p>The single most important variable, by a wide margin, is total daily protein. If you reach your day's target, the precise clock times at which you eat it matter far less than the fitness-marketing emphasis on "anabolic windows" once implied. Consistency in hitting your total, day after day across weeks and months, is what builds and preserves muscle. Timing is a refinement on top of that foundation, not a substitute for it.</p>
+          <p>That said, distribution does carry a modest, real edge. Because a protein meal elevates muscle synthesis for only a few hours before it returns toward baseline — the "muscle full" effect from the synthesis topic — spreading protein across three or four feedings keeps synthesis stimulated across more of the day than loading it all into one or two large meals. The difference is meaningful enough to be worth doing when convenient, but small enough that it shouldn't override the priority of total intake.</p>
+          <p>Each feeding benefits from clearing a threshold to maximally switch on synthesis — very roughly 25–40 grams of quality protein, with larger or older individuals at the higher end, since more muscle mass and age-related anabolic resistance both raise the dose needed. Servings well below that threshold still count toward your daily total and still contribute, but they stimulate the building response less per sitting. The practical implication is to aim for solid, threshold-clearing portions at your main meals rather than grazing on small amounts.</p>
+          <p>The post-workout "window" is real but far more generous than the old advice suggested. Rather than a frantic 30-minute rush, think in terms of getting a good protein-containing meal within a few hours on either side of training — the muscle's heightened sensitivity to protein lasts a day or more, so there's ample time. The one situation where sooner is genuinely better is training fasted, after many hours without food, where providing protein reasonably soon afterward makes more difference than it does when you've already eaten.</p>
+          <p>An overnight consideration is worth a mention: the long stretch of sleep is the body's longest daily fast, and synthesis can dip toward the end of it. A protein-containing meal before bed, particularly a slower-digesting source, can support overnight synthesis for those optimizing the margins. It's a fine-tuning detail, not a requirement.</p>
+          <p>The practical synthesis of all this is simple. Hit your daily protein target first — that's the rock. Then, if it's easy, divide it into three or four balanced, threshold-clearing meals across the day, including one reasonably near your training. But never let timing rules add stress, restrict your eating, or cause you to undereat protein overall in pursuit of a perfect schedule. The total is what moves the needle; the timing just polishes it.</p>
         `,
       },
       {
@@ -3328,11 +3372,12 @@ const LEARN_CATEGORIES = [
         title: "Complete protein and amino acids",
         summary: "Of 20 amino acids, nine are essential — your body can't make them. A complete protein supplies all nine in usable amounts; animal sources are complete, and most plant sources become complete when varied across the day.",
         detail: `
-          <p>Proteins are built from 20 amino acids. Your body can synthesize 11 of them on its own; the other nine are essential, meaning they must come from food. A protein source is judged partly on whether it delivers all nine in good proportion.</p>
-          <p>A complete protein contains all nine essential amino acids in amounts that support the body's needs. Animal sources — meat, fish, eggs, dairy — are complete, as is soy among plants. They also tend to be rich in leucine, the amino acid that most strongly triggers muscle synthesis.</p>
-          <p>Most individual plant proteins are "incomplete" only in the sense of being lower in one or two essentials — grains tend to be light on lysine, legumes on methionine. The classic pairing of, say, beans and rice covers the gaps.</p>
-          <p>You don't have to combine them in the same meal. Eating a variety of plant proteins across the day lets your body pool the amino acids it needs. The old rule about strict meal-by-meal pairing has been relaxed by later evidence.</p>
-          <p>The practical upshot: omnivores get complete protein easily; plant-based eaters do too with a bit of variety, and may aim slightly higher in total since some plant sources are less concentrated and a touch less digestible.</p>
+          <p>Proteins are assembled from 20 amino acids, like words from a fixed alphabet. The body can manufacture 11 of them on its own, drawing on other raw materials as needed. The remaining nine are termed essential, meaning they cannot be synthesized internally and must be supplied by food. A protein source is judged in large part by whether it delivers all nine essentials, and in what proportions relative to what the body needs.</p>
+          <p>A complete protein contains all nine essential amino acids in amounts that adequately support the body's requirements. Animal sources — meat, fish, poultry, eggs, and dairy — are complete, and among plants, soy stands out as complete as well. These sources also tend to be rich in leucine, the amino acid that most strongly triggers muscle synthesis, which makes them especially efficient stimulators of muscle building per gram.</p>
+          <p>Most individual plant proteins are "incomplete" only in a narrow sense: they're lower in one or two of the essential amino acids rather than missing them outright. Grains and many vegetables tend to be limited in lysine, while legumes are typically lighter on methionine. The shortfall is partial, and it's easily covered by eating a mix of sources — the classic pairing of beans with rice, for instance, combines two foods whose limiting amino acids complement each other to form a complete profile between them.</p>
+          <p>An important update to older nutrition advice: you do not need to combine complementary proteins within the same meal. The body maintains a pool of recently absorbed amino acids and can draw on it to assemble complete proteins over the course of a day, so eating a variety of plant proteins across your meals achieves the same result. The strict meal-by-meal pairing once taught has been relaxed by later evidence; variety across the day is what matters, not precision within a single sitting.</p>
+          <p>Digestibility and concentration add a second dimension beyond completeness. Animal proteins are generally both highly digestible and protein-dense, while some plant proteins are a little less digestible — partly because fiber and other compounds in plants modestly reduce absorption — and come packaged with more carbohydrate. Scoring systems like the DIAAS attempt to capture this combination of amino acid profile and digestibility, and they're part of why plant-based eaters are often advised to aim somewhat higher in total protein and to favor concentrated sources.</p>
+          <p>The practical upshot is reassuring on both sides. Omnivores reach complete protein almost automatically through ordinary meals. Plant-based eaters do too, with a little intentional variety — combining legumes, grains, soy foods, nuts, and seeds across the day — and by leaning on concentrated options like tofu, tempeh, edamame, lentils, and seitan, while aiming a bit higher in total to offset lower digestibility. Completeness is a solvable puzzle, not a barrier, for any reasonable diet.</p>
         `,
       },
       {
@@ -3340,11 +3385,12 @@ const LEARN_CATEGORIES = [
         title: "How much protein is too much",
         summary: "For healthy people, very high protein is safe but offers diminishing returns past roughly 2.2 g/kg for muscle. The old worry that protein harms healthy kidneys isn't supported by evidence — though those with kidney disease should follow medical guidance.",
         detail: `
-          <p>For building muscle, benefit plateaus. Past roughly 1.6–2.2 grams per kilogram of bodyweight, additional protein adds little to the muscle-building response. It isn't harmful, it's just not doing much extra work — which is why Hyalo caps the target rather than chasing ever-higher numbers.</p>
-          <p>During fat loss, the useful range can run a bit higher, because more protein helps preserve muscle in a deficit and keeps you full. Even so, there's a ceiling beyond which you're mostly displacing other nutrients for no added benefit.</p>
-          <p>The persistent fear that high protein damages healthy kidneys is not supported by the evidence in people with normal kidney function. Studies of higher-protein diets in healthy adults haven't shown the harm the myth predicts.</p>
-          <p>The genuine exception is existing kidney disease. For people with compromised kidney function, protein does need to be managed, and that's a matter for a doctor, not a general guideline. Certain other medical conditions warrant individualized advice too.</p>
-          <p>Very high intakes also bump up against practicality and balance — protein crowds out room for the carbohydrates and fats that fuel training and overall health. More isn't better here; enough, consistently, is the goal.</p>
+          <p>For the purpose of building muscle, the benefit of additional protein plateaus. Past roughly 1.6–2.2 grams per kilogram of bodyweight per day, more protein adds little to the muscle-building response — the machinery is already being supplied and stimulated about as much as it can use. The extra isn't harmful, it's simply not doing much further work, which is precisely why a well-designed protein target includes a cap rather than encouraging ever-larger amounts.</p>
+          <p>During fat loss, the genuinely useful range can run somewhat higher. In a calorie deficit, higher protein helps preserve muscle that would otherwise be broken down for energy, and it blunts hunger, making the deficit easier to sustain. So a person actively dieting may sit toward the upper end, or briefly above the muscle-building range, with good reason. Even here, though, there's a ceiling beyond which you're mostly displacing other nutrients for no added return.</p>
+          <p>The most persistent fear — that high protein damages the kidneys — is not supported by the evidence in people with normal kidney function. Studies of higher-protein diets in healthy adults, including longer-term ones, have not shown the kidney harm the myth predicts. The body adapts its filtration to handle the protein load, and a temporary rise in a marker like filtration rate reflects normal adaptation, not injury. For healthy kidneys, higher protein appears safe.</p>
+          <p>The genuine and important exception is existing kidney disease. For people whose kidney function is already compromised, protein intake does need to be managed carefully, because the impaired kidneys handle the byproducts of protein metabolism less effectively. This is a matter for a doctor or renal dietitian, not a general guideline, and nothing here should override individualized medical advice. Certain other conditions — some liver diseases, particular metabolic disorders — likewise call for tailored guidance.</p>
+          <p>Beyond the kidney question, very high intakes bump up against practicality and balance. Protein is filling and crowds the plate, so pushing it very high tends to displace the carbohydrates that fuel hard training and the fats that support hormones and the absorption of fat-soluble vitamins. Extremely high-protein diets can also be monotonous and expensive to sustain. There's a sweet spot where you get protein's full benefit without sacrificing the rest of a balanced diet, and overshooting moves you away from it.</p>
+          <p>A few secondary points round out the picture. Adequate hydration helps the body process the nitrogen byproducts of higher protein intake comfortably. Spreading protein across meals, rather than consuming enormous single doses, is gentler on digestion and, as the timing topic notes, slightly more effective anyway. The honest bottom line is that for healthy people, more protein is not better past a point — enough, consistently, within a balanced diet, is the goal, and that's the principle a sensible cap is built to respect.</p>
         `,
       },
     ],
@@ -3357,11 +3403,12 @@ const LEARN_CATEGORIES = [
         title: "What body fat % means",
         summary: "Body fat percentage is the share of your weight that's fat, with the rest being lean mass — muscle, bone, organs, water. It describes what your weight is made of, which the scale and BMI can't.",
         detail: `
-          <p>Body fat percentage splits your weight into two buckets: fat mass, and everything else — muscle, bone, organs, connective tissue, and water, collectively called lean mass. If you're 150 lb at 25% body fat, that's about 37 lb of fat and 113 lb of lean tissue.</p>
-          <p>It answers a question the scale can't: not how much you weigh, but what that weight is. Two people at the identical weight and height can look and function completely differently depending on how much of them is muscle versus fat.</p>
-          <p>That's also where it improves on BMI. BMI uses only height and weight, so it can't distinguish a muscular athlete from someone carrying excess fat — both can land in the same BMI category despite very different health profiles. Body fat percentage sees the difference.</p>
-          <p>Not all fat is optional. A baseline amount — "essential fat" — is required for hormones, brain function, and organ protection, and it's higher in women than men for reproductive reasons. Below that baseline, health suffers; this is not a number to minimize without limit.</p>
-          <p>Any practical method of measuring it is an estimate with a margin of error. The most useful way to use the figure is as a trend over time under consistent conditions, rather than fixating on a single decimal.</p>
+          <p>Body fat percentage divides your total weight into two categories: fat mass, and everything else — muscle, bone, organs, connective tissue, and the water held within them, collectively called lean mass or fat-free mass. If you weigh 150 pounds at 25% body fat, that's about 37.5 pounds of fat and 112.5 pounds of lean tissue. The figure tells you the composition of your weight, not just its quantity.</p>
+          <p>It answers a question the bathroom scale fundamentally cannot: not how much you weigh, but what that weight is made of. Two people of identical height and weight can look entirely different and have very different health and fitness profiles depending on how much of them is muscle versus fat. The scale sees only the total; body fat percentage sees the makeup, which is usually what people actually care about when they talk about getting "leaner" or "in shape."</p>
+          <p>This is also where it improves on BMI. Body mass index is calculated from height and weight alone, so by design it cannot distinguish a lean, muscular athlete from someone carrying excess fat — both can land in the same BMI category despite opposite body compositions and health risks. BMI is a useful population-level screening tool but a blunt instrument for an individual; body fat percentage resolves the distinction BMI is blind to.</p>
+          <p>Not all body fat is excess, and a baseline amount is required to live. This irreducible minimum, called essential fat, is built into the brain, nerves, bone marrow, and the membranes of every cell, and it's necessary for hormone production, temperature regulation, and organ protection. Essential fat is higher in women than men — roughly in the low teens of percent versus the single digits — largely for reproductive function. Below the essential threshold, health deteriorates; this is emphatically not a number to drive toward zero, and the body-fat-ranges and goal-setting topics develop why.</p>
+          <p>Fat also isn't a single uniform substance. Subcutaneous fat sits under the skin, while visceral fat surrounds the internal organs and behaves very differently for health, as its own topic explains. So body fat percentage is a useful summary number, but where the fat sits matters too — which is why measurements like waist circumference and waist-to-hip ratio add information that a single percentage leaves out.</p>
+          <p>Every practical method of measuring body fat is an estimate carrying a margin of error. Circumference formulas, bioelectrical scales, calipers, and even more sophisticated tools each have their own assumptions and imprecision, and they can disagree by several points for the same person. Because of that, the most useful way to use the figure is as a trend over time under consistent conditions and a consistent method, watching the direction of change rather than fixating on a single decimal as if it were exact.</p>
         `,
       },
       {
@@ -3369,11 +3416,12 @@ const LEARN_CATEGORIES = [
         title: "Body fat ranges",
         summary: "Healthy ranges differ by sex: very roughly 10–20% for men and 18–28% for women, with athletes often lower. Both extremes carry risk — too high strains metabolism, too low disrupts hormones.",
         detail: `
-          <p>Healthy body fat differs by sex because women carry more essential fat for reproductive function. As broad reference bands, fitness-and-health sources often place men around 10–20% and women around 18–28% as a healthy, sustainable range, with "athletic" categories sitting below that.</p>
-          <p>These bands are approximate and depend on the source and measurement method. They're orientation, not precise cutoffs — the boundary between "fit" and "average" is a gradient, not a line, and where you feel and perform best may sit anywhere within a healthy span.</p>
-          <p>Higher body fat, particularly around the midsection, is associated with greater metabolic and cardiovascular risk. The concern isn't appearance; it's that excess fat — especially the visceral kind around the organs — is metabolically active in ways that strain health.</p>
-          <p>Lower is not automatically better, and there's a floor. Pushing body fat very low disrupts hormones, mood, sleep, immunity, and — in women especially — menstrual and bone health. The lean physiques seen in peak-condition athletes are often not sustainable year-round, even for them.</p>
-          <p>A healthy target is one you can maintain while feeling strong, sleeping well, and training consistently — not the lowest number you can briefly force. If thinking about these ranges starts to feel preoccupying or punishing, that's a sign to step back and, if needed, talk to someone.</p>
+          <p>Healthy body fat differs meaningfully by sex, because women carry more essential fat for reproductive function. As broad reference bands, fitness-and-health sources commonly place healthy, sustainable ranges around 10–20% for men and 18–28% for women, with "athletic" categories sitting below those and "essential fat" minimums lower still — roughly the single digits for men and low teens for women. These are orientation, not universal law.</p>
+          <p>The bands are approximate and vary by the source, the population studied, and the measurement method used. They describe gradients, not bright lines: the boundary between "fit" and "average" is a smooth transition, not a threshold you cross. Where you personally look, feel, and perform best may sit anywhere within a healthy span, and chasing a specific decimal because a chart labels it a certain way misreads what the ranges are for.</p>
+          <p>Higher body fat, particularly when concentrated around the midsection, is associated with greater metabolic and cardiovascular risk. The concern is not appearance but physiology: excess fat — especially the visceral fat packed around the organs, covered in its own topic — is metabolically active in ways that promote inflammation, insulin resistance, and unfavorable changes in blood lipids and pressure. This is why reducing excess fat is genuinely health-protective, beyond any aesthetic motivation.</p>
+          <p>Lower is not automatically better, and there is a real floor below which health suffers. Pushing body fat very low disrupts the endocrine system: it can lower sex hormones, harm mood, sleep, and immune function, reduce bone density, and — in women especially — interrupt the menstrual cycle, a warning sign of broader hormonal and skeletal consequences. The extremely lean physiques seen in peak-condition physique athletes are typically achieved briefly and deliberately, are uncomfortable to maintain, and are often not sustainable year-round even for the athletes themselves.</p>
+          <p>A healthy target, then, is one you can maintain while feeling strong, sleeping well, recovering properly, and training consistently — not the lowest number you can force for a short window. Sustainability is the real criterion, because a level you can only briefly hold isn't a stable place to live. For most people, a target somewhere in the mid-to-lower portion of the healthy range delivers a fit, capable body without the costs that come with chasing extremes.</p>
+          <p>Finally, a note of care. If thinking about these ranges starts to feel preoccupying, punishing, or like it's driving your eating and self-worth in a rigid way, that's a meaningful signal to step back. Body composition is one input into health, not a measure of your value, and disordered patterns can hide behind the language of "discipline." If any of that resonates, it's worth talking with a doctor or a qualified professional — these numbers should serve your wellbeing, never erode it.</p>
         `,
       },
       {
@@ -3381,11 +3429,12 @@ const LEARN_CATEGORIES = [
         title: "Visceral vs subcutaneous fat",
         summary: "Subcutaneous fat sits under the skin; visceral fat wraps around your organs. Visceral fat is the metabolically dangerous kind — it drives inflammation and insulin resistance — which is why waist size predicts health risk.",
         detail: `
-          <p>Subcutaneous fat is the layer just under the skin — the fat you can pinch. It's the majority of body fat and is relatively benign; it's largely a storage depot and even produces some helpful signals.</p>
-          <p>Visceral fat is different. It sits deep in the abdomen, packed around the liver, intestines, and other organs. You can't pinch it, but it's what pushes the belly outward from within and makes a waist measurement meaningful.</p>
-          <p>The trouble is that visceral fat is metabolically active in harmful ways. It releases inflammatory signals and free fatty acids directly toward the liver, promoting insulin resistance, unfavorable cholesterol shifts, and chronic low-grade inflammation.</p>
-          <p>That's why where you carry fat matters as much as how much. Two people at the same body fat percentage can have very different risk profiles depending on how much of it is visceral — and why waist circumference and waist-to-hip ratio predict cardiometabolic risk on their own.</p>
-          <p>The encouraging part: visceral fat tends to be among the first fat lost when you improve diet, activity, and sleep. A shrinking waist is often a sign that the most metabolically important fat is going first, even before the scale moves much.</p>
+          <p>Subcutaneous fat is the layer that sits just beneath the skin — the fat you can pinch between your fingers. It accounts for the large majority of total body fat and is, comparatively, relatively benign. It serves as an energy store and insulation, and it even secretes some helpful signaling molecules. Its distribution shapes how the body looks, but on its own it carries less metabolic hazard than its location and visibility might suggest.</p>
+          <p>Visceral fat is a different tissue with a different address. It sits deep within the abdominal cavity, packed around and between the internal organs — the liver, intestines, pancreas, and others. You cannot pinch it, but it's what pushes the belly outward from within, producing the firm, protruding "apple-shaped" midsection, and it's the reason a waist measurement carries health meaning that a skinfold pinch does not.</p>
+          <p>The trouble with visceral fat is that it is metabolically active in harmful ways. It releases a steady stream of inflammatory signaling molecules and free fatty acids, and because of its location it drains directly toward the liver through the portal vein, delivering those fatty acids and inflammatory signals straight to a central metabolic organ. The downstream effects include insulin resistance, unfavorable shifts in cholesterol and triglycerides, higher blood pressure, and chronic low-grade inflammation — the cluster that underlies type 2 diabetes and cardiovascular disease.</p>
+          <p>This is why where you carry fat can matter as much as how much you carry. Two people at the same overall body fat percentage can have substantially different health risk depending on how much of their fat is visceral versus subcutaneous. It's also why simple, location-aware measures — waist circumference and waist-to-hip ratio — predict cardiometabolic risk on their own, sometimes better than total weight or BMI, because they indirectly capture the visceral component, a connection the cardiometabolic-risk topic draws out.</p>
+          <p>Several factors influence how much visceral fat a person accumulates. Genetics and sex play a role — men and post-menopausal women tend to store more viscerally — as do chronic stress (through cortisol), poor sleep, excess refined-carbohydrate and alcohol intake, and physical inactivity. Importantly, you can carry meaningful visceral fat even at a normal weight, sometimes called being "skinny fat," which is part of why the scale alone can miss a real risk.</p>
+          <p>The genuinely encouraging part is that visceral fat tends to be among the first fat lost when you improve the fundamentals — a better diet, more physical activity (both cardio and resistance training help), better sleep, and lower stress. Because it's so metabolically responsive, a shrinking waistline often signals that the most dangerous fat is leaving first, sometimes well before the scale moves much at all. That makes waist measurement and waist-to-hip ratio especially worthwhile things to track.</p>
         `,
       },
       {
@@ -3393,11 +3442,12 @@ const LEARN_CATEGORIES = [
         title: "Lean mass",
         summary: "Lean mass is everything that isn't fat — muscle, bone, organs, water. It's the engine of your metabolism and the tissue protein maintains, which is why Hyalo targets protein to lean mass rather than total weight.",
         detail: `
-          <p>Lean body mass is your total weight minus fat mass: muscle, bone, organs, connective tissue, and the water within them. When people talk about preserving or building "lean mass," they usually mean skeletal muscle, the part that's most trainable.</p>
-          <p>It drives your metabolism. Lean tissue — muscle especially — is metabolically active and accounts for much of the energy you burn at rest. More muscle means a slightly higher resting burn and, more importantly, a body that handles fuel better.</p>
-          <p>It's the tissue protein supports. Because muscle and organs are what use dietary protein, basing your protein target on lean mass rather than total weight is more accurate — it feeds the part of you that actually needs feeding.</p>
-          <p>Protecting it is the quiet goal of good fat loss. Lose weight carelessly and a chunk of what you shed can be muscle; lose it with enough protein and resistance training, and you keep the lean mass while the fat leaves. That difference is what separates looking "smaller" from looking "leaner."</p>
-          <p>It also tends to decline with age unless defended. From midlife onward, muscle is gradually lost without a stimulus to keep it — a process that resistance training and adequate protein meaningfully slow, which is part of why both matter more, not less, over time.</p>
+          <p>Lean body mass is your total weight minus fat mass: skeletal muscle, bone, organs, connective tissue, and the water contained within them. When people speak of preserving or building "lean mass," they're usually referring specifically to skeletal muscle, the portion that is most trainable and most responsive to diet and exercise — but the broader category includes everything in you that isn't fat.</p>
+          <p>Lean tissue is the engine of your metabolism. Muscle and organs are metabolically active, burning energy continuously even at rest, and they account for the large majority of your resting energy expenditure. More muscle means a modestly higher resting burn, but the more important effect is qualitative: a body with more muscle handles fuel better, storing carbohydrate as glycogen and improving insulin sensitivity, so that the food you eat is more readily used and less readily stored as fat.</p>
+          <p>It's also the tissue that dietary protein serves. Because muscle and organs are what use amino acids — while fat tissue largely does not — basing a protein target on lean mass rather than total bodyweight is the more accurate approach, feeding the part of you that actually needs feeding. This is the reasoning behind scaling protein to lean mass when a body-fat figure is known, as the protein-goal topic describes.</p>
+          <p>Protecting lean mass is the quiet, central goal of well-executed fat loss. If you lose weight carelessly — through crash dieting with inadequate protein and no resistance training — a substantial fraction of what you shed can be muscle rather than fat, leaving you lighter but weaker, with a slower metabolism and a softer appearance. Lose weight with enough protein and a real training stimulus, and you keep the lean mass while the fat departs. That difference is exactly what separates merely looking "smaller" from looking and being "leaner" and stronger.</p>
+          <p>Lean mass also tends to decline with age unless actively defended. From roughly midlife onward, adults gradually lose muscle — a process called sarcopenia — at a pace that accelerates if nothing counteracts it, eroding strength, mobility, metabolic health, and independence. The decline is not inevitable in the way it's often assumed to be: resistance training and adequate protein meaningfully slow it, and can build muscle even late in life. This is a major reason both matter more, not less, as the years pass, and why protein targets include a higher floor for older adults.</p>
+          <p>Building lean mass is genuinely slow, bounded by biology — a reality the muscle-gain-rate topic covers — but maintaining it is very achievable, and the payoff is broad. Beyond strength and appearance, more muscle supports better blood-sugar control, denser bones (since loading the skeleton stimulates bone maintenance), greater resilience to injury and illness, and a higher quality of life over the long run. Lean mass is, in a real sense, the tissue of health, not just of aesthetics.</p>
         `,
       },
       {
@@ -3405,11 +3455,12 @@ const LEARN_CATEGORIES = [
         title: "Body recomposition",
         summary: "Recomposition means losing fat and gaining muscle at the same time, so weight barely moves while your shape changes. It's most achievable for beginners, those returning to training, or anyone with higher body fat.",
         detail: `
-          <p>Recomp is the simultaneous loss of fat and gain of muscle. Because the two roughly offset on the scale, your weight can stay nearly flat while your body visibly changes — firmer, leaner, different proportions. It's the case where the scale is least useful.</p>
-          <p>Traditionally these were treated as separate phases — a "cut" to lose fat, a "bulk" to gain muscle — because doing both at once is harder than doing either alone. Recomp threads the needle by training hard and eating around maintenance with high protein.</p>
-          <p>It works best in specific situations: beginners, whose muscles respond strongly to any training; people returning after a layoff, who regain lost muscle quickly ("muscle memory"); and those with higher body fat, who have ample stored energy to fuel muscle growth while losing fat.</p>
-          <p>For lean, well-trained people, recomp slows to a crawl, and the classic cut-or-bulk approach usually makes faster progress. The closer you are to your limits, the harder it is to push fat down and muscle up at the same time.</p>
-          <p>The two ingredients are non-negotiable: a real resistance-training stimulus and enough protein to build with while in a slight deficit. This is also where measurements beat the scale — a steady weight with a shrinking waist and a dropping waist-to-hip ratio is recomp happening in plain sight.</p>
+          <p>Body recomposition — "recomp" — refers to losing fat and gaining muscle simultaneously. Because the two changes roughly offset on the scale, bodyweight can stay nearly flat while the body visibly transforms: firmer, leaner, with different proportions and better-fitting clothes. It is the scenario in which the scale is least informative and other measures — the tape, photos, how you look and feel — tell the real story.</p>
+          <p>Traditionally, fat loss and muscle gain were treated as separate phases — a "cut" in a calorie deficit to lose fat, and a "bulk" in a surplus to build muscle — precisely because doing both at once is harder than doing either alone. Building muscle classically favors extra energy, while losing fat requires an energy shortfall, and these pull in opposite directions. Recomp threads that needle by training hard and eating at or near maintenance with high protein, letting the body draw on its own fat stores to help fuel muscle growth.</p>
+          <p>It works best in specific, identifiable situations. Beginners respond strongly to any training stimulus — so-called "newbie gains" — and can build muscle readily even while losing fat. People returning to training after a layoff regain lost muscle especially fast, thanks to "muscle memory," the lasting adaptations in previously-trained muscle. And those carrying higher body fat have ample stored energy on hand, which the body can tap to support muscle growth while in a modest deficit, making simultaneous progress more feasible.</p>
+          <p>For lean, well-trained individuals, recomp slows to a crawl. The closer you are to your genetic muscular ceiling and the leaner you already are, the harder it becomes to push fat down and muscle up at the same time, because the easy adaptations have already been made and there's less spare fat to fuel growth. For these people, the classic approach of alternating focused cuts and bulks usually produces faster, clearer progress than trying to do everything at once.</p>
+          <p>Two ingredients are non-negotiable for recomp to work. The first is a genuine resistance-training stimulus — progressive, challenging load that signals the muscle to grow; without it, eating at maintenance simply maintains. The second is adequate protein, kept high to supply building material and to protect existing muscle while energy is at or slightly below maintenance. Sleep, recovery, and consistency over months round out the requirements; recomp is a patient process, not a quick transformation.</p>
+          <p>This is exactly the situation where measurements decisively beat the scale. A steady bodyweight accompanied by a shrinking waist, a dropping waist-to-hip ratio, and a falling body-fat estimate is recomposition happening in plain sight — real, visible change that a single number on the scale would completely miss. If you're recomping, tracking circumferences and composition rather than weight alone is what keeps you from mistaking genuine progress for a plateau.</p>
         `,
       },
       {
@@ -3417,11 +3468,12 @@ const LEARN_CATEGORIES = [
         title: "Why the scale lies",
         summary: "Bodyweight swings daily with water, food, and glycogen — often by several pounds that have nothing to do with fat. It also can't tell muscle from fat, so it misses real progress during recomposition.",
         detail: `
-          <p>Daily weight is noisy. It moves with the water you're holding, the food and fluid still in your system, your glycogen stores, sodium intake, and — for women — the menstrual cycle. Swings of a few pounds day to day are normal and have nothing to do with fat gained or lost.</p>
-          <p>A single weigh-in is a snapshot in a storm. That's why the trend over a week or two tells the truth where any one morning can mislead — the noise averages out and the real direction emerges.</p>
-          <p>More fundamentally, the scale can't tell tissue apart. A pound of muscle and a pound of fat weigh the same; the scale sees only the sum. Gain muscle and lose fat in equal measure and it won't budge, even though your body has meaningfully changed.</p>
-          <p>This is exactly when people get discouraged for no reason — doing everything right, seeing a flat number, and concluding it isn't working. Often it's working precisely as intended, just invisibly to a bathroom scale.</p>
-          <p>The fix isn't to abandon the scale but to pair it with measures that see composition: a tape measure, waist-to-hip ratio, body-fat estimates, progress photos, and how clothes fit. Together they tell a story a single number never could.</p>
+          <p>Daily bodyweight is genuinely noisy, swinging for reasons that have nothing to do with fat gained or lost. It moves with the water you're retaining, the food and fluid still passing through your system, the carbohydrate stored as glycogen (which binds roughly three to four times its weight in water), sodium intake, hormonal fluctuations, and — for women — the menstrual cycle, which can shift water retention by several pounds across a month. Day-to-day changes of two, three, even four pounds are entirely normal and rarely reflect real fat change.</p>
+          <p>Because of that noise, a single weigh-in is a snapshot taken in the middle of a storm. One morning's number can mislead in either direction, which is why the trend over a week or two is what carries the signal — averaging across days lets the random fluctuations cancel out and the genuine direction emerge. Reacting to any one reading, up or down, is reacting mostly to noise.</p>
+          <p>More fundamentally, the scale cannot tell your tissues apart. A pound of muscle and a pound of fat weigh exactly the same; the scale registers only their sum. They differ markedly in volume and in what they mean for health and appearance, but to a bathroom scale they're indistinguishable. Gain muscle and lose fat in equal measure and the number won't move at all, even though your body has changed in a way you'd be glad to see.</p>
+          <p>This is precisely where people get discouraged without cause. Someone doing everything right — training hard, eating well, recomping — can watch a flat scale for weeks and wrongly conclude it isn't working, when in fact it's working as intended, just invisibly to that particular instrument. The scale's silence during recomposition is one of the most common reasons people abandon an approach that was actually succeeding.</p>
+          <p>None of this means the scale is useless — it's a cheap, convenient, consistent data point, and tracked as a multi-week trend it's genuinely informative about the overall direction of weight. The error isn't using it; the error is over-interpreting single readings and treating it as a complete measure of progress when it's only ever measuring one dimension.</p>
+          <p>The remedy is to pair the scale with measures that actually see composition: a tape measure for waist and other circumferences, waist-to-hip ratio, body-fat estimates, progress photos taken under consistent conditions, how your clothes fit, and your strength in the gym. Together these tell a story that no single number can — and when the scale stalls but your waist shrinks and your lifts climb, that ensemble is what reassures you that real progress is underway.</p>
         `,
       },
     ],
@@ -3434,11 +3486,12 @@ const LEARN_CATEGORIES = [
         title: "The Navy method",
         summary: "The Navy method estimates body fat from a few tape measurements — neck, waist, and (for women) hips, plus height. It's not as precise as a lab scan, but it's free, repeatable, and good at tracking change over time.",
         detail: `
-          <p>The Navy method (developed by the U.S. Navy) estimates body fat from circumferences. For men it uses neck, waist, and height; for women it adds the hip measurement. A formula turns those tape readings into a percentage.</p>
-          <p>The logic is that fat distributes in patterns that circumferences capture. A larger waist relative to neck and height, for instance, implies more abdominal fat. It's an indirect estimate of an unseen quantity, inferred from the shape it produces on the outside.</p>
-          <p>Its strengths are accessibility and repeatability. It needs only a tape measure, costs nothing, and — measured consistently — tracks change reliably. For watching a trend over weeks and months, that repeatability is exactly what you want.</p>
-          <p>Its limit is absolute accuracy. Against a gold standard like a DEXA scan, any circumference method carries a margin of error and can read several points off for a given individual, especially at the extremes or with unusual proportions.</p>
-          <p>So treat the number as a consistent yardstick rather than a verdict. Measure the same way each time — same spots, same tension, same time of day — and trust the direction of travel more than the precise figure. That's how Hyalo uses it.</p>
+          <p>The Navy method — developed by the U.S. Navy as a practical body-composition screen — estimates body fat percentage from simple circumference measurements. For men it uses neck, waist, and height; for women it adds the hip measurement. A validated formula converts those tape readings into an estimated percentage, requiring nothing more than a flexible tape measure and a moment of arithmetic.</p>
+          <p>The underlying logic is that fat distributes across the body in patterns that circumferences can capture indirectly. A larger waist relative to neck and height, for example, implies more abdominal fat; the formula encodes the statistical relationship between these girths and overall body fat, derived from populations measured against more precise reference methods. It's an inference — reading an unseen internal quantity from the external shape it produces — rather than a direct measurement.</p>
+          <p>Its great strengths are accessibility and repeatability. It costs nothing, needs no equipment beyond a tape, takes a minute, and can be done at home as often as you like. Measured consistently — same landmarks, same tension, same time of day — it tracks change reliably over weeks and months. For the everyday goal of watching whether body fat is trending down, that repeatability is precisely what matters, and it's what the method does well.</p>
+          <p>Its limitation is absolute accuracy for a given individual. Measured against a gold-standard reference like a DEXA scan, any circumference-based method carries a margin of error and can read several percentage points off for a particular person — more so at the extremes of body composition, or for people with unusual proportions, very high muscularity, or fat distribution that doesn't match the population the formula was built on. It estimates a population-typical relationship, which won't fit every individual exactly.</p>
+          <p>Measurement technique is the largest controllable source of error. Small differences in where you place the tape, how snugly you pull it, your posture, and whether you measure at the end of a normal exhale can shift the result by enough to swamp a real change. This is why consistency dwarfs precision in importance: the same slightly-imperfect method applied the same way each time yields a trustworthy trend, even if the absolute number is a little off.</p>
+          <p>The sensible way to use it, then, is as a consistent yardstick rather than a verdict. Treat the absolute percentage as approximate, measure the same way every time, and trust the direction of travel far more than any single figure — a steadily falling estimate is meaningful even if the exact value carries uncertainty. Compared with bioelectrical scales (which are sensitive to hydration) or calipers (which require skill and pinch only subcutaneous fat), the Navy method offers a good balance of convenience and consistency, which is why Hyalo uses it for tracking.</p>
         `,
       },
       {
@@ -3446,11 +3499,12 @@ const LEARN_CATEGORIES = [
         title: "Waist-to-hip ratio",
         summary: "WHR divides waist circumference by hip circumference, capturing where your body stores fat. It reveals the recomp signature — when waist shrinks and hips hold, the ratio drops even if weight doesn't.",
         detail: `
-          <p>Waist-to-hip ratio is simply your waist measurement divided by your hip measurement. A waist of 30 inches and hips of 40 gives a ratio of 0.75. It distills fat distribution — your shape — into a single number.</p>
-          <p>It captures something neither measurement alone can: the relative balance between midsection and hips. Two people with the same waist can have very different ratios, and very different fat-distribution profiles, depending on their hips.</p>
-          <p>It's the recomp signature. When you lose abdominal fat while building or holding the glutes and hips, your waist shrinks while your hips don't — and the ratio drops sharply, even if your bodyweight barely changes. It catches a real shape change the scale misses entirely.</p>
-          <p>It's also an independent health marker, which the cardiometabolic-risk topic covers in depth: a waist-heavy distribution tracks with the visceral fat that drives metabolic risk, so the ratio carries information about health, not just aesthetics.</p>
-          <p>As with all of these, consistency is what makes it trustworthy — measure the waist and hips at the same landmarks each time. A ratio trending down over months is one of the clearer signs that body composition is genuinely improving.</p>
+          <p>Waist-to-hip ratio is your waist circumference divided by your hip circumference — a waist of 30 inches over hips of 40 gives a ratio of 0.75. In a single number it distills the distribution of fat across your torso, summarizing your shape in a way that neither measurement captures on its own. It's simple to compute and, measured consistently, surprisingly informative.</p>
+          <p>What it captures is the relative balance between midsection and hips — information that a single circumference misses. Two people with the same waist measurement can have very different ratios, and very different fat-distribution profiles, depending on their hip girth. By relating the two, WHR describes whether your body carries fat more centrally (around the waist) or more peripherally (around the hips and thighs), a distinction with both aesthetic and health significance.</p>
+          <p>It is the clearest single signature of recomposition. When you lose abdominal fat while building or holding the muscle of the glutes and hips, your waist shrinks while your hips hold steady or even grow — and the ratio drops noticeably, even if your bodyweight barely changes. This is a real, visible change in shape that the scale would entirely miss, which is why WHR is one of the most useful things to track for anyone whose goal is body recomposition rather than simple weight loss.</p>
+          <p>Beyond aesthetics, WHR is an independent marker of health, because central fat distribution tracks with the visceral fat that drives metabolic risk — the connection developed in the cardiometabolic-risk topic. A waist-heavy shape implies more of the metabolically active fat packed around the organs, so the ratio carries information about cardiovascular and metabolic risk, not just appearance, and the World Health Organization treats elevated WHR as a distinct risk marker with thresholds that differ by sex.</p>
+          <p>Measurement consistency is what makes the ratio trustworthy. The waist should be measured at a consistent landmark — commonly the narrowest point between the ribs and hip bones, or at the navel — and the hips at their widest point around the glutes, with the tape level, snug but not compressing, and taken at the end of a normal exhale without sucking in. Because the ratio depends on two measurements, small errors in either can move it, so measuring the same way each time matters even more than usual.</p>
+          <p>As a tracking tool, a WHR trending down over months is one of the clearer signals that body composition is genuinely improving — particularly valuable precisely when the scale is flat. It's worth remembering that the ratio is a summary, not a complete diagnosis: it doesn't distinguish a small waist from large hips versus a moderate waist from moderate hips beyond the ratio itself, and individual factors shape what's healthy. But as a cheap, repeatable measure that captures shape change and health risk in one number, it's hard to beat.</p>
         `,
       },
       {
@@ -3458,11 +3512,12 @@ const LEARN_CATEGORIES = [
         title: "Cardiometabolic risk",
         summary: "This is the combined risk of cardiovascular disease (heart, stroke) and metabolic disease (type 2 diabetes), which share visceral fat as a common driver. Waist-to-hip ratio predicts it because waist-heavy fat distribution tracks with visceral fat.",
         detail: `
-          <p>Cardiometabolic risk bundles two intertwined categories: cardiovascular disease — heart disease, stroke, high blood pressure — and metabolic disease, such as type 2 diabetes, insulin resistance, and metabolic syndrome. They're grouped because they tend to travel together and share root causes.</p>
-          <p>The common thread is often visceral fat — the fat around the organs. By driving inflammation and insulin resistance and altering blood lipids, it raises risk across both categories at once, which is why one measure can speak to several conditions.</p>
-          <p>Waist-to-hip ratio predicts this risk because a waist-heavy distribution signals more visceral fat. The World Health Organization treats elevated WHR as a distinct risk marker — above roughly 0.85 for women and 0.90 for men, risk rises, with higher thresholds marking higher risk.</p>
-          <p>Notably, this works somewhat independently of overall weight or BMI. Two people of similar BMI can carry very different cardiometabolic risk depending on where their fat sits — a key reason shape-based measures add information that weight alone leaves out.</p>
-          <p>A risk marker is a statistical signal across populations, not a personal diagnosis. A given ratio nudges the odds; it doesn't determine an individual's fate, and many factors — genetics, fitness, blood markers, lifestyle — shape the full picture. For anything concerning, that's a conversation for a clinician.</p>
+          <p>Cardiometabolic risk bundles together two deeply intertwined categories of disease: cardiovascular conditions — heart disease, stroke, high blood pressure, and atherosclerosis — and metabolic conditions, such as type 2 diabetes, insulin resistance, and the cluster known as metabolic syndrome. They're grouped under one umbrella because they tend to travel together, share underlying causes, and amplify one another, so a factor that raises one often raises the other.</p>
+          <p>The common thread running through both is frequently visceral fat — the metabolically active fat packed around the abdominal organs, described in its own topic. By releasing inflammatory signals and free fatty acids directly toward the liver, driving insulin resistance, and shifting blood lipids and pressure unfavorably, visceral fat pushes risk upward across both categories simultaneously. This shared driver is why a single measure of central fatness can speak to several different conditions at once.</p>
+          <p>Waist-to-hip ratio predicts this risk because a waist-heavy distribution signals more visceral fat. The World Health Organization treats elevated WHR as a distinct risk marker, separate from BMI: broadly, risk begins to rise above roughly 0.85 for women and 0.90 for men, with higher ratios marking higher risk, and waist circumference alone carries similar information above its own thresholds. These cutoffs are population-derived guides, not precise personal verdicts, but they make the ratio a meaningful, easily-measured signal.</p>
+          <p>Notably, this works substantially independently of overall weight or BMI. Two people of similar BMI can carry very different cardiometabolic risk depending on where their fat sits — central versus peripheral — which is a central reason shape-based measures add information that weight alone leaves out, and why someone at a "normal" weight can still carry elevated risk if their fat is concentrated viscerally. Distribution, not just amount, shapes the danger.</p>
+          <p>It's essential to read a risk marker correctly: it is a statistical signal across populations, not a diagnosis of any individual. A given ratio nudges the odds in one direction; it does not determine a particular person's fate, and many other factors — genetics, fitness, blood pressure, cholesterol and blood-sugar markers, smoking, sleep, diet, and family history — shape the complete picture. Two people with identical ratios can have quite different actual risk once everything else is accounted for.</p>
+          <p>The constructive takeaway is that the same fundamentals that reduce visceral fat reduce cardiometabolic risk — regular physical activity (both aerobic exercise and resistance training), a quality diet, adequate sleep, lower chronic stress, not smoking, and limiting excess alcohol. Because visceral fat is so responsive, a shrinking waist and a falling WHR often signal improving risk even before other markers shift. And for anything genuinely concerning — or to interpret these numbers against your full health picture — the right move is a conversation with a clinician, who can order the blood work and assessments that a tape measure cannot.</p>
         `,
       },
       {
@@ -3470,11 +3525,12 @@ const LEARN_CATEGORIES = [
         title: "How to measure consistently",
         summary: "Trends matter more than any single reading, so consistency is everything: same time of day, same conditions, tape snug but not compressing. Morning, after the bathroom and before eating, is the most repeatable window.",
         detail: `
-          <p>The goal of measuring isn't a perfect absolute number — it's a comparable one. A reading is only as useful as the one before it is similar in conditions, because what you're really tracking is the change between them.</p>
-          <p>Time of day matters because your body shifts over a day — food, fluid, and activity all move the numbers. The most repeatable window is first thing in the morning, after using the bathroom and before eating or drinking, when those variables are at their most consistent.</p>
-          <p>Technique should be identical each time. Measure at the same anatomical landmarks, keep the tape level and snug but not compressing the skin, and take the reading at the end of a normal exhale without sucking in. Hyalo's per-field hints describe exactly where each one goes.</p>
-          <p>Frequency can be modest. Bodies don't change meaningfully day to day, so measuring every week or two is plenty — frequent enough to see a trend, infrequent enough to avoid chasing noise. Daily measuring mostly adds anxiety, not information.</p>
-          <p>When in doubt, hold conditions constant and trust the direction. A waist that reads steadily smaller across several sessions is real, even if any single measurement is a touch imprecise. Consistency is what turns a tape measure into useful data.</p>
+          <p>The purpose of measuring isn't to capture a flawless absolute number — it's to capture a comparable one. Any single reading is only as useful as how similar its conditions are to the reading before it, because what you're really tracking is the change between measurements over time. A consistent method that's slightly imperfect beats an occasionally-precise one taken haphazardly, every time.</p>
+          <p>Time of day matters because the body shifts measurably over a day. Food and fluid in the digestive tract, water retention, sodium, and activity all move circumferences and weight between morning and night. The most repeatable window is first thing in the morning, after using the bathroom and before eating or drinking, when those variables are at their most consistent from one session to the next. Picking a fixed time and sticking to it removes a major source of false variation.</p>
+          <p>Technique should be as identical as you can make it each time. Measure at the same anatomical landmarks — and the per-field hints in the app describe exactly where each one sits — keep the tape level and parallel to the floor, pull it snug against the skin without compressing or indenting it, and take the reading at the end of a normal, relaxed exhale without sucking in or pushing out. Standing in a consistent, natural posture matters too; tensing, slouching, or holding your breath differently between sessions introduces error that can masquerade as change.</p>
+          <p>Frequency can be modest, because bodies don't change meaningfully day to day. Measuring once every week or two is plenty — frequent enough to reveal a trend, infrequent enough to avoid chasing the noise of daily fluctuation. Daily measuring mostly generates anxiety and false signals rather than information, since real composition change is slow and any single day's wobble is dominated by water, food, and timing rather than fat or muscle.</p>
+          <p>A few practical habits sharpen the data further. Use the same tape measure each time, since tapes vary slightly; for girths you can reach awkwardly, taking two measurements and averaging, or having a consistent helper, improves reliability. Record the numbers along with the date rather than trusting memory, and note conditions that might explain an outlier — illness, a high-sodium meal the night before, or, for women, the point in the menstrual cycle, which shifts water retention predictably.</p>
+          <p>When in doubt, hold conditions constant and trust the direction. A waist that reads steadily smaller across several consistent sessions reflects real change, even if any single measurement is a touch imprecise. The goal of all this rigor is simply to make the trend trustworthy: consistency is what turns a humble tape measure into genuinely useful data about your progress.</p>
         `,
       },
     ],
@@ -3487,11 +3543,12 @@ const LEARN_CATEGORIES = [
         title: "How Hyalo sets your goals",
         summary: "Both goals start from your profile. Water scales from bodyweight; protein scales from lean mass and your goal. Workouts add a daily bump, and you can always override either number manually.",
         detail: `
-          <p>Everything begins with your profile — weight, body composition, activity level, goal, and a few other details. From those, Hyalo derives two daily targets rather than handing you one-size-fits-all numbers.</p>
-          <p>Water is built from bodyweight: a baseline of 0.4 ounces per pound, plus additions for activity and hot climates that scale to your size, plus fixed amounts for pregnancy or breastfeeding. The dedicated water topic walks through the reasoning.</p>
-          <p>Protein is built from lean mass and your goal, landing in the research-backed 1.6–2.2 g/kg range, with adjustments for activity, an older-adult floor, and a sensible cap. Basing it on lean mass rather than total weight keeps it honest. The protein topic covers the details.</p>
-          <p>Workouts then add a same-day bump to both numbers, scaled to how hard and long you trained, with a one-time protein bonus on resistance days. These are additions on top of your baseline, applied only to the day you log them.</p>
-          <p>None of it is locked. You can override either goal with a number of your own, and a planner can set protein around a goal body-fat target. The calculations are a thoughtful starting point — the final say is yours, and past days keep whatever goal applied at the time.</p>
+          <p>Everything begins with your profile — weight, body composition, activity level, goal, climate, and a few other details. From those inputs, Hyalo derives two personalized daily targets rather than handing you generic, one-size-fits-all numbers. The aim is a starting point that already reflects your body and intentions, which you can then refine as you learn what works for you.</p>
+          <p>The water target is built from bodyweight. It starts at a baseline of 0.4 ounces per pound, then adds for activity and for hot or humid climates — both of those additions scaled to your size, since a larger body sweats more for the same conditions — plus fixed amounts for pregnancy or breastfeeding, which reflect the demands of those stages rather than body size. The dedicated water-goal topic walks through the full reasoning and the all-important caveat that urine color, not the number, is the real signal.</p>
+          <p>The protein target is built from lean mass and your goal, landing within the research-backed range of roughly 1.6–2.2 grams per kilogram for active people, with adjustments for activity level, a higher floor for older adults, and a sensible cap at the top. Basing it on lean mass rather than total weight feeds the tissue that actually uses protein, making the figure both more accurate and more achievable. The protein-goal and how-much-is-too-much topics cover the details and the limits.</p>
+          <p>Workouts then add a same-day bump to both targets, scaled to how hard and how long you trained, with a one-time protein bonus on days you do resistance work — reflecting the extra fluid lost to sweat and the elevated muscle repair that follow a session. These are additions applied only to the day you log the workout, so an easy day stays at baseline and a hard day reflects the real extra demand, keeping each day's goal honest to what you actually did.</p>
+          <p>A deliberate design choice is that biology-bound quantities aren't treated as preferences you set. Muscle is built at a rate the body dictates, not one you can choose, so Hyalo doesn't ask you to specify a muscle-gain timeframe — the muscle-gain-rate topic explains why pace isn't a dial you can turn. Likewise, the protein and water calculations encode established physiology rather than letting arbitrary inputs drive unrealistic numbers; the goal is accuracy, not flattery.</p>
+          <p>None of it is locked. You can override either goal with a figure of your own, and a planner can set protein around a specific goal body-fat target if you want your intake oriented toward where you're headed rather than where you are. When you change a planner-based goal, the related numbers update together so your targets never silently disagree. And past days keep whatever goal applied at the time, so changing things going forward never rewrites your history — the calculations are a thoughtful foundation, but the final say, and the record of what you actually did, remain yours.</p>
         `,
       },
       {
@@ -3499,11 +3556,12 @@ const LEARN_CATEGORIES = [
         title: "Realistic muscle gain rates",
         summary: "Muscle builds slowly — very roughly 1–2 lbs per month for beginners, slowing to a fraction of that for trained lifters. This is a biological ceiling that no amount of extra protein or effort can rush.",
         detail: `
-          <p>Building muscle is genuinely slow, and that's biology, not a lack of effort. As a rough orientation, a beginner training and eating well might gain on the order of 1–2 pounds of muscle a month, and that rate is among the fastest you'll ever see.</p>
-          <p>It decelerates as you advance. After the first year or so, the body's capacity to add muscle drops sharply — an intermediate lifter might gain half that rate, and a long-trained lifter a fraction again, measured in small amounts over a year rather than a month.</p>
-          <p>The rate is also bounded by factors you don't control: genetics, age, sex, and hormones all set a ceiling. Two people doing the same program can progress at different speeds for reasons that have nothing to do with how hard they're trying.</p>
-          <p>Crucially, you can't buy speed with surplus. Beyond meeting your protein and training needs, more protein, more food, or more volume doesn't accelerate muscle gain past the biological limit — the excess energy mostly becomes fat. This is exactly why Hyalo doesn't ask you to set a muscle-gain timeframe: pace isn't a preference.</p>
-          <p>The honest expectation is patience. Real, lasting muscle accrues over months and years of consistency. Knowing the ceiling protects you from both disappointment and the temptation of extreme approaches that promise to beat it.</p>
+          <p>Building muscle is genuinely slow, and the pace is set by biology rather than by how badly you want it or how hard you try. As a rough orientation, a true beginner training and eating well might gain on the order of one to two pounds of muscle per month in their first months — and that rate is among the fastest they will ever experience. The "newbie gains" period is real, but it's also the exception, not the norm, for what muscle growth looks like over a lifetime.</p>
+          <p>The rate decelerates sharply as you advance, in a well-documented pattern. After roughly the first year of consistent training, the body's capacity to add new muscle drops substantially: an intermediate lifter might gain around half the beginner rate, and a long-trained, near-ceiling lifter a small fraction again — progress measured in a handful of pounds across an entire year rather than month to month. Each year of training brings you closer to your genetic limit, and the closer you get, the slower the remaining gains arrive.</p>
+          <p>The ceiling is also bounded by factors entirely outside your control. Genetics set much of your muscular potential and how fast you approach it; age, sex, and hormones all shape the rate. Men generally build muscle faster than women in absolute terms, largely due to testosterone, and younger trainees tend to progress faster than older ones. Two people following the identical program with identical effort can gain at noticeably different speeds for reasons that have nothing to do with discipline — which is worth remembering before comparing your progress to anyone else's.</p>
+          <p>Crucially, you cannot buy speed with surplus. Once your protein and training needs are met, eating more protein, more total food, or doing more training volume does not accelerate muscle gain beyond the biological limit — the body can only build muscle so fast, and the excess energy is largely stored as fat instead. This is the direct rationale for why Hyalo doesn't ask you to set a muscle-gain timeframe: the pace simply isn't a preference you can dial in, and pretending otherwise would invite overeating in pursuit of a rate that physiology won't allow.</p>
+          <p>This biological ceiling is also why "lean bulking" — a modest rather than aggressive calorie surplus — makes sense. Since muscle growth is rate-limited, a large surplus mostly adds fat without building muscle any faster, so a small surplus that just covers the cost of the muscle you can actually build is the efficient approach. Recomposition, covered in its own topic, takes this further still for those positioned to gain muscle at maintenance.</p>
+          <p>The honest expectation, then, is patience and a long horizon. Real, lasting muscle accrues over months and years of consistent training, adequate protein, progressive load, and good recovery — not in weeks, and not faster because you forced more food or effort. Knowing where the ceiling sits protects you twice over: from the disappointment of unrealistic expectations, and from the temptation of extreme diets, overtraining, or risky shortcuts that promise to beat a limit that, in the end, can't be beaten.</p>
         `,
       },
       {
@@ -3511,11 +3569,12 @@ const LEARN_CATEGORIES = [
         title: "Choosing a goal body fat %",
         summary: "A good target is one that's healthy and sustainable, not the lowest possible number. For most people that's the mid-to-lower end of the healthy range; chasing extremes tends to cost muscle, hormones, and adherence.",
         detail: `
-          <p>The best goal isn't the leanest one imaginable — it's the leanest one you can hold comfortably while feeling strong, sleeping well, and living normally. Sustainability is the real criterion, because a number you can't maintain isn't a destination, just a brief visit.</p>
-          <p>For most people, a sensible target sits somewhere in the mid-to-lower part of the healthy range for their sex, rather than at the very bottom. That's typically lean enough to look and feel fit without the cost that comes with pushing to extremes.</p>
-          <p>Those extremes carry a price. Driving body fat very low tends to eat into muscle, disrupt hormones, flatten mood and energy, and — for women especially — affect menstrual and bone health. The shredded look seen in peak-condition athletes is often a temporary, deliberately uncomfortable state, not a way to live.</p>
-          <p>It helps to anchor the goal to how you want to feel and perform, not just a mirror or a metric. Working backward from "strong, energetic, sustainable" usually lands on a more generous and more livable target than working forward from "as low as possible."</p>
-          <p>And if setting a target starts to feel preoccupying — if the number begins driving how you eat, train, or feel about yourself in a punishing way — that's worth noticing. A goal should serve your health and life, not the other way around, and there's no shame in talking it through with someone.</p>
+          <p>The best goal body-fat percentage is not the leanest one imaginable — it's the leanest one you can hold comfortably while feeling strong, sleeping well, recovering properly, and living a normal life. Sustainability is the real criterion, because a number you can only briefly force isn't a destination so much as a fleeting visit, usually followed by a rebound. A target you can actually maintain is worth far more than a lower one you can't.</p>
+          <p>For most people, a sensible target sits somewhere in the mid-to-lower portion of the healthy range for their sex, rather than at the very bottom of it. That's typically lean enough to look and feel fit, see muscle definition, and enjoy the health benefits of low excess fat — without the steep costs that come with pushing toward the extremes. Where exactly within that band you aim is personal, shaped by your priorities, your starting point, and how a given level feels to live at.</p>
+          <p>The extremes carry a real and often underappreciated price. Driving body fat very low tends to eat into muscle (since severe, prolonged deficits break down lean tissue), disrupt hormones, flatten mood and energy, impair sleep, weaken immunity, reduce bone density, and — in women especially — interrupt the menstrual cycle, a warning sign of broader endocrine and skeletal harm. The very lean, sharply-defined "shredded" look seen in peak-condition physique competitors is typically a temporary, deliberately uncomfortable state achieved for a brief window, not a way to live year-round; even those athletes don't maintain it.</p>
+          <p>It helps to anchor the goal to how you want to feel and perform, not only to a mirror or a metric. Working backward from "strong, energetic, healthy, and sustainable" usually lands on a more generous and more livable target than working forward from "as low as the chart allows." Functional markers — your strength, your energy through the day, the quality of your sleep, your mood, and (for women) a regular cycle — are better guides to whether a body-fat level suits you than the number alone.</p>
+          <p>Context should shape the target too. Someone with higher body fat will sensibly aim to reduce it for health, while someone already lean might do better to focus on building muscle than on shaving off more fat. The right destination depends on where you're starting, what you want from your body, and your individual physiology — there is no universal "correct" percentage that everyone should pursue.</p>
+          <p>Finally, and most importantly, a note of care. If setting or pursuing a target starts to feel preoccupying — if the number begins driving how you eat, train, and feel about yourself in a rigid or punishing way, or if "discipline" starts to look like restriction — that's a meaningful signal to step back. A goal should serve your health and your life, not rule them, and disordered patterns often hide behind the language of fitness. If any of that resonates, please consider talking it through with a doctor or a qualified professional; these numbers are a tool for wellbeing, never a measure of your worth.</p>
         `,
       },
       {
@@ -3523,11 +3582,12 @@ const LEARN_CATEGORIES = [
         title: "Recomp vs cut vs bulk",
         summary: "A cut eats at a deficit to lose fat; a bulk eats at a surplus to gain muscle; recomp aims for both at maintenance. Which fits depends on your training age, body fat, and goals.",
         detail: `
-          <p>These are three strategies defined mostly by energy balance. A cut runs a calorie deficit to lose fat. A bulk runs a surplus to build muscle. A recomp eats around maintenance and tries to do both at once. Protein stays high in all three; training stays hard in all three.</p>
-          <p>A cut suits you when body fat is higher than you'd like and leaning out is the priority. The art is losing fat while keeping muscle — which is why protein and resistance training matter most precisely when calories are low.</p>
-          <p>A bulk suits you when you're relatively lean and want to add size and strength, and you're willing to accept a little fat gain along the way. Kept modest, the surplus feeds muscle; pushed too far, it mostly adds fat without building faster, since muscle gain has a ceiling.</p>
-          <p>A recomp suits the in-between cases — beginners, returners, and those with higher body fat — where the body can pull from fat stores to build muscle at maintenance. For lean, advanced lifters it's slow going, and alternating focused cuts and bulks usually moves faster.</p>
-          <p>There's no universally right choice; it depends on your starting point and what you want. A practical rule of thumb: leaner and chasing size leans toward a bulk, higher body fat leans toward a cut, and the early or returning trainee can often recomp. Whichever you pick, consistency over months is what makes it work.</p>
+          <p>These are three strategies defined mainly by energy balance — how your calorie intake compares to what you burn. A cut runs a deliberate calorie deficit to lose fat. A bulk runs a surplus to build muscle. A recomp eats at or near maintenance and aims to do both at once. Across all three, two things stay constant: protein is kept high, and resistance training is kept hard. Energy balance is the dial that differs; the muscle-preserving and muscle-building fundamentals don't.</p>
+          <p>A cut suits you when body fat is higher than you'd like and leaning out is the priority. The central skill of a good cut is losing fat while keeping the muscle you have — which is exactly why high protein and continued resistance training matter most precisely when calories are low, since a deficit without those tends to shed muscle alongside fat. A moderate deficit, rather than an aggressive crash, preserves more muscle, protects performance, and is far easier to sustain to the finish.</p>
+          <p>A bulk suits you when you're relatively lean and want to add size and strength, and you're willing to accept a little fat gain along the way. Kept modest — a small surplus — the extra energy mostly feeds muscle growth; pushed too far, it mostly adds fat without building muscle any faster, because, as the muscle-gain-rate topic explains, growth is rate-limited by biology and can't be rushed with more food. This is why "lean bulking" with a small, controlled surplus has largely replaced the old "dirty bulk" approach.</p>
+          <p>A recomp suits the in-between cases — beginners, those returning after a layoff, and people carrying higher body fat — where the body can draw on its own fat stores to build muscle while eating at maintenance. For these groups, simultaneous fat loss and muscle gain is genuinely achievable. For lean, advanced trainees, though, recomp is slow going, and deliberately alternating focused cuts and bulks usually produces faster, clearer results than trying to do everything at once, as the recomposition topic details.</p>
+          <p>Choosing among them comes down to your starting point and your objective, and there's no universally correct answer. A practical rule of thumb: if you're already fairly lean and chasing size and strength, lean toward a bulk; if you're carrying excess fat, lean toward a cut; and if you're a beginner, a returner, or higher in body fat, you can often recomp. Many people cycle through phases over time — bulking to build, then cutting to reveal — rather than committing to one approach forever.</p>
+          <p>Whatever you pick, the same principles carry across all three and matter more than the label: enough protein, progressive resistance training, adequate sleep and recovery, and — above all — consistency sustained over months. The strategy sets the direction, but it's the patient, repeated execution of the fundamentals that actually changes your body. Picking the phase that fits your situation simply makes that consistency easier to maintain.</p>
         `,
       },
     ],
@@ -3545,6 +3605,7 @@ function findLearnTopic(id) {
 /* ============ State ============ */
 const DEFAULT_STATE = () => ({
   hasOnboarded: false,
+  disclaimerAck: false,   // one-time health-disclaimer acknowledgment
   profile: {
     sex: "X", age: 35, weight_lb: 150, height_in: 0,
     activity: "moderate", goal: "maintain",
@@ -4677,6 +4738,7 @@ function finishOnboarding() {
   save();
   switchView("main");
   render();
+  showDisclaimerGate();
 }
 function skipOnboarding() {
   state.hasOnboarded = true;
@@ -4688,9 +4750,7 @@ function skipOnboarding() {
   save();
   switchView("main");
   render();
-  setTimeout(() => {
-    showToast("Set your goals in Settings → Goals");
-  }, 400);
+  showDisclaimerGate();
 }
 
 /* ============ View switching ============ */
@@ -5243,10 +5303,12 @@ function cryptoId() {
 function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 
 /* ============ Modals ============ */
-function openModal(html, modalClass = "") {
+function openModal(html, modalClass = "", opts = {}) {
   const root = $("#modal-root");
   root.innerHTML = `<div class="modal-backdrop open" id="m-back"><div class="modal ${modalClass}" id="m-modal">${html}</div></div>`;
-  $("#m-back").addEventListener("click", e => { if (e.target === $("#m-back")) closeModal(); });
+  if (!opts.noBackdropClose) {
+    $("#m-back").addEventListener("click", e => { if (e.target === $("#m-back")) closeModal(); });
+  }
   document.body.style.overflow = "hidden";
   syncModalViewport();
 }
@@ -5975,6 +6037,13 @@ function renderSettings() {
           </div>
           <div class="settings-row-chev">›</div>
         </button>
+        <button class="settings-row" id="health-disclaimer">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Health disclaimer</div>
+            <div class="settings-row-value">What Hyalo is — and isn't</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
       </div>
     </div>
 
@@ -6026,6 +6095,7 @@ function wireSettingsHandlers() {
   }));
   $("#open-learn")?.addEventListener("click", openLearnModal);
   $("#recent-updates")?.addEventListener("click", openRecentUpdatesModal);
+  $("#health-disclaimer")?.addEventListener("click", () => openDisclaimerModal());
 }
 
 /* ============ Goals & body hub ============
@@ -7173,11 +7243,13 @@ function openLearnModal() {
     <div class="modal-title">Learn</div>
     <div class="modal-sub">The benchmarks, metrics, and science behind what Hyalo tracks. Each topic opens to a fuller explanation.</div>
     <div class="learn-list">${cats}</div>
+    <button class="learn-disclaimer" id="learn-disclaimer">${DISCLAIMER_SHORT_HTML} <span class="learn-disclaimer-more">Read more</span></button>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
     </div>
   `);
   $("#m-close")?.addEventListener("click", closeModal);
+  $("#learn-disclaimer")?.addEventListener("click", () => openDisclaimerModal(openLearnModal));
   $$("[data-topic]").forEach(b => b.addEventListener("click", () => openLearnTopicModal(b.dataset.topic, openLearnModal)));
 }
 
@@ -7196,7 +7268,43 @@ function openLearnTopicModal(topicId, returnTo) {
     </div>
   `);
   $("#learn-back")?.addEventListener("click", back);
-  $("#m-close")?.addEventListener("click", closeModal);
+  $("#m-close")?.addEventListener("click", back);
+}
+
+/* ============ Health disclaimer ============ */
+// One-time acknowledgment gate — non-dismissable, requires the explicit tap.
+function showDisclaimerGate() {
+  openModal(`
+    <div class="modal-title">Before you start</div>
+    <div class="modal-sub">A quick note on what Hyalo is — and isn't.</div>
+    <div class="goals-update-body">${DISCLAIMER_FULL_HTML}</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="disc-ack" style="width:100%">I understand</button>
+    </div>
+  `, "", { noBackdropClose: true });
+  $("#disc-ack")?.addEventListener("click", () => {
+    state.disclaimerAck = true;
+    save();
+    closeModal();
+  });
+}
+// Reference view, opened any time from Settings → About. Dismissable.
+function openDisclaimerModal(returnTo) {
+  const back = returnTo || closeModal;
+  openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
+    <div class="modal-title">Health disclaimer</div>
+    <div class="goals-update-body">${DISCLAIMER_FULL_HTML}</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="m-close" style="width:100%">Got it</button>
+    </div>
+  `);
+  $("#top-back")?.addEventListener("click", back);
+  $("#m-close")?.addEventListener("click", back);
+}
+// Show the gate once, after onboarding, if not yet acknowledged.
+function maybeShowDisclaimerGate() {
+  if (state.hasOnboarded && !state.disclaimerAck) showDisclaimerGate();
 }
 
 // Daily-window editor — controls dayStart/windDown used for pacing.
@@ -7950,7 +8058,13 @@ function init() {
   } else {
     switchView("main");
     render();
-    setTimeout(maybeShowBodyCompNotice, 600);
+    // Health disclaimer takes priority: show the one-time gate before any other
+    // notice. Other notices resume on the next open, once acknowledged.
+    if (!state.disclaimerAck) {
+      showDisclaimerGate();
+    } else {
+      setTimeout(maybeShowBodyCompNotice, 600);
+    }
   }
   // Tab navigation
   $$(".tab").forEach(t => t.addEventListener("click", () => switchTab(t.dataset.tab)));
