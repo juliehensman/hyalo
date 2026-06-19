@@ -1894,22 +1894,65 @@
     padding: 14px;
     margin-bottom: 14px;
   }
-  .bm-chart-head {
+  .chart-controls {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
-  .bm-chart-title {
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+  .chart-periods {
+    display: flex;
+    gap: 4px;
+    background: var(--card-hover);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .chart-period {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
     color: var(--ink-muted);
+    background: none;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .chart-period.active {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .chart-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .chart-pill {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .chart-pill.active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
   }
   .bm-chart-legend {
     display: flex;
     gap: 12px;
-    font-size: 11.5px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
   }
   .bm-chart-legend .swatch {
     display: inline-block;
@@ -1919,28 +1962,14 @@
     margin-right: 4px;
     vertical-align: middle;
   }
-  .bm-chart-legend .info-btn {
-    background: none;
-    border: 1px solid var(--border);
+  .chart-delta {
+    font-size: 11px;
     color: var(--ink-muted);
-    font-family: inherit;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    padding: 0;
-    font-size: 10px;
-    line-height: 1;
-    cursor: pointer;
     margin-left: 4px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    vertical-align: middle;
   }
-  .bm-chart-legend .info-btn:hover { color: var(--ink); }
   .bm-chart-svg {
     width: 100%;
-    height: 130px;
+    height: 140px;
     display: block;
   }
   .bm-chart-empty {
@@ -7671,11 +7700,12 @@ let _bmEditingId = null;          // id of entry being edited, null = new
    goal-summary band, a + New entry button, the trend chart, and the
    measurement log taking the bulk of the screen. The list breathes on a
    real page in a way it never could in a modal. */
-function propRow(label, value, chipText, chipClass, sub) {
+function propRow(label, value, chipText, chipClass, sub, infoTopic) {
+  const infoBtn = infoTopic ? ` <button class="info-dot" type="button" data-prop-info="${infoTopic}">i</button>` : "";
   return `
     <div class="prop-row">
       <div class="prop-row-top">
-        <span class="prop-label">${label}</span>
+        <span class="prop-label">${label}${infoBtn}</span>
         <span class="prop-val">${value}${chipText ? ` <span class="prop-chip ${chipClass}">${chipText}</span>` : ""}</span>
       </div>
       ${sub ? `<div class="prop-row-sub">${sub}</div>` : ""}
@@ -7711,7 +7741,7 @@ function renderProportionsPanel(entries) {
     const t = proportionTrend(asc, e => entryWHtR(e, p));
     healthRows.push(propRow("Waist-to-height", whtr.toFixed(2),
       b === "low" ? "healthy" : b === "moderate" ? "increased" : "high", cls(b),
-      `Under 0.5 is the healthy guideline${trendStr(t, 2, "")}`));
+      `Under 0.5 is the healthy guideline${trendStr(t, 2, "")}`, "cardiometabolic"));
   }
   if (waist != null) {
     const b = waistRiskBand(p.sex, waist);
@@ -7719,7 +7749,7 @@ function renderProportionsPanel(entries) {
     const thr = p.sex === "M" ? "37″" : p.sex === "F" ? "31.5″" : null;
     healthRows.push(propRow("Waist", waist.toFixed(1) + "″",
       b === "low" ? "below threshold" : b === "moderate" ? "elevated" : "high", cls(b),
-      `${thr ? "Low-risk under " + thr : "A direct measure of abdominal fat"}${trendStr(t, 1, "″")}`));
+      `${thr ? "Low-risk under " + thr : "A direct measure of abdominal fat"}${trendStr(t, 1, "″")}`, "visceral-fat"));
   }
   if (whr != null) {
     const b = whrRiskBand(p.sex, whr);
@@ -7727,7 +7757,7 @@ function renderProportionsPanel(entries) {
     const thr = p.sex === "M" ? "0.90" : "0.80";
     healthRows.push(propRow("Waist-to-hip", whr.toFixed(2),
       b, cls(b),
-      `Under ${thr} is low cardiometabolic risk${trendStr(t, 2, "")}`));
+      `Under ${thr} is low cardiometabolic risk${trendStr(t, 2, "")}`, "whr"));
   }
   // Context note: when waist + waist-to-height are reassuring but WHR is mid/high,
   // explain that the ratio reflects frame proportions more than abdominal fat.
@@ -7740,21 +7770,21 @@ function renderProportionsPanel(entries) {
   if (swr != null) {
     const t = proportionTrend(asc, entrySWR);
     buildRows.push(propRow("Shoulder-to-waist", swr.toFixed(2), "", "",
-      `Higher means more shoulder-to-waist taper${trendStr(t, 2, "")}`));
+      `Higher means more shoulder-to-waist taper${trendStr(t, 2, "")}`, "recomp"));
   }
   if (cwr != null) {
     const t = proportionTrend(asc, entryCWR);
     buildRows.push(propRow("Chest-to-waist", cwr.toFixed(2), "", "",
-      `Higher means more chest-to-waist taper${trendStr(t, 2, "")}`));
+      `Higher means more chest-to-waist taper${trendStr(t, 2, "")}`, "recomp"));
   }
 
   let frameRow;
   if (frame && frame.label) {
     frameRow = propRow("Frame size", frame.label, "", "",
-      `Height-to-wrist ratio ${frame.ratio.toFixed(1)} · a rough estimate`);
+      `Height-to-wrist ratio ${frame.ratio.toFixed(1)} · a rough estimate`, "measure-consistent");
   } else if (frame && !frame.label) {
     frameRow = propRow("Frame size", "ratio " + frame.ratio.toFixed(1), "", "",
-      "Set your sex in Basics for a small / medium / large estimate");
+      "Set your sex in Basics for a small / medium / large estimate", "measure-consistent");
   } else {
     frameRow = `<button class="prop-add-wrist" id="prop-add-wrist">+ Add a wrist measurement to estimate frame size</button>`;
   }
@@ -7787,8 +7817,28 @@ function renderBody() {
   $("#prop-add-wrist")?.addEventListener("click", () => openMeasurementEntryModal(null));
   $("#bm-goals")?.addEventListener("click", () => openBodyGoalsModal());
   $$("[data-bm-edit]").forEach(b => b.addEventListener("click", () => openMeasurementEntryModal(b.dataset.bmEdit)));
-  $("#bm-info-bf")?.addEventListener("click", () => openLearnTopicModal("bf-meaning", () => { closeModal(); }));
-  $("#bm-info-whr")?.addEventListener("click", () => openLearnTopicModal("whr", () => { closeModal(); }));
+
+  // Chart: period tabs + metric pills re-render the canvas only.
+  const wireChart = () => {
+    $$(".chart-period").forEach(btn => btn.addEventListener("click", () => {
+      _chartPeriod = btn.dataset.period;
+      // Update tab active states
+      $$(".chart-period").forEach(t => t.classList.toggle("active", t.dataset.period === _chartPeriod));
+      document.getElementById("chart-canvas").innerHTML = renderChartSVG(entries);
+    }));
+    $$(".chart-pill").forEach(btn => btn.addEventListener("click", () => {
+      _chartMetric = btn.dataset.metric;
+      $$(".chart-pill").forEach(p => p.classList.toggle("active", p.dataset.metric === _chartMetric));
+      document.getElementById("chart-canvas").innerHTML = renderChartSVG(entries);
+    }));
+  };
+  wireChart();
+
+  // Inline ⓘ icons on proportions panel.
+  $$("[data-prop-info]").forEach(b => b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openLearnTopicModal(b.dataset.propInfo, () => { closeModal(); });
+  }));
 }
 
 // Goal summary band: shows current → target + "to go" for each goal that's set,
@@ -7938,66 +7988,130 @@ function renderBmList(entries) {
 
 // Two-line trend chart: BF% (left axis tinted protein) + WHR (right axis
 // tinted water). Sparkline aesthetic — no gridlines, just labeled endpoints.
-function renderBmChart(entries) {
-  // Compute derived series. WHR uses waist+hip from each entry.
-  const bfPoints = entries.filter(e => e.bodyFatPct).map(e => ({ ts: e.ts, v: e.bodyFatPct }));
-  const whrPoints = entries
-    .map(e => ({ ts: e.ts, v: computeWHR(e.waist, e.hip) }))
-    .filter(p => p.v != null);
-  bfPoints.sort((a, b) => a.ts.localeCompare(b.ts));
-  whrPoints.sort((a, b) => a.ts.localeCompare(b.ts));
-  if (bfPoints.length < 2 && whrPoints.length < 2) {
-    return `
-      <div class="bm-chart-wrap">
-        <div class="bm-chart-head">
-          <div class="bm-chart-title">Trend</div>
-        </div>
-        <div class="bm-chart-empty">Add at least two entries to see a trend.</div>
-      </div>`;
-  }
-  const W = 600, H = 130, padX = 24, padY = 18;
-  const innerW = W - padX * 2, innerH = H - padY * 2;
-  const allTs = [...bfPoints, ...whrPoints].map(p => +new Date(p.ts));
-  const tMin = Math.min(...allTs), tMax = Math.max(...allTs);
-  const xOf = t => padX + ((t - tMin) / (tMax - tMin || 1)) * innerW;
+/* ============ Body trend chart — multi-metric with period/metric selection ============ */
+let _chartMetric = "bf";        // active metric key
+let _chartPeriod = "6m";        // active period key
+
+const CHART_METRICS = [
+  { key: "weight", label: "Weight", unit: "lb",  color: "var(--ink-soft)",  fn: e => e.weight_lb || null },
+  { key: "bf",     label: "BF%",    unit: "%",   color: "var(--protein)",   fn: e => e.bodyFatPct || null },
+  { key: "whr",    label: "WHR",    unit: "",    color: "var(--water)",     fn: e => computeWHR(e.waist, e.hip) },
+  { key: "waist",  label: "Waist",  unit: "″",   color: "var(--ink-soft)",  fn: e => e.waist || null },
+  { key: "whtr",   label: "WHtR",   unit: "",    color: "var(--sage)",      fn: e => entryWHtR(e, state.profile) },
+  { key: "swr",    label: "S / W",  unit: "",    color: "var(--ink-soft)",  fn: e => entrySWR(e) },
+  { key: "cwr",    label: "C / W",  unit: "",    color: "var(--ink-soft)",  fn: e => entryCWR(e) },
+];
+const CHART_PERIODS = [
+  { key: "1w", label: "1W", days: 7 },
+  { key: "1m", label: "1M", days: 30 },
+  { key: "6m", label: "6M", days: 180 },
+  { key: "1y", label: "1Y", days: 365 },
+];
+// Goal lines: only BF% and WHR have goals.
+function chartGoalFor(metricKey) {
   const g = state.bodyGoals || {};
-  // pathFor optionally takes a goal value; if present, the y-scale expands to
-  // include it so the dashed target line is always on-canvas.
-  const pathFor = (pts, goal) => {
-    if (pts.length < 2) return null;
-    const vals = pts.map(p => p.v);
-    if (goal != null) vals.push(goal);
-    const vMin = Math.min(...vals);
-    const vMax = Math.max(...vals);
-    const span = (vMax - vMin) || 1;
-    const pad = span * 0.15;
-    const yOf = v => padY + (1 - (v - (vMin - pad)) / (span + 2 * pad)) * innerH;
-    const d = pts.map((p, i) => `${i ? "L" : "M"}${xOf(+new Date(p.ts)).toFixed(1)},${yOf(p.v).toFixed(1)}`).join(" ");
-    const dots = pts.map(p => `<circle cx="${xOf(+new Date(p.ts)).toFixed(1)}" cy="${yOf(p.v).toFixed(1)}" r="3" />`).join("");
-    const goalY = goal != null ? yOf(goal).toFixed(1) : null;
-    return { d, dots, latest: pts[pts.length - 1].v, goalY };
-  };
-  const bf = pathFor(bfPoints, g.bodyFatPct);
-  const whr = pathFor(whrPoints, g.whr);
-  const goalLine = (info, color) => (info && info.goalY != null)
-    ? `<line x1="${padX}" y1="${info.goalY}" x2="${W - padX}" y2="${info.goalY}" stroke="${color}" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.7"/>`
-    : "";
+  if (metricKey === "bf") return g.bodyFatPct ?? null;
+  if (metricKey === "whr") return g.whr ?? null;
+  return null;
+}
+// Guideline lines: WHtR has the 0.5 threshold.
+function chartGuideFor(metricKey) {
+  if (metricKey === "whtr") return { v: 0.5, label: "0.5 guideline" };
+  return null;
+}
+
+function renderBmChart(entries) {
+  // Build the shell with period tabs and metric pills.
+  const periodTabs = CHART_PERIODS.map(p =>
+    `<button class="chart-period${p.key === _chartPeriod ? " active" : ""}" data-period="${p.key}">${p.label}</button>`
+  ).join("");
+  // Only show metric pills for metrics that have ≥ 1 data point in all entries.
+  const availableMetrics = CHART_METRICS.filter(m => entries.some(e => m.fn(e) != null));
+  // If active metric has no data, fall back to first available.
+  if (!availableMetrics.find(m => m.key === _chartMetric) && availableMetrics.length) {
+    _chartMetric = availableMetrics[0].key;
+  }
+  const metricPills = availableMetrics.map(m =>
+    `<button class="chart-pill${m.key === _chartMetric ? " active" : ""}" data-metric="${m.key}">${m.label}</button>`
+  ).join("");
+
   return `
     <div class="bm-chart-wrap">
-      <div class="bm-chart-head">
-        <div class="bm-chart-title">Trend</div>
-        <div class="bm-chart-legend">
-          ${bf ? `<span><span class="swatch" style="background:var(--protein)"></span>BF ${bf.latest}%${g.bodyFatPct != null ? ` <span style="opacity:0.6">→ ${g.bodyFatPct}%</span>` : ""}<button class="info-btn" id="bm-info-bf" aria-label="What is body fat %?">i</button></span>` : ""}
-          ${whr ? `<span><span class="swatch" style="background:var(--water)"></span>WHR ${whr.latest.toFixed(2)}${g.whr != null ? ` <span style="opacity:0.6">→ ${g.whr.toFixed(2)}</span>` : ""}<button class="info-btn" id="bm-info-whr" aria-label="What is WHR?">i</button></span>` : ""}
-        </div>
+      <div class="chart-controls">
+        <div class="chart-periods">${periodTabs}</div>
       </div>
-      <svg class="bm-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-        ${goalLine(bf, "var(--protein)")}
-        ${goalLine(whr, "var(--water)")}
-        ${bf ? `<path d="${bf.d}" fill="none" stroke="var(--protein)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--protein)">${bf.dots}</g>` : ""}
-        ${whr ? `<path d="${whr.d}" fill="none" stroke="var(--water)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--water)">${whr.dots}</g>` : ""}
-      </svg>
+      <div class="chart-pills">${metricPills}</div>
+      <div id="chart-canvas">${renderChartSVG(entries)}</div>
     </div>`;
+}
+
+// Render just the SVG + legend for the active metric/period. Called on initial
+// render and again when a pill or tab is tapped (without rebuilding the shell).
+function renderChartSVG(entries) {
+  const m = CHART_METRICS.find(x => x.key === _chartMetric) || CHART_METRICS[0];
+  const p = CHART_PERIODS.find(x => x.key === _chartPeriod) || CHART_PERIODS[2];
+  const cutoff = Date.now() - p.days * 86400000;
+  const pts = entries
+    .map(e => ({ ts: +new Date(e.ts), v: m.fn(e) }))
+    .filter(pt => pt.v != null && pt.ts >= cutoff)
+    .sort((a, b) => a.ts - b.ts);
+
+  const goal = chartGoalFor(m.key);
+  const guide = chartGuideFor(m.key);
+
+  // Legend line
+  const latest = pts.length ? pts[pts.length - 1] : null;
+  const dp = ["whr","whtr","swr","cwr"].includes(m.key) ? 2 : (m.key === "bf" ? 1 : 1);
+  const fmtV = v => v == null ? "—" : (Number.isInteger(v) ? v.toString() : v.toFixed(dp));
+  let legendHtml = `<span class="swatch" style="background:${m.color}"></span>${m.label} ${latest ? fmtV(latest.v) + m.unit : "—"}`;
+  if (goal != null) legendHtml += ` <span style="opacity:0.6">→ ${fmtV(goal)}${m.unit}</span>`;
+  if (pts.length >= 2) {
+    const delta = pts[pts.length - 1].v - pts[0].v;
+    const arrow = delta > 0 ? "↑" : delta < 0 ? "↓" : "";
+    legendHtml += ` <span class="chart-delta">${arrow}${Math.abs(delta).toFixed(dp)}${m.unit}</span>`;
+  }
+
+  if (pts.length < 2) {
+    return `
+      <div class="bm-chart-legend"><span>${legendHtml}</span></div>
+      <div class="bm-chart-empty">${pts.length === 0 ? "No data in this period." : "Need at least two entries to draw a trend."}</div>`;
+  }
+
+  const W = 600, H = 140, padX = 12, padY = 18;
+  const innerW = W - padX * 2, innerH = H - padY * 2;
+  const tMin = pts[0].ts, tMax = pts[pts.length - 1].ts;
+  const xOf = t => padX + ((t - tMin) / (tMax - tMin || 1)) * innerW;
+
+  const allVals = pts.map(pt => pt.v);
+  if (goal != null) allVals.push(goal);
+  if (guide) allVals.push(guide.v);
+  const vMin = Math.min(...allVals), vMax = Math.max(...allVals);
+  const span = (vMax - vMin) || 1;
+  const pad = span * 0.15;
+  const yOf = v => padY + (1 - (v - (vMin - pad)) / (span + 2 * pad)) * innerH;
+
+  const pathD = pts.map((pt, i) => `${i ? "L" : "M"}${xOf(pt.ts).toFixed(1)},${yOf(pt.v).toFixed(1)}`).join(" ");
+  const dots = pts.map(pt => `<circle cx="${xOf(pt.ts).toFixed(1)}" cy="${yOf(pt.v).toFixed(1)}" r="3.5" fill="${m.color}" />`).join("");
+
+  let goalSvg = "";
+  if (goal != null) {
+    const gy = yOf(goal).toFixed(1);
+    goalSvg = `<line x1="${padX}" y1="${gy}" x2="${W - padX}" y2="${gy}" stroke="${m.color}" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>`;
+  }
+  let guideSvg = "";
+  if (guide) {
+    const gy = yOf(guide.v).toFixed(1);
+    guideSvg = `<line x1="${padX}" y1="${gy}" x2="${W - padX}" y2="${gy}" stroke="var(--ink-muted)" stroke-width="1" stroke-dasharray="3 5" opacity="0.5"/>
+      <text x="${W - padX}" y="${gy - 4}" text-anchor="end" fill="var(--ink-muted)" font-size="9" font-family="var(--font-body)">${guide.label}</text>`;
+  }
+
+  return `
+    <div class="bm-chart-legend"><span>${legendHtml}</span></div>
+    <svg class="bm-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      ${goalSvg}${guideSvg}
+      <path d="${pathD}" fill="none" stroke="${m.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+    </svg>`;
 }
 
 function openWHRInfoModal() {
