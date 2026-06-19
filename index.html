@@ -1969,7 +1969,7 @@
   }
   .bm-chart-svg {
     width: 100%;
-    height: 140px;
+    height: 180px;
     display: block;
   }
   .bm-chart-empty {
@@ -8175,11 +8175,6 @@ function chartGoalFor(metricKey) {
   if (metricKey === "whr") return g.whr ?? null;
   return null;
 }
-// Guideline lines: WHtR has the 0.5 threshold.
-function chartGuideFor(metricKey) {
-  if (metricKey === "whtr") return { v: 0.5, label: "0.5 guideline" };
-  return null;
-}
 
 function renderBmChart(entries) {
   // Build the shell with period tabs and metric pills.
@@ -8208,6 +8203,30 @@ function renderBmChart(entries) {
 
 // Render just the SVG + legend for the active metric/period. Called on initial
 // render and again when a pill or tab is tapped (without rebuilding the shell).
+// Risk-range reference lines per metric (sex-dependent).
+function chartRefLines(metricKey, sex) {
+  if (metricKey === "whtr") return [
+    { v: 0.40, label: "0.40", cls: "low" },
+    { v: 0.50, label: "0.50", cls: "mod" },
+    { v: 0.60, label: "0.60", cls: "high" },
+  ];
+  if (metricKey === "whr") return sex === "M" ? [
+    { v: 0.90, label: "0.90", cls: "mod" },
+    { v: 1.00, label: "1.00", cls: "high" },
+  ] : [
+    { v: 0.80, label: "0.80", cls: "mod" },
+    { v: 0.85, label: "0.85", cls: "high" },
+  ];
+  if (metricKey === "waist") return sex === "M" ? [
+    { v: 37, label: '37″', cls: "mod" },
+    { v: 40, label: '40″', cls: "high" },
+  ] : [
+    { v: 31.5, label: '31.5″', cls: "mod" },
+    { v: 34.6, label: '34.6″', cls: "high" },
+  ];
+  return [];
+}
+
 function renderChartSVG(entries) {
   const m = CHART_METRICS.find(x => x.key === _chartMetric) || CHART_METRICS[0];
   const p = CHART_PERIODS.find(x => x.key === _chartPeriod) || CHART_PERIODS[2];
@@ -8218,11 +8237,11 @@ function renderChartSVG(entries) {
     .sort((a, b) => a.ts - b.ts);
 
   const goal = chartGoalFor(m.key);
-  const guide = chartGuideFor(m.key);
+  const refLines = chartRefLines(m.key, state.profile.sex);
 
   // Legend line
   const latest = pts.length ? pts[pts.length - 1] : null;
-  const dp = ["whr","whtr","swr","cwr"].includes(m.key) ? 2 : (m.key === "bf" ? 1 : 1);
+  const dp = ["whr","whtr","swr","cwr"].includes(m.key) ? 2 : 1;
   const fmtV = v => v == null ? "—" : (Number.isInteger(v) ? v.toString() : v.toFixed(dp));
   let legendHtml = `<span class="swatch" style="background:${m.color}"></span>${m.label} ${latest ? fmtV(latest.v) + m.unit : "—"}`;
   if (goal != null) legendHtml += ` <span style="opacity:0.6">→ ${fmtV(goal)}${m.unit}</span>`;
@@ -8238,40 +8257,71 @@ function renderChartSVG(entries) {
       <div class="bm-chart-empty">${pts.length === 0 ? "No data in this period." : "Need at least two entries to draw a trend."}</div>`;
   }
 
-  const W = 600, H = 140, padX = 12, padY = 18;
-  const innerW = W - padX * 2, innerH = H - padY * 2;
+  // Layout — extra left padding for y-axis labels, bottom for dates.
+  const W = 600, H = 180, padL = 48, padR = 14, padT = 16, padB = 28;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
   const tMin = pts[0].ts, tMax = pts[pts.length - 1].ts;
-  const xOf = t => padX + ((t - tMin) / (tMax - tMin || 1)) * innerW;
+  const xOf = t => padL + ((t - tMin) / (tMax - tMin || 1)) * innerW;
 
+  // Y range: include data, goal, and ref lines so everything fits on canvas.
   const allVals = pts.map(pt => pt.v);
   if (goal != null) allVals.push(goal);
-  if (guide) allVals.push(guide.v);
+  refLines.forEach(r => allVals.push(r.v));
   const vMin = Math.min(...allVals), vMax = Math.max(...allVals);
   const span = (vMax - vMin) || 1;
-  const pad = span * 0.15;
-  const yOf = v => padY + (1 - (v - (vMin - pad)) / (span + 2 * pad)) * innerH;
+  const vPad = span * 0.12;
+  const yOf = v => padT + (1 - (v - (vMin - vPad)) / (span + 2 * vPad)) * innerH;
 
-  const pathD = pts.map((pt, i) => `${i ? "L" : "M"}${xOf(pt.ts).toFixed(1)},${yOf(pt.v).toFixed(1)}`).join(" ");
-  const dots = pts.map(pt => `<circle cx="${xOf(pt.ts).toFixed(1)}" cy="${yOf(pt.v).toFixed(1)}" r="3.5" fill="${m.color}" />`).join("");
+  // --- SVG layers ---
 
+  // 1. Risk-range reference lines (subtle dashed, with labels at right)
+  const refSvg = refLines.map(r => {
+    const y = yOf(r.v).toFixed(1);
+    const color = r.cls === "high" ? "var(--protein)" : r.cls === "mod" ? "var(--ink-muted)" : "var(--sage)";
+    return `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="${color}" stroke-width="1" stroke-dasharray="4 4" opacity="0.45"/>
+      <text x="${padL - 4}" y="${(+y + 3.5).toFixed(1)}" text-anchor="end" fill="${color}" font-size="9.5" font-family="var(--font-body)" opacity="0.7">${r.label}</text>`;
+  }).join("");
+
+  // 2. Goal line (your target, different dash pattern)
   let goalSvg = "";
   if (goal != null) {
     const gy = yOf(goal).toFixed(1);
-    goalSvg = `<line x1="${padX}" y1="${gy}" x2="${W - padX}" y2="${gy}" stroke="${m.color}" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>`;
+    goalSvg = `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="${m.color}" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.55"/>
+      <text x="${padL - 4}" y="${(+gy + 3.5).toFixed(1)}" text-anchor="end" fill="${m.color}" font-size="9.5" font-family="var(--font-body)" opacity="0.7">goal</text>`;
   }
-  let guideSvg = "";
-  if (guide) {
-    const gy = yOf(guide.v).toFixed(1);
-    guideSvg = `<line x1="${padX}" y1="${gy}" x2="${W - padX}" y2="${gy}" stroke="var(--ink-muted)" stroke-width="1" stroke-dasharray="3 5" opacity="0.5"/>
-      <text x="${W - padX}" y="${gy - 4}" text-anchor="end" fill="var(--ink-muted)" font-size="9" font-family="var(--font-body)">${guide.label}</text>`;
+
+  // 3. Data path + dots with value labels
+  const pathD = pts.map((pt, i) => `${i ? "L" : "M"}${xOf(pt.ts).toFixed(1)},${yOf(pt.v).toFixed(1)}`).join(" ");
+  // Label strategy: always label first + last; label intermediate points only
+  // if there are ≤ 8 (otherwise too cluttered on a phone).
+  const labelAll = pts.length <= 8;
+  const dotsSvg = pts.map((pt, i) => {
+    const cx = xOf(pt.ts).toFixed(1), cy = yOf(pt.v).toFixed(1);
+    const showLabel = labelAll || i === 0 || i === pts.length - 1;
+    // Place label above the dot; if near the top edge, place below.
+    const labelY = (+cy - 8 > padT) ? (+cy - 8).toFixed(1) : (+cy + 14).toFixed(1);
+    return `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${m.color}"/>` +
+      (showLabel ? `<text x="${cx}" y="${labelY}" text-anchor="middle" fill="var(--ink-soft)" font-size="9.5" font-weight="600" font-family="var(--font-body)">${fmtV(pt.v)}</text>` : "");
+  }).join("");
+
+  // 4. X-axis date labels (first, last, + midpoint if spread is > 14 days)
+  const fmtDate = ts => new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const dateLabels = [pts[0]];
+  if (pts.length >= 3 && (tMax - tMin) > 14 * 86400000) {
+    dateLabels.push(pts[Math.floor(pts.length / 2)]);
   }
+  dateLabels.push(pts[pts.length - 1]);
+  const dateSvg = dateLabels.map(pt => {
+    const x = xOf(pt.ts).toFixed(1);
+    return `<text x="${x}" y="${H - 4}" text-anchor="middle" fill="var(--ink-muted)" font-size="9.5" font-family="var(--font-body)">${fmtDate(pt.ts)}</text>`;
+  }).join("");
 
   return `
     <div class="bm-chart-legend"><span>${legendHtml}</span></div>
     <svg class="bm-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      ${goalSvg}${guideSvg}
+      ${refSvg}${goalSvg}
       <path d="${pathD}" fill="none" stroke="${m.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      ${dots}
+      ${dotsSvg}${dateSvg}
     </svg>`;
 }
 
