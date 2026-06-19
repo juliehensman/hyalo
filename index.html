@@ -2033,12 +2033,12 @@
     margin-top: 4px;
   }
 
-  /* Proportions & frame panel */
+  /* Proportions & frame panel — clean tappable rows */
   .prop-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 16px 18px 14px;
+    padding: 14px 16px 10px;
     margin: 16px 0 0;
     box-shadow: var(--shadow);
   }
@@ -2047,12 +2047,7 @@
     font-style: italic;
     font-size: 22px;
     color: var(--ink);
-  }
-  .prop-sub {
-    font-size: 12px;
-    color: var(--ink-muted);
-    margin: 2px 0 6px;
-    line-height: 1.45;
+    margin-bottom: 2px;
   }
   .prop-group-label {
     font-size: 10.5px;
@@ -2060,19 +2055,30 @@
     text-transform: uppercase;
     color: var(--ink-muted);
     font-weight: 700;
-    margin: 14px 0 6px;
+    margin: 12px 0 4px;
   }
-  .prop-row {
-    padding: 8px 0;
-    border-top: 1px solid var(--border);
-  }
-  .prop-row-top {
+  .prop-row-clean {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    padding: 12px 0;
+    cursor: pointer;
     gap: 10px;
   }
+  .prop-row-clean:last-child { border-bottom: none; }
+  .prop-row-clean:active { opacity: 0.7; }
   .prop-label { font-size: 14px; color: var(--ink); }
+  .prop-val-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
   .prop-val {
     font-size: 15px;
     font-weight: 600;
@@ -2081,31 +2087,20 @@
   }
   .prop-chip {
     display: inline-block;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: lowercase;
-    padding: 1px 7px;
+    padding: 2px 7px;
     border-radius: 999px;
-    margin-left: 4px;
-    vertical-align: middle;
+    white-space: nowrap;
   }
   .prop-chip.low  { background: color-mix(in srgb, var(--sage) 22%, transparent); color: var(--sage); }
   .prop-chip.mod  { background: var(--card-hover); color: var(--ink-muted); }
   .prop-chip.high { background: color-mix(in srgb, var(--protein) 18%, transparent); color: var(--protein); }
-  .prop-row-sub {
-    font-size: 11.5px;
+  .prop-chev {
+    font-size: 16px;
     color: var(--ink-muted);
-    margin-top: 3px;
-    line-height: 1.4;
-  }
-  .prop-note {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--ink-soft);
-    background: var(--card-hover);
-    border-radius: var(--radius);
-    padding: 10px 12px;
-    margin-top: 8px;
+    margin-left: 2px;
   }
   .prop-add-wrist {
     display: block;
@@ -2121,12 +2116,93 @@
     cursor: pointer;
   }
   .prop-add-wrist:hover { background: var(--card-hover); }
-  .prop-foot {
-    font-size: 11px;
+
+  /* Proportion detail modal */
+  .detail-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 4px 0 16px;
+  }
+  .detail-ranges { margin-bottom: 16px; }
+  .detail-range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 13px;
     color: var(--ink-muted);
-    font-style: italic;
-    margin-top: 12px;
-    line-height: 1.45;
+  }
+  .detail-range-row.active {
+    background: var(--card-hover);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .detail-range-bar {
+    width: 4px;
+    height: 18px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .detail-range-bar.low  { background: var(--sage); }
+  .detail-range-bar.mod  { background: var(--ink-muted); }
+  .detail-range-bar.high { background: var(--protein); }
+  .detail-range-label { min-width: 80px; }
+  .detail-range-name { flex: 1; }
+  .detail-range-you {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--protein);
+  }
+  .detail-trend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .detail-trend-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    font-weight: 700;
+  }
+  .detail-trend-delta {
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .detail-context {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    background: var(--card-hover);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin: 8px 0;
+  }
+  .detail-note {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin: 12px 0 14px;
+  }
+  .detail-learn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--protein);
+    padding: 0 0 4px;
+    cursor: pointer;
   }
   .bm-section {
     margin-top: 16px;
@@ -7700,26 +7776,71 @@ let _bmEditingId = null;          // id of entry being edited, null = new
    goal-summary band, a + New entry button, the trend chart, and the
    measurement log taking the bulk of the screen. The list breathes on a
    real page in a way it never could in a modal. */
-function propRow(label, value, chipText, chipClass, sub, infoTopic) {
-  const infoBtn = infoTopic ? ` <button class="info-dot" type="button" data-prop-info="${infoTopic}">i</button>` : "";
+
+/* ---- Proportions panel: clean row + tappable detail ---- */
+// Reference range definitions per metric. Each band has [label, cssClass].
+// "you" is placed by the band function.
+const PROP_RANGES = {
+  whtr: {
+    title: "Waist-to-height ratio",
+    topic: "cardiometabolic",
+    bands: (sex) => [
+      { lo: 0,   hi: 0.40, label: "Very lean",      cls: "low" },
+      { lo: 0.40, hi: 0.50, label: "Healthy",        cls: "low" },
+      { lo: 0.50, hi: 0.60, label: "Increased risk", cls: "mod" },
+      { lo: 0.60, hi: 9,    label: "High risk",      cls: "high" },
+    ],
+    note: "The best-validated waist-based health screen — simply keep your waist under half your height.",
+  },
+  waist: {
+    title: "Absolute waist",
+    topic: "visceral-fat",
+    bands: (sex) => sex === "M" ? [
+      { lo: 0,   hi: 37,   label: "Low risk",  cls: "low" },
+      { lo: 37,  hi: 40,   label: "Elevated",  cls: "mod" },
+      { lo: 40,  hi: 999,  label: "High risk",  cls: "high" },
+    ] : [
+      { lo: 0,   hi: 31.5, label: "Low risk",  cls: "low" },
+      { lo: 31.5, hi: 34.6, label: "Elevated",  cls: "mod" },
+      { lo: 34.6, hi: 999,  label: "High risk",  cls: "high" },
+    ],
+    note: "A direct proxy for visceral fat — the metabolically active fat around your organs.",
+  },
+  whr: {
+    title: "Waist-to-hip ratio",
+    topic: "whr",
+    bands: (sex) => sex === "M" ? [
+      { lo: 0,    hi: 0.90, label: "Low risk",      cls: "low" },
+      { lo: 0.90, hi: 1.00, label: "Moderate risk",  cls: "mod" },
+      { lo: 1.00, hi: 9,    label: "High risk",      cls: "high" },
+    ] : [
+      { lo: 0,    hi: 0.80, label: "Low risk",      cls: "low" },
+      { lo: 0.80, hi: 0.85, label: "Moderate risk",  cls: "mod" },
+      { lo: 0.85, hi: 9,    label: "High risk",      cls: "high" },
+    ],
+    note: "Captures fat distribution — waist-heavy shapes track with visceral fat and cardiometabolic risk.",
+  },
+  swr: { title: "Shoulder-to-waist ratio", topic: "recomp", bands: () => null, note: "Higher means broader shoulders relative to waist — the V-taper. No health standard; track your own trend." },
+  cwr: { title: "Chest-to-waist ratio", topic: "recomp", bands: () => null, note: "Higher means broader chest relative to waist. Descriptive build ratio — track your trend." },
+  frame: { title: "Frame size", topic: "measure-consistent", bands: () => null, note: "Estimated from height ÷ wrist circumference. A rough proxy for bone structure." },
+};
+
+function propCleanRow(key, label, value, chipText, chipCls) {
   return `
-    <div class="prop-row">
-      <div class="prop-row-top">
-        <span class="prop-label">${label}${infoBtn}</span>
-        <span class="prop-val">${value}${chipText ? ` <span class="prop-chip ${chipClass}">${chipText}</span>` : ""}</span>
-      </div>
-      ${sub ? `<div class="prop-row-sub">${sub}</div>` : ""}
-    </div>`;
+    <button class="prop-row-clean" data-prop="${key}">
+      <span class="prop-label">${label}</span>
+      <span class="prop-val-group">
+        <span class="prop-val">${value}</span>
+        ${chipText ? `<span class="prop-chip ${chipCls}">${chipText}</span>` : ""}
+        <span class="prop-chev">›</span>
+      </span>
+    </button>`;
 }
-// Proportions & frame panel — descriptive ratios from existing measurements,
-// each with context and change-since-first. Hidden until there's a waist to
-// work from. Frames the waist-to-hip flag alongside the more reassuring
-// waist-to-height and absolute waist.
+
 function renderProportionsPanel(entries) {
   if (!entries.length) return "";
   const p = state.profile;
   const latest = entries[0];
-  const asc = entries.slice().reverse();
   const whtr = entryWHtR(latest, p);
   const whr = entryWHRr(latest);
   const swr = entrySWR(latest);
@@ -7729,62 +7850,32 @@ function renderProportionsPanel(entries) {
   if (whtr == null && whr == null && swr == null && cwr == null && waist == null && !frame) return "";
 
   const cls = b => b === "low" ? "low" : b === "high" ? "high" : "mod";
-  const trendStr = (t, dp, unit) => {
-    if (!t || t.n < 2) return "";
-    if (Math.abs(t.delta) < (dp === 2 ? 0.005 : 0.05)) return " · level since first entry";
-    return ` · ${t.delta > 0 ? "↑" : "↓"}${Math.abs(t.delta).toFixed(dp)}${unit} since first`;
-  };
 
   const healthRows = [];
   if (whtr != null) {
     const b = whtrBand(whtr);
-    const t = proportionTrend(asc, e => entryWHtR(e, p));
-    healthRows.push(propRow("Waist-to-height", whtr.toFixed(2),
-      b === "low" ? "healthy" : b === "moderate" ? "increased" : "high", cls(b),
-      `Under 0.5 is the healthy guideline${trendStr(t, 2, "")}`, "cardiometabolic"));
+    healthRows.push(propCleanRow("whtr", "Waist-to-height", whtr.toFixed(2),
+      b === "low" ? "healthy" : b === "moderate" ? "increased" : "high", cls(b)));
   }
   if (waist != null) {
     const b = waistRiskBand(p.sex, waist);
-    const t = proportionTrend(asc, e => e.waist || null);
-    const thr = p.sex === "M" ? "37″" : p.sex === "F" ? "31.5″" : null;
-    healthRows.push(propRow("Waist", waist.toFixed(1) + "″",
-      b === "low" ? "below threshold" : b === "moderate" ? "elevated" : "high", cls(b),
-      `${thr ? "Low-risk under " + thr : "A direct measure of abdominal fat"}${trendStr(t, 1, "″")}`, "visceral-fat"));
+    healthRows.push(propCleanRow("waist", "Waist", waist.toFixed(1) + "″",
+      b === "low" ? "below threshold" : b === "moderate" ? "elevated" : "high", cls(b)));
   }
   if (whr != null) {
     const b = whrRiskBand(p.sex, whr);
-    const t = proportionTrend(asc, entryWHRr);
-    const thr = p.sex === "M" ? "0.90" : "0.80";
-    healthRows.push(propRow("Waist-to-hip", whr.toFixed(2),
-      b, cls(b),
-      `Under ${thr} is low cardiometabolic risk${trendStr(t, 2, "")}`, "whr"));
-  }
-  // Context note: when waist + waist-to-height are reassuring but WHR is mid/high,
-  // explain that the ratio reflects frame proportions more than abdominal fat.
-  let whrNote = "";
-  if (whr != null && whrRiskBand(p.sex, whr) !== "low" && whtrBand(whtr) === "low" && waistRiskBand(p.sex, waist) === "low") {
-    whrNote = `<div class="prop-note">Your waist and waist-to-height sit in the healthy range, so a mid-band waist-to-hip here reflects your frame's proportions — narrower hips raise the ratio — more than abdominal fat.</div>`;
+    healthRows.push(propCleanRow("whr", "Waist-to-hip", whr.toFixed(2), b, cls(b)));
   }
 
   const buildRows = [];
-  if (swr != null) {
-    const t = proportionTrend(asc, entrySWR);
-    buildRows.push(propRow("Shoulder-to-waist", swr.toFixed(2), "", "",
-      `Higher means more shoulder-to-waist taper${trendStr(t, 2, "")}`, "recomp"));
-  }
-  if (cwr != null) {
-    const t = proportionTrend(asc, entryCWR);
-    buildRows.push(propRow("Chest-to-waist", cwr.toFixed(2), "", "",
-      `Higher means more chest-to-waist taper${trendStr(t, 2, "")}`, "recomp"));
-  }
+  if (swr != null) buildRows.push(propCleanRow("swr", "Shoulder-to-waist", swr.toFixed(2), "", ""));
+  if (cwr != null) buildRows.push(propCleanRow("cwr", "Chest-to-waist", cwr.toFixed(2), "", ""));
 
-  let frameRow;
+  let frameRow = "";
   if (frame && frame.label) {
-    frameRow = propRow("Frame size", frame.label, "", "",
-      `Height-to-wrist ratio ${frame.ratio.toFixed(1)} · a rough estimate`, "measure-consistent");
+    frameRow = propCleanRow("frame", "Frame size", frame.label, "", "");
   } else if (frame && !frame.label) {
-    frameRow = propRow("Frame size", "ratio " + frame.ratio.toFixed(1), "", "",
-      "Set your sex in Basics for a small / medium / large estimate", "measure-consistent");
+    frameRow = propCleanRow("frame", "Frame size", "ratio " + frame.ratio.toFixed(1), "", "");
   } else {
     frameRow = `<button class="prop-add-wrist" id="prop-add-wrist">+ Add a wrist measurement to estimate frame size</button>`;
   }
@@ -7792,13 +7883,85 @@ function renderProportionsPanel(entries) {
   return `
     <div class="prop-card">
       <div class="prop-head">Proportions &amp; frame</div>
-      <div class="prop-sub">From your latest entry. Descriptive — for understanding and tracking, not a diagnosis.</div>
-      ${healthRows.length ? `<div class="prop-group-label">Shape &amp; health</div>${healthRows.join("")}${whrNote}` : ""}
+      ${healthRows.length ? `<div class="prop-group-label">Shape &amp; health</div>${healthRows.join("")}` : ""}
       ${buildRows.length ? `<div class="prop-group-label">Build</div>${buildRows.join("")}` : ""}
       <div class="prop-group-label">Frame</div>
       ${frameRow}
-      <div class="prop-foot">Tape ratios estimate proportions, not health. Actual cardiometabolic risk needs a clinician.</div>
     </div>`;
+}
+
+// Detail modal: shows reference ranges, your position, trend, context note,
+// and a Learn link. Opened by tapping a row.
+function openProportionDetail(key, entries) {
+  const p = state.profile;
+  const latest = entries[0];
+  const asc = entries.slice().reverse();
+  const meta = PROP_RANGES[key];
+  if (!meta) return;
+
+  // Current value + trend
+  let curVal = null, unit = "", dp = 2, trendData = null;
+  if (key === "whtr") { curVal = entryWHtR(latest, p); trendData = proportionTrend(asc, e => entryWHtR(e, p)); }
+  else if (key === "waist") { curVal = latest.waist; unit = "″"; dp = 1; trendData = proportionTrend(asc, e => e.waist || null); }
+  else if (key === "whr") { curVal = entryWHRr(latest); trendData = proportionTrend(asc, entryWHRr); }
+  else if (key === "swr") { curVal = entrySWR(latest); trendData = proportionTrend(asc, entrySWR); }
+  else if (key === "cwr") { curVal = entryCWR(latest); trendData = proportionTrend(asc, entryCWR); }
+  else if (key === "frame") {
+    const f = frameSizeFromWrist(p.sex, p.height_in, latest.wrist);
+    curVal = f ? (f.label || "ratio " + f.ratio.toFixed(1)) : "—";
+    unit = ""; dp = 0;
+  }
+  const fmtVal = (v) => v == null ? "—" : (dp === 0 ? String(v) : Number(v).toFixed(dp)) + unit;
+
+  // Ranges
+  const bands = meta.bands(p.sex);
+  let rangesHtml = "";
+  if (bands && curVal != null && typeof curVal === "number") {
+    rangesHtml = `<div class="detail-ranges">${bands.map(b => {
+      const active = curVal >= b.lo && curVal < b.hi;
+      const rangeStr = b.hi >= 900 ? `> ${b.lo}${unit}` : b.lo === 0 ? `< ${b.hi}${unit}` : `${b.lo}${unit} – ${b.hi}${unit}`;
+      return `<div class="detail-range-row${active ? " active" : ""}">
+        <span class="detail-range-bar ${b.cls}"></span>
+        <span class="detail-range-label">${rangeStr}</span>
+        <span class="detail-range-name">${b.label}</span>
+        ${active ? `<span class="detail-range-you">← you</span>` : ""}
+      </div>`;
+    }).join("")}</div>`;
+  }
+
+  // Trend
+  let trendHtml = "";
+  if (trendData && trendData.n >= 2) {
+    const arrow = trendData.delta > 0 ? "↑" : trendData.delta < 0 ? "↓" : "";
+    const absDelta = Math.abs(trendData.delta).toFixed(dp);
+    trendHtml = `<div class="detail-trend">
+      <span class="detail-trend-label">Trend</span>
+      <span>${fmtVal(trendData.first)} → ${fmtVal(trendData.latest)} <span class="detail-trend-delta">${arrow}${absDelta}${unit}</span></span>
+    </div>`;
+  }
+
+  // WHR context note
+  let contextNote = "";
+  if (key === "whr" && curVal != null) {
+    const whtr = entryWHtR(latest, p);
+    const waist = latest.waist;
+    if (whrRiskBand(p.sex, curVal) !== "low" && whtrBand(whtr) === "low" && waistRiskBand(p.sex, waist) === "low") {
+      contextNote = `<div class="detail-context">Your waist and waist-to-height sit in the healthy range, so a mid-band ratio here reflects your frame's proportions — narrower hips raise the ratio — more than abdominal fat.</div>`;
+    }
+  }
+
+  openModal(`
+    <button class="modal-back" type="button" id="top-back">‹ Back</button>
+    <div class="modal-title">${meta.title}</div>
+    <div class="detail-value">${fmtVal(curVal)}</div>
+    ${rangesHtml}
+    ${trendHtml}
+    ${contextNote}
+    <div class="detail-note">${meta.note}</div>
+    <button class="detail-learn" id="detail-learn">Learn more about this →</button>
+  `);
+  $("#top-back")?.addEventListener("click", () => { closeModal(); render(); });
+  $("#detail-learn")?.addEventListener("click", () => openLearnTopicModal(meta.topic, () => { closeModal(); render(); }));
 }
 
 function renderBody() {
@@ -7822,7 +7985,6 @@ function renderBody() {
   const wireChart = () => {
     $$(".chart-period").forEach(btn => btn.addEventListener("click", () => {
       _chartPeriod = btn.dataset.period;
-      // Update tab active states
       $$(".chart-period").forEach(t => t.classList.toggle("active", t.dataset.period === _chartPeriod));
       document.getElementById("chart-canvas").innerHTML = renderChartSVG(entries);
     }));
@@ -7834,10 +7996,9 @@ function renderBody() {
   };
   wireChart();
 
-  // Inline ⓘ icons on proportions panel.
-  $$("[data-prop-info]").forEach(b => b.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openLearnTopicModal(b.dataset.propInfo, () => { closeModal(); });
+  // Proportions panel: tappable rows open the detail modal.
+  $$("[data-prop]").forEach(btn => btn.addEventListener("click", () => {
+    openProportionDetail(btn.dataset.prop, entries);
   }));
 }
 
