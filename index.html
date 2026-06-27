@@ -3379,8 +3379,6 @@ const STORAGE_KEY = "hyalo-v1";
 // Bumped whenever the goal-calculation logic changes, so existing users get
 // a one-time notice. v2 = evidence-based protein ladder (build/recomp lowered).
 const CALC_VERSION = 3;
-// Display dates for entries in Recent updates.
-const LATEST_UPDATE_DATE = "June 2026";
 // Bumped when default-library content changes, to top-up existing users once.
 const LIBRARY_SEED_VERSION = 6;
 const MS_PER_DAY = 86400000;
@@ -6365,13 +6363,6 @@ function renderSettings() {
           </div>
           <div class="settings-row-chev">›</div>
         </button>
-        <button class="settings-row" id="recent-updates">
-          <div class="settings-row-info">
-            <div class="settings-row-label">Recent updates</div>
-            <div class="settings-row-value">What's changed in Hyalo lately</div>
-          </div>
-          <div class="settings-row-chev">›</div>
-        </button>
         <button class="settings-row" id="health-disclaimer">
           <div class="settings-row-info">
             <div class="settings-row-label">Health disclaimer</div>
@@ -6429,7 +6420,6 @@ function wireSettingsHandlers() {
     render();
   }));
   $("#open-learn")?.addEventListener("click", openLearnModal);
-  $("#recent-updates")?.addEventListener("click", openRecentUpdatesModal);
   $("#health-disclaimer")?.addEventListener("click", () => openDisclaimerModal());
 }
 
@@ -7538,28 +7528,6 @@ function openGoalsUpdateModal() {
     </div>
   `);
   $("#gu-close")?.addEventListener("click", closeModal);
-}
-
-function openRecentUpdatesModal() {
-  openModal(`
-    <button class="modal-back" type="button" id="top-back">‹ Back</button>
-    <div class="modal-title">Recent updates</div>
-    <div class="goals-update-body">
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Goals &amp; body, in one place</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Settings → <strong>Goals &amp; body</strong> now gathers everything in one view: where you are (weight, body fat %, WHR), where you're headed (goal body fat % and WHR), and your daily water and protein targets. Each target shows where its number came from — <em>calculated</em>, <em>planned for a goal body fat %</em>, or <em>manual</em> — so you can see at a glance how it all lines up instead of cross-checking separate screens. Tap any line to edit it.</p>
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <p style="font-weight:600;color:var(--ink);margin-bottom:2px">Body measurements</p>
-      <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:10px">${LATEST_UPDATE_DATE}</p>
-      <p>Inside Goals &amp; body, the measurement log tracks circumferences over time. Navy method fields (height + neck + waist + hip) compute body fat % on save; optional fields track muscle groups (chest, biceps, thighs, calves, shoulders), each with anatomical guidance for tape placement.</p>
-      <p>The trend chart plots <strong>body fat %</strong> and <strong>waist-to-hip ratio (WHR)</strong> together, with dashed lines for any goals you set. WHR reveals the recomp signature — when waist barely moves but hips grow, WHR drops sharply. It's also an independent WHO health risk marker (tap the ⓘ for thresholds).</p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-primary" id="ru-close" style="width:100%">Got it</button>
-    </div>
-  `);
-  $("#ru-close")?.addEventListener("click", closeModal);
-  $("#top-back")?.addEventListener("click", closeModal);
 }
 
 /* ============ Learn: list + topic detail ============ */
