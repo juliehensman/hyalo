@@ -4173,7 +4173,10 @@ function bodyFatSourceLabel(p) {
 function proteinGoalSource() {
   if (state.goalsOverride.protein_g == null) return { key: "calculated", label: "calculated" };
   const meta = state.goalsOverride.protein_meta;
-  if (meta?.goalBFPct) return { key: "planned", label: `planned for ${meta.goalBFPct}% BF` };
+  if (meta?.goalBFPct) {
+    const tl = MUSCLE_TIERS.find(t => t.key === meta.tier)?.label;
+    return { key: "planned", label: `planned for ${meta.goalBFPct}% BF${tl ? " · " + tl : ""}` };
+  }
   return { key: "manual", label: "manual" };
 }
 function waterGoalSource() {
@@ -6460,14 +6463,20 @@ function openGoalsBodyHub() {
     </div>`;
   const valWithSub = (main, sub, tint) => `<span${tint ? ` style="color:var(--${tint})"` : ""}>${main}</span>${sub ? `<span class="hub-row-sub"> · ${sub}</span>` : ""}`;
 
-  // "Where you're headed" — either the set goals, or a prompt to set one.
+  // "Where you're headed" — body composition goal (BF% + muscle target) and WHR.
   const hasGoal = g.bodyFatPct != null || g.whr != null;
+  const meta = state.goalsOverride.protein_meta;
+  let bcSub = "";
+  if (g.bodyFatPct != null && meta?.goalBFPct != null) {
+    const tl = MUSCLE_TIERS.find(t => t.key === meta.tier)?.label;
+    if (tl) bcSub = `${tl}${meta.muscleGain > 0 ? ` +${meta.muscleGain} lb` : ""}`;
+  }
   const goalRows = hasGoal ? `
-    ${row("Goal body fat", g.bodyFatPct != null ? valWithSub(`${g.bodyFatPct}%`, "", "protein") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "goal-bf" })}
+    ${row("Body composition goal", g.bodyFatPct != null ? valWithSub(`${g.bodyFatPct}% BF`, bcSub, "protein") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "goal-bf" })}
     ${row("Goal waist-to-hip", g.whr != null ? valWithSub(g.whr.toFixed(2), "", "water") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "whr" })}
   ` : `
     <div class="hub-row tappable hub-row-empty" data-hub-tap="goals">
-      <div class="hub-row-label">Set a body fat % or WHR goal</div>
+      <div class="hub-row-label">Set a body composition goal</div>
       <div class="hub-chev">›</div>
     </div>`;
 
@@ -6550,48 +6559,11 @@ function openGoalOverride(kind, opts = {}) {
     : (state.goalsOverride.protein_g ?? suggested);
   const step = kind === "water" ? 4 : 5;
 
-  const hasBodyComp = currentBodyFat(p) != null;
-  const showPlanner = kind === "protein" && hasBodyComp;
-  const sexKey = p.sex === "M" ? "M" : (p.sex === "F" ? "F" : "X");
-  // Restore last planner setup if user previously saved an override via planner.
-  // Auto-expand the planner section in that case (or when caller requests it).
-  const savedMeta = kind === "protein" ? state.goalsOverride.protein_meta : null;
-  // Goal BF is a single shared value (state.bodyGoals.bodyFatPct). Default to it
-  // first, then the last planner snapshot, then a sensible per-sex starting point.
-  const initialGoalBF = state.bodyGoals.bodyFatPct ?? savedMeta?.goalBFPct ?? (p.sex === "M" ? 15 : 20);
-  const initialTier = savedMeta?.tier ?? "athletic";
-  const plannerOpen = showPlanner && (savedMeta != null || opts.expandPlanner);
-
-  const plannerHTML = kind !== "protein" ? "" : (hasBodyComp ? `
-    <button type="button" class="planner-toggle ${plannerOpen ? "expanded" : ""}" id="planner-toggle">
-      <span class="planner-toggle-arrow">›</span>
-      <span>Plan around a body composition goal</span>
-    </button>
-    <div class="planner-section" id="planner-section" style="display:${plannerOpen ? "block" : "none"}">
-      <div class="planner-row-bf">
-        <span class="planner-bf-label">Goal body fat</span>
-        <div style="display:flex;align-items:baseline;gap:4px">
-          <input type="number" class="planner-bf-input" id="planner-goal-bf" value="${initialGoalBF}" step="0.5" min="3" max="60" inputmode="decimal" />
-          <span style="color:var(--ink-muted);font-size:13px">%</span>
-        </div>
-      </div>
-      <div class="planner-tier-label">Muscle target</div>
-      <div class="chip-group" id="planner-tiers">
-        ${MUSCLE_TIERS.map(t => {
-          const r = MUSCLE_RANGES[sexKey][t.key];
-          const rText = t.key === "maintain" ? "" : ` <span style="opacity:0.7;font-size:11px">+${r[0]}–${r[1]}lb</span>`;
-          return `<button type="button" class="chip ${t.key === initialTier ? "selected" : ""}" data-tier="${t.key}">${t.label}${rText}</button>`;
-        }).join("")}
-      </div>
-      <div class="planner-tier-info" id="planner-tier-info"></div>
-      <div class="planner-breakdown" id="planner-breakdown"></div>
-      <p class="planner-caveat">Same per-pound rate as above, applied to your projected goal weight instead of your current weight — that's why the number can differ.</p>
-      <p class="planner-caveat" style="margin-top:-4px">Muscle gain ranges are estimates — people vary widely.</p>
-      <button type="button" class="planner-use-btn" id="planner-use">Use this number →</button>
-    </div>
-  ` : `
-    <p class="planner-hint">Set your body composition in Settings to enable goal-based planning.</p>
-  `);
+  // The body-composition planner now lives in the Body composition goal editor
+  // (Goals & body → Where you're headed). This editor only sets a manual number.
+  const plannerHTML = kind !== "protein" ? "" : `
+    <p class="planner-hint">To plan this around a goal body fat % and muscle target, set a <strong>Body composition goal</strong> under “Where you're headed.”</p>
+  `;
 
   openModal(`
     <button class="modal-back" type="button" id="top-back">‹ Back</button>
@@ -6636,55 +6608,6 @@ function openGoalOverride(kind, opts = {}) {
   $("#m-cancel").addEventListener("click", back);
   $("#top-back")?.addEventListener("click", back);
 
-  // Planner wiring. lastPlannerResult tracks the currently-displayed projection
-  // so we can match it against the saved value to decide whether to persist meta.
-  let currentTier = initialTier;
-  let lastPlannerResult = null;
-  const renderProjection = () => {
-    if (!showPlanner) return;
-    const goalBF = parseFloat($("#planner-goal-bf").value) || initialGoalBF;
-    const result = projectedProteinGoal(p, goalBF, currentTier);
-    if (!result) return;
-    lastPlannerResult = { ...result, goalBFPct: goalBF, tier: currentTier };
-    const tierDesc = MUSCLE_TIERS.find(t => t.key === currentTier)?.desc || "";
-    $("#planner-tier-info").textContent = tierDesc;
-    const projRows = [
-      { label: "Current lean mass", value: `${result.leanMass}<span class="u">lb</span>` },
-    ];
-    if (result.muscleGain > 0) projRows.push({ label: "Muscle gain target", value: `+${result.muscleGain}<span class="u">lb</span>` });
-    projRows.push(
-      { label: `Goal weight at ${goalBF}% BF`, value: `${result.goalWeight}<span class="u">lb</span>` },
-      { label: `${result.goalWeight} lb × ${result.mult.toFixed(2)}`, value: fmtG(result.protein) },
-    );
-    $("#planner-breakdown").innerHTML = rowsToHtml(projRows);
-    $("#planner-use").textContent = `Use ${result.protein}g →`;
-    $("#planner-use").dataset.value = result.protein;
-  };
-  if (showPlanner) {
-    $("#planner-toggle").addEventListener("click", () => {
-      const section = $("#planner-section");
-      const expanded = section.style.display !== "none";
-      section.style.display = expanded ? "none" : "block";
-      $("#planner-toggle").classList.toggle("expanded", !expanded);
-      if (!expanded) renderProjection();
-    });
-    $("#planner-goal-bf").addEventListener("input", renderProjection);
-    $$("#planner-tiers .chip").forEach(c => {
-      c.addEventListener("click", () => {
-        $$("#planner-tiers .chip").forEach(x => x.classList.remove("selected"));
-        c.classList.add("selected");
-        currentTier = c.dataset.tier;
-        renderProjection();
-      });
-    });
-    $("#planner-use").addEventListener("click", () => {
-      const v = +$("#planner-use").dataset.value;
-      if (v > 0) { input.value = v; syncResetVisibility(); }
-    });
-    // If meta exists, the planner is already expanded — render its rows now.
-    if (plannerOpen) renderProjection();
-  }
-
   $("#m-save").addEventListener("click", () => {
     const v = +input.value;
     if (!v || v <= 0) return;
@@ -6693,27 +6616,14 @@ function openGoalOverride(kind, opts = {}) {
     const newOverride = (v === suggested) ? null : v;
     if (kind === "water") {
       state.goalsOverride.water_oz = newOverride;
+    } else if (v === currentVal && state.goalsOverride.protein_meta) {
+      // Unchanged planner-based value — leave the planned override + meta intact
+      // (editing the plan itself happens in the Body composition goal editor).
     } else {
+      // Typed a manual number (or reset to suggested): this is no longer a
+      // planner-based goal, so clear the meta.
       state.goalsOverride.protein_g = newOverride;
-      // Persist planner metadata only if the saved value matches what the
-      // planner currently shows. If user typed a number that doesn't match
-      // (or never used the planner), meta clears so the explainer falls back
-      // to the simple "Custom target" view.
-      if (newOverride !== null && lastPlannerResult && v === lastPlannerResult.protein) {
-        state.goalsOverride.protein_meta = {
-          goalBFPct: lastPlannerResult.goalBFPct,
-          tier: lastPlannerResult.tier,
-          leanMass: lastPlannerResult.leanMass,
-          muscleGain: lastPlannerResult.muscleGain,
-          goalWeight: lastPlannerResult.goalWeight,
-          mult: lastPlannerResult.mult,
-          protein: lastPlannerResult.protein,
-        };
-        // Committing the planner sets your tracked body-fat goal too (shared value).
-        state.bodyGoals.bodyFatPct = lastPlannerResult.goalBFPct;
-      } else {
-        state.goalsOverride.protein_meta = null;
-      }
+      state.goalsOverride.protein_meta = null;
     }
     save();
     render();
@@ -7248,7 +7158,7 @@ function wirePlannerOnbBanner() {
   $("#planner-onb-show")?.addEventListener("click", () => {
     state.plannerOnbSeen = true;
     save();
-    openGoalOverride("protein", { expandPlanner: true });
+    openBodyGoalsModal();
   });
   $("#planner-onb-close")?.addEventListener("click", retire);
 }
@@ -8052,27 +7962,90 @@ function openBodyGoalsModal(returnTo) {
   const back = returnTo || (() => { closeModal(); render(); });
   const g = state.bodyGoals || {};
   const p = state.profile;
+  const hasBodyComp = currentBodyFat(p) != null;
+  const sexKey = p.sex === "M" ? "M" : (p.sex === "F" ? "F" : "X");
+  const meta = state.goalsOverride.protein_meta;
+  const initialGoalBF = g.bodyFatPct ?? meta?.goalBFPct ?? (p.sex === "M" ? 15 : 20);
+  const initialTier = meta?.tier ?? null;   // a tier is selected only if protein is already planned
+
+  const tierChips = MUSCLE_TIERS.map(t => {
+    const r = MUSCLE_RANGES[sexKey][t.key];
+    const rText = t.key === "maintain" ? "" : ` <span style="opacity:0.7;font-size:11px">+${r[0]}–${r[1]}lb</span>`;
+    return `<button type="button" class="chip ${t.key === initialTier ? "selected" : ""}" data-tier="${t.key}">${t.label}${rText}</button>`;
+  }).join("");
+
+  const plannerBlock = hasBodyComp ? `
+    <div class="planner-tier-label" style="margin-top:16px">Muscle target <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink-muted);font-size:11px">— optional · plans your protein</span></div>
+    <div class="chip-group" id="bg-tiers">${tierChips}</div>
+    <div class="planner-tier-info" id="bg-tier-info"></div>
+    <div class="planner-breakdown" id="bg-breakdown"></div>
+    <p class="planner-caveat" id="bg-caveat" style="display:none">Your protein goal is planned at the same per-pound rate applied to your projected goal weight. Muscle-gain ranges are estimates — people vary widely.</p>
+  ` : `
+    <p class="planner-hint">Set your current body fat % (in Body fat) to plan your protein around this goal. You can still set a goal body fat % as a chart target below.</p>
+  `;
+
   openModal(`
     <button class="modal-back" type="button" id="top-back">‹ Back</button>
-    <div class="modal-title">Body composition goals</div>
-    <div class="modal-sub">Optional targets. Both show as dashed lines on your trend chart so you can watch progress. Leave blank to clear.</div>
-    <div class="field" style="margin-top:4px">
+    <div class="modal-title">Body composition goal</div>
+    <div class="modal-sub">Where you're headed. Your goal body fat % shows as a line on your trend chart${hasBodyComp ? ", and a muscle target plans the protein your goal self will need" : ""}.</div>
+
+    <div class="field" style="margin-top:8px">
       <span class="field-label">Goal body fat %</span>
       <div class="input-box"><label>Target BF %</label><input type="number" id="bg-bf" inputmode="decimal" step="0.5" min="3" max="60" placeholder="—" value="${g.bodyFatPct ?? ""}" /></div>
-      <div class="navy-hint">Shared with the protein planner — this is the body fat % your protein goal can be calculated around.</div>
     </div>
-    <div class="field" style="margin-top:14px">
+
+    ${plannerBlock}
+
+    <div class="field" style="margin-top:18px">
       <span class="field-label">Goal waist-to-hip ratio</span>
       <div class="input-box"><label>Target WHR</label><input type="number" id="bg-whr" inputmode="decimal" step="0.01" min="0.5" max="1.5" placeholder="—" value="${g.whr ?? ""}" /></div>
-      <div class="navy-hint">Lower means greater hip-to-waist contrast. ${p.sex === "M" ? "Below 0.90 is low health risk for men." : "Below 0.80 is low health risk for women."}</div>
+      <div class="navy-hint">Lower means greater hip-to-waist contrast. ${p.sex === "M" ? "Below 0.90 is low health risk for men." : "Below 0.80 is low health risk for women."} Leave blank to clear.</div>
     </div>
+
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-cancel">Cancel</button>
-      <button class="btn btn-primary" id="m-save">Save goals</button>
+      <button class="btn btn-primary" id="m-save">Save goal</button>
     </div>
   `);
   $("#m-cancel").addEventListener("click", back);
   $("#top-back")?.addEventListener("click", back);
+
+  // Live projection: shown only when body comp is known and a muscle target is
+  // selected. Selecting a tier is the opt-in to planning protein around the goal.
+  let currentTier = initialTier;
+  const renderProjection = () => {
+    if (!hasBodyComp) return;
+    const breakdown = $("#bg-breakdown");
+    const info = $("#bg-tier-info");
+    const caveat = $("#bg-caveat");
+    if (!currentTier) {
+      breakdown.innerHTML = ""; info.textContent = ""; caveat.style.display = "none";
+      return;
+    }
+    const goalBF = parseFloat($("#bg-bf").value) || initialGoalBF;
+    const result = projectedProteinGoal(p, goalBF, currentTier);
+    if (!result) { breakdown.innerHTML = ""; return; }
+    info.textContent = MUSCLE_TIERS.find(t => t.key === currentTier)?.desc || "";
+    const projRows = [{ label: "Current lean mass", value: `${result.leanMass}<span class="u">lb</span>` }];
+    if (result.muscleGain > 0) projRows.push({ label: "Muscle gain target", value: `+${result.muscleGain}<span class="u">lb</span>` });
+    projRows.push(
+      { label: `Goal weight at ${goalBF}% BF`, value: `${result.goalWeight}<span class="u">lb</span>` },
+      { label: "Planned protein", value: fmtG(result.protein) },
+    );
+    breakdown.innerHTML = rowsToHtml(projRows);
+    caveat.style.display = "block";
+  };
+  if (hasBodyComp) {
+    $$("#bg-tiers .chip").forEach(c => c.addEventListener("click", () => {
+      $$("#bg-tiers .chip").forEach(x => x.classList.remove("selected"));
+      c.classList.add("selected");
+      currentTier = c.dataset.tier;
+      renderProjection();
+    }));
+    $("#bg-bf").addEventListener("input", renderProjection);
+    if (currentTier) renderProjection();
+  }
+
   $("#m-save").addEventListener("click", () => {
     const bfRaw = $("#bg-bf").value.trim();
     const whrRaw = $("#bg-whr").value.trim();
@@ -8088,30 +8061,25 @@ function openBodyGoalsModal(returnTo) {
       whr = Math.round(whr * 100) / 100;
     }
     state.bodyGoals = { bodyFatPct: bf, whr };
-    // Single source of truth: if the protein goal is planner-based, re-plan it
-    // for the new goal BF so the protein target and the goal never disagree.
-    // (Calculated or manually-typed protein goals are left alone.)
-    let proteinReplanned = false;
-    const meta = state.goalsOverride.protein_meta;
-    if (bf != null && meta?.goalBFPct != null && meta.goalBFPct !== bf) {
-      const result = projectedProteinGoal(state.profile, bf, meta.tier);
+
+    // Plan protein around the goal when a muscle target is selected (and we have
+    // current body comp + a goal BF). This is the single place the planner lives.
+    let planned = false;
+    if (hasBodyComp && currentTier && bf != null) {
+      const result = projectedProteinGoal(state.profile, bf, currentTier);
       if (result) {
         state.goalsOverride.protein_g = result.protein;
         state.goalsOverride.protein_meta = {
-          goalBFPct: bf,
-          tier: meta.tier,
-          leanMass: result.leanMass,
-          muscleGain: result.muscleGain,
-          goalWeight: result.goalWeight,
-          mult: result.mult,
-          protein: result.protein,
+          goalBFPct: bf, tier: currentTier,
+          leanMass: result.leanMass, muscleGain: result.muscleGain,
+          goalWeight: result.goalWeight, mult: result.mult, protein: result.protein,
         };
-        proteinReplanned = true;
+        planned = true;
       }
     }
     save();
     render();
-    showToast(proteinReplanned ? `Goals saved · protein re-planned for ${bf}% BF` : "Goals saved");
+    showToast(planned ? `Goal saved · protein planned for ${bf}% BF` : "Goal saved");
     back();
   });
 }
