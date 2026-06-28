@@ -8569,15 +8569,40 @@ function openMeasurementEntryModal(editId) {
 
     // Optional: push to profile (weight + computed BF%) and reset the body-check
     // timer since this counts as a fresh refresh of those inputs.
+    let proteinReplanned = false;
     if (bf != null && $("#bm-apply").checked) {
       if (weight) state.profile.weight_lb = Math.round(weight);
       state.profile.bodyComp = "exact";
       state.profile.bodyFatPct = bf;
       state.profile.bodyFatSource = "navy";   // computed from circumferences
       resetBodyCheckTimer();
+      // If the protein goal is planner-based, its projection is built from your
+      // current lean mass — which this measurement just changed. Re-run it with
+      // the same goal BF% and tier so the planned target never drifts out of
+      // sync with your measurements. (Mirrors the re-plan on goal-BF edit;
+      // calculated and manually-typed goals are left untouched.)
+      const meta = state.goalsOverride.protein_meta;
+      if (meta?.goalBFPct != null) {
+        const result = projectedProteinGoal(state.profile, meta.goalBFPct, meta.tier);
+        if (result) {
+          state.goalsOverride.protein_g = result.protein;
+          state.goalsOverride.protein_meta = {
+            goalBFPct: meta.goalBFPct,
+            tier: meta.tier,
+            leanMass: result.leanMass,
+            muscleGain: result.muscleGain,
+            goalWeight: result.goalWeight,
+            mult: result.mult,
+            protein: result.protein,
+          };
+          proteinReplanned = true;
+        }
+      }
     }
     save();
-    showToast(isEdit ? "Measurement updated" : "Measurement saved");
+    showToast(proteinReplanned
+      ? (isEdit ? "Measurement updated · protein re-planned" : "Measurement saved · protein re-planned")
+      : (isEdit ? "Measurement updated" : "Measurement saved"));
     close();
   });
 }
