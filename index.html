@@ -3331,7 +3331,7 @@
         <div class="ex-subtotal"><span>Suggested</span><span class="ex-val" id="onb-planner-result">—</span></div>
       </div>
 
-      <p class="planner-caveat" style="text-align:left">Same per-pound rate as the default goal, applied to your projected goal weight. Muscle gain ranges are estimates — people vary widely.</p>
+      <p class="planner-caveat" style="text-align:left">Same per-kg-of-lean-mass rate as your base goal, applied to your projected goal lean mass. Muscle gain ranges are estimates — people vary widely.</p>
 
       <div class="onb-actions">
         <button class="btn btn-secondary" data-prev="4">Back</button>
@@ -3674,13 +3674,13 @@ const LEARN_CATEGORIES = [
       {
         id: "protein-goal",
         title: "How your protein goal is calculated",
-        summary: "Hyalo targets protein to your lean mass and goal, landing in the well-established 1.6–2.2 g/kg range for most people. It scales to muscle, not total weight, because fat tissue doesn't need feeding.",
+        summary: "Hyalo scales protein to your lean mass, not total weight — fat tissue doesn't need feeding. Rates are set per kilogram of lean tissue from sports-nutrition research: around the 1.6–2.2 g/kg-bodyweight range for building and maintaining, higher for fat loss, and capped where the benefit plateaus.",
         detail: `
-          <p>The headline ranges come from a large body of sports-nutrition research: for active people aiming to build or maintain muscle, roughly 1.6–2.2 grams of protein per kilogram of bodyweight per day captures where the benefit lives. Below that range, muscle-building is often under-supported; above it, the returns flatten out. Hyalo's multipliers are designed to land inside this evidence-based window, adjusted for your particular situation rather than applied as a blanket number.</p>
+          <p>The headline numbers come from a large body of sports-nutrition research: for active people aiming to build or maintain muscle, roughly 1.6–2.2 grams of protein per kilogram of bodyweight per day captures where the benefit lives. Below that range, muscle-building is often under-supported; above it, the returns flatten out. Fat loss is the exception — a calorie deficit justifies more, as the next paragraph explains. Hyalo works in grams per kilogram of <em>lean</em> mass and is anchored to these findings, adjusted for your particular situation rather than applied as a blanket number.</p>
           <p>The target scales to lean mass, not gross bodyweight, whenever you've entered a body-fat figure. The reasoning is mechanical: muscle, organs, and other lean tissue use protein, while fat tissue is largely metabolically inert in this respect and doesn't need feeding. Two people at the same weight but different body compositions don't have the same protein requirement, and basing the figure on the tissue that actually uses protein makes it both more accurate and, often, more achievable than scaling off total weight.</p>
-          <p>Your stated goal shifts the multiplier, because different objectives place different demands on protein. Actively building muscle raises the target to supply the raw material for growth. Losing fat raises it too — arguably most of all — because in a calorie deficit, ample protein is the single most important dietary factor protecting muscle from being broken down for energy alongside the fat you're trying to lose. Simple maintenance sits a little lower, since you're sustaining rather than constructing.</p>
+          <p>Your stated goal sets the rate, because different objectives place different demands on protein. Actively building muscle raises the target to supply the raw material for growth. Losing fat raises it too — arguably most of all — because in a calorie deficit, ample protein is the single most important dietary factor protecting muscle from being broken down for energy alongside the fat you're trying to lose; published work puts the requirement for lean dieters as high as ~3.1 grams per kilogram of lean mass. Simple maintenance sits a little lower, since you're sustaining rather than constructing.</p>
           <p>Activity level nudges the figure up further, reflecting the greater repair and turnover that training demands. There's also a deliberate floor for older adults, because ageing muscle responds less readily to protein — the anabolic resistance described in the muscle-synthesis topic — so the same result requires a higher intake. Raising the minimum for older users is a hedge against the gradual, often silent muscle loss that otherwise accompanies ageing.</p>
-          <p>There's a sensible cap at the top end, because benefit plateaus. Past a certain point, additional protein does little for muscle and mostly displaces the carbohydrates and fats that fuel training and overall health. Capping the target keeps the recommendation honest and practical rather than chasing an ever-higher number that delivers diminishing value, a point the upper-limit topic develops.</p>
+          <p>There's a sensible cap at the top end — around 3.1 grams per kilogram of lean mass — because benefit plateaus. Past a certain point, additional protein does little for muscle and mostly displaces the carbohydrates and fats that fuel training and overall health. Capping the target keeps the recommendation honest and practical rather than chasing an ever-higher number that delivers diminishing value, a point the upper-limit topic develops.</p>
           <p>Finally, training days add a same-day bump on top of the baseline, scaled to how hard and how long you trained, with a one-time bonus applied on any day you do resistance work — reflecting the elevated synthesis and repair that follow a real session. And none of this is locked: you can override the whole calculation with a figure of your own, or have the planner set protein around a specific goal body-fat target. The math is a well-reasoned starting point, but the final number is yours.</p>
         `,
       },
@@ -3972,6 +3972,9 @@ function findLearnTopic(id) {
 }
 
 /* ============ State ============ */
+// Bump when the protein math changes in a way that should re-derive existing
+// saved plans. v2 = lean-mass × g/kg-FFM model (replacing the per-pound model).
+const PROTEIN_MODEL_VERSION = 2;
 const DEFAULT_STATE = () => ({
   hasOnboarded: false,
   disclaimerAck: false,   // one-time health-disclaimer acknowledgment
@@ -4006,6 +4009,7 @@ const DEFAULT_STATE = () => ({
   bodyMeasurements: [],     // [{id, ts, weight_lb, neck, waist, hip, chest, biceps, thighs, calves, shoulders, bodyFatPct, notes}]
   bodyGoals: { bodyFatPct: null, whr: null },   // target body fat % (shared with protein planner) + target WHR
   windDownDismissedDate: null,
+  proteinModelVersion: PROTEIN_MODEL_VERSION,    // new users start on the current model
 });
 
 let state = DEFAULT_STATE();
@@ -4035,6 +4039,30 @@ function normalizeState(data) {
   // deliberately-cleared goal isn't resurrected on the next load).
   if (data.bodyGoals === undefined && s.goalsOverride.protein_meta?.goalBFPct) {
     s.bodyGoals.bodyFatPct = s.goalsOverride.protein_meta.goalBFPct;
+  }
+  // One-time migration: re-derive any planner-based protein plan under the
+  // current lean-mass model, so existing plans match what the editor now
+  // produces — without the user having to reopen and re-save. Checks the *raw*
+  // incoming version (not the merged default, which would mask it). Manual
+  // overrides and plans that can no longer be re-derived (body comp unset) are
+  // left untouched; the version is still bumped so this runs only once.
+  if ((data.proteinModelVersion || 0) < PROTEIN_MODEL_VERSION) {
+    const ov = s.goalsOverride;
+    if (ov.protein_g != null && ov.protein_meta?.goalBFPct != null) {
+      const r = projectedProteinGoal(s.profile, ov.protein_meta.goalBFPct, ov.protein_meta.tier);
+      if (r) {
+        ov.protein_g = r.protein;
+        ov.protein_meta = {
+          goalBFPct: ov.protein_meta.goalBFPct,
+          tier: ov.protein_meta.tier,
+          leanMass: r.leanMass,
+          muscleGain: r.muscleGain,
+          goalWeight: r.goalWeight,
+          protein: r.protein,
+        };
+      }
+    }
+    s.proteinModelVersion = PROTEIN_MODEL_VERSION;
   }
   // Migration: old single `workout` → new `workouts: []` array
   for (const dateKey in s.log) {
@@ -4232,17 +4260,6 @@ function resolveBodyFat(p) {
     default: return null;                    // "unset" or missing → no adjustment
   }
 }
-// Multiplier on basis weight; 1.0 = no change. Clamped to a safe band.
-function bodyCompFactor(p) {
-  const bf = resolveBodyFat(p);
-  if (bf == null) return 1;
-  const ref = bandsForSex(p.sex).ref;
-  let f = (1 - bf) / (1 - ref);
-  return Math.max(0.80, Math.min(1.15, f));
-}
-function proteinBasisWeight(p) {
-  return p.weight_lb * bodyCompFactor(p);
-}
 const BODYCOMP_LABELS = {
   unset: "Not set", lower: "Lower body fat", average: "Average",
   higher: "Higher body fat", exact: "Exact %",
@@ -4294,38 +4311,24 @@ function waterBreakdownRows(p) {
 }
 function proteinBreakdownRows(p) {
   const rows = [];
-  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
-  const actBump = { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
-  mult += actBump;
-  let capped = false;
-  if (p.age >= 65 && mult < 0.6) mult = 0.6;
-  if (mult > 1.2) { mult = 1.2; capped = true; }
-  const factor = bodyCompFactor(p);
-  const basis = proteinBasisWeight(p);
-  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  const bf = resolveBodyFat(p);
+  const usedBF = (bf == null) ? bandsForSex(p.sex).ref : bf;
+  const leanLb = p.weight_lb * (1 - usedBF);
+  const leanKg = leanLb / LB_PER_KG;
+  const rate = proteinRateFFM(p);
+  const rawRate = (PROTEIN_FFM_RATE[p.goal] ?? 1.8) + (PROTEIN_FFM_ACT[p.activity] ?? 0);
+  const capped = rawRate > PROTEIN_FFM_CEILING;
+  const floored = p.age >= 65 && rawRate < PROTEIN_FFM_AGE_FLOOR;
   const goalText = GOAL_LABELS[p.goal].toLowerCase();
   const actText = p.activity !== "sedentary" ? `, ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : "";
-  const multLabel = `${goalText}${actText}${capped ? " (capped)" : ""}`;
+  const bfNote = (bf == null) ? " (est.)" : (p.bodyComp === "exact" && p.bodyFatPct ? ` (${p.bodyFatPct}% BF)` : "");
 
-  // Always start the chain with the actual body weight as the visual anchor.
   rows.push({ label: "Your weight", value: `${p.weight_lb}<span class="u">lb</span>` });
-
-  if (factor !== 1) {
-    // Body composition step — adjust weight up (leaner) or down (higher BF).
-    const direction = factor > 1 ? "lower" : "higher";
-    const bfNote = p.bodyComp === "exact" && p.bodyFatPct ? ` (${p.bodyFatPct}%)` : "";
-    rows.push({
-      label: `× ${direction} body fat${bfNote} adjustment (${factor.toFixed(2)})`,
-      value: `= ${Math.round(basis)}<span class="u">lb</span>`,
-    });
-  }
-
-  // Final multiplication step — per-pound rate × basis = protein.
+  rows.push({ label: `Lean mass${bfNote}`, value: `${Math.round(leanLb)}<span class="u">lb</span>` });
   rows.push({
-    label: `× ${multLabel} (${mult.toFixed(2)} g/lb)`,
-    value: `= ${fmtG(Math.round(basis * mult))}`,
+    label: `× ${rate.toFixed(1)} g/kg lean (${goalText}${actText}${capped ? ", capped" : ""}${floored ? ", age floor" : ""})`,
+    value: `= ${fmtG(Math.round(leanKg * rate))}`,
   });
-
   if (p.pregnancy === "pregnant") rows.push({ label: "+ pregnancy", value: fmtG(25, true) });
   else if (p.pregnancy === "breastfeeding") rows.push({ label: "+ breastfeeding", value: fmtG(25, true) });
 
@@ -4336,10 +4339,10 @@ function rowsToHtml(rows) {
 }
 
 /* ============ Goal-based protein planner ============
-   Optional path inside Settings → Protein goal that projects your future
-   weight from a target body composition (goal BF% + muscle gain tier), then
-   uses Hyalo's same per-pound multiplier to compute a goal-aware protein
-   number. Requires bodyComp to be set (any value other than "unset"). */
+   Projects your future weight from a target body composition (goal BF% + muscle
+   gain tier), then runs that projected goal composition through the same
+   lean-mass × per-kg-FFM model the base goal uses. Requires bodyComp to be set
+   (any value other than "unset"). */
 const MUSCLE_RANGES = {
   F: { maintain: [0, 0], toned: [3, 5], athletic: [6, 10], built: [10, 15] },
   M: { maintain: [0, 0], toned: [5, 8], athletic: [10, 18], built: [18, 30] },
@@ -4488,18 +4491,9 @@ function inchesToFtIn(total) {
   const inch = +(total - ft * 12).toFixed(1);
   return { ft, in: inch };
 }
-// Hyalo's per-pound protein multiplier (factored out for reuse by planner).
-function proteinMultiplier(p) {
-  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
-  mult += { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
-  let capped = false;
-  if (p.age >= 65 && mult < 0.6) mult = 0.6;
-  if (mult > 1.2) { mult = 1.2; capped = true; }
-  return { mult, capped };
-}
-// Project the protein goal from a target body composition. Uses current lean
-// mass + tier muscle gain to project future weight at the goal BF%, then
-// applies Hyalo's per-pound multiplier (not a hard-coded 0.95).
+// Project the protein goal from a target body composition: current lean mass +
+// tier muscle gain → goal weight at the goal BF%, then through the same
+// lean-mass × per-kg-FFM model the base goal uses.
 function projectedProteinGoal(p, goalBFPct, tier) {
   const cbf = currentBodyFat(p);
   if (cbf == null) return null;
@@ -4510,18 +4504,16 @@ function projectedProteinGoal(p, goalBFPct, tier) {
   const goalLean = leanMass + muscleGain;
   const safeBF = Math.min(Math.max(goalBFPct, 3), 60);
   const goalWeight = goalLean / (1 - safeBF / 100);
-  const { mult } = proteinMultiplier(p);
   // Same model as the base goal: your projected goal composition through
-  // proteinFromComposition. Because goalWeight × (1 − goalBF) = goalLean, this is
-  // equivalently goalLean scaled the same way the base scales your current lean —
-  // so the plan = base × (goal lean ÷ current lean). Adding muscle raises it.
+  // proteinFromComposition (lean mass × the per-kg-FFM rate). Because
+  // goalWeight × (1 − goalBF) = goalLean, this is goalLean scaled exactly the way
+  // the base scales your current lean — so plan = base × (goal lean ÷ current lean).
   const protein = proteinFromComposition(goalWeight, safeBF / 100, p);
   return {
     leanMass: Math.round(leanMass),
     muscleGain: Math.round(muscleGain),
     goalLean: Math.round(goalLean),
     goalWeight: Math.round(goalWeight),
-    mult,
     protein,
   };
 }
@@ -4607,17 +4599,32 @@ function bodyMeasurementsSummary() {
   return `${entries.length} ${entries.length === 1 ? "entry" : "entries"} · last ${dateLabel}${stats}`;
 }
 
-// One model for protein from a body composition (weight + body-fat fraction).
-// Lean-mass driven, expressed as an adjusted bodyweight × the goal/activity rate.
-// BOTH the current-state base goal and the projected goal plan route through this,
-// so they are always the same calculation — differing only by their inputs (your
-// current weight/BF vs your projected goal weight/BF). bf is a fraction (0–1) or
-// null when body composition is unknown (then no leanness adjustment is applied).
+// Evidence-based protein rate in grams per kg of fat-free (lean) mass.
+// Anchored to the literature: ~1.6–2.2 g/kg bodyweight maximizes hypertrophy in
+// energy balance, while a deficit needs more — 2.3–3.1 g/kg of lean mass — to
+// preserve muscle, with ~3.1 g/kg FFM the point beyond which more doesn't help.
+// Rates are sex-neutral: protein per kg of lean tissue doesn't depend on sex.
+const PROTEIN_FFM_RATE = { general: 1.6, maintain: 1.8, build: 2.2, lose: 2.6, recomp: 2.8 };
+const PROTEIN_FFM_ACT  = { sedentary: 0, light: 0.1, moderate: 0.2, high: 0.3, athlete: 0.4 };
+const PROTEIN_FFM_CEILING = 3.1;     // g/kg FFM — evidence-supported upper limit
+const PROTEIN_FFM_AGE_FLOOR = 1.9;   // g/kg FFM — older adults need more
+const LB_PER_KG = 2.2046226;
+function proteinRateFFM(p) {
+  let rate = (PROTEIN_FFM_RATE[p.goal] ?? 1.8) + (PROTEIN_FFM_ACT[p.activity] ?? 0);
+  if (p.age >= 65 && rate < PROTEIN_FFM_AGE_FLOOR) rate = PROTEIN_FFM_AGE_FLOOR;
+  if (rate > PROTEIN_FFM_CEILING) rate = PROTEIN_FFM_CEILING;
+  return rate;
+}
+// One model for protein from a body composition (weight + body-fat fraction):
+// lean mass × an evidence-based per-kg-of-lean rate. BOTH the current-state base
+// goal and the projected goal plan route through this, so they are always the
+// same calculation — differing only by their inputs (current weight/BF vs goal
+// weight/BF). bf is a fraction (0–1), or null when composition is unknown, in
+// which case lean mass is estimated from the sex-average body fat.
 function proteinFromComposition(weight, bf, p) {
-  const ref = bandsForSex(p.sex).ref;
-  const factor = (bf == null) ? 1 : Math.max(0.80, Math.min(1.15, (1 - bf) / (1 - ref)));
-  const { mult } = proteinMultiplier(p);
-  let g = weight * factor * mult;
+  const usedBF = (bf == null) ? bandsForSex(p.sex).ref : bf;
+  const leanKg = (weight * (1 - usedBF)) / LB_PER_KG;
+  let g = leanKg * proteinRateFFM(p);
   if (p.pregnancy === "pregnant" || p.pregnancy === "breastfeeding") g += 25;
   return Math.round(g);
 }
@@ -4626,23 +4633,17 @@ function computeProteinGoal(p) {
   return proteinFromComposition(p.weight_lb, resolveBodyFat(p), p);
 }
 function proteinBreakdown(p) {
-  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
-  const actBump = { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
-  mult += actBump;
-  let capped = false;
-  if (p.age >= 65 && mult < 0.6) mult = 0.6;
-  if (mult > 1.2) { mult = 1.2; capped = true; }
-  const factor = bodyCompFactor(p);
-  const basis = proteinBasisWeight(p);
+  const bf = resolveBodyFat(p);
+  const usedBF = (bf == null) ? bandsForSex(p.sex).ref : bf;
+  const leanLb = p.weight_lb * (1 - usedBF);
+  const leanKg = leanLb / LB_PER_KG;
+  const rate = proteinRateFFM(p);
+  const rawRate = (PROTEIN_FFM_RATE[p.goal] ?? 1.8) + (PROTEIN_FFM_ACT[p.activity] ?? 0);
+  const capped = rawRate > PROTEIN_FFM_CEILING;
   const parts = [
-    `${mult.toFixed(2)} g/lb (${GOAL_LABELS[p.goal].toLowerCase()}${actBump ? ` + ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : ""}${capped ? ", capped at 1.20" : ""})`,
+    `${Math.round(leanLb)} lb lean mass${bf == null ? " (estimated)" : ""}`,
+    `× ${rate.toFixed(1)} g/kg lean (${GOAL_LABELS[p.goal].toLowerCase()}${p.activity !== "sedentary" ? ` + ${ACTIVITY_LABELS[p.activity].toLowerCase()} activity` : ""}${capped ? ", capped at 3.1" : ""}) = ${Math.round(leanKg * rate)}g`,
   ];
-  if (factor !== 1) {
-    parts.push(`${Math.round(basis)} lb adjusted basis (${p.weight_lb} lb × ${factor.toFixed(2)} for body composition)`);
-    parts.push(`${Math.round(basis * mult)}g (${Math.round(basis)} × ${mult.toFixed(2)})`);
-  } else {
-    parts.push(`${Math.round(p.weight_lb * mult)}g (${p.weight_lb} lb × ${mult.toFixed(2)})`);
-  }
   if (p.pregnancy === "pregnant" || p.pregnancy === "breastfeeding") parts.push(`+25g (${p.pregnancy})`);
   return parts.join(" · ");
 }
@@ -5011,7 +5012,6 @@ function initOnboarding() {
           leanMass: _onbPlannerResult.leanMass,
           muscleGain: _onbPlannerResult.muscleGain,
           goalWeight: _onbPlannerResult.goalWeight,
-          mult: _onbPlannerResult.mult,
           protein: _onbPlannerResult.protein,
         },
       };
@@ -8110,7 +8110,7 @@ function openBodyGoalsModal(returnTo) {
     <div class="chip-group" id="bg-tiers">${tierChips}</div>
     <div class="planner-tier-info" id="bg-tier-info"></div>
     <div class="planner-breakdown" id="bg-breakdown"></div>
-    <p class="planner-caveat" id="bg-caveat" style="display:none">Your protein goal is planned at the same per-pound rate applied to your projected goal weight. Muscle-gain ranges are estimates — people vary widely.</p>
+    <p class="planner-caveat" id="bg-caveat" style="display:none">Your protein goal is planned at the same per-kg-of-lean-mass rate as your base goal, applied to your projected goal lean mass. Muscle-gain ranges are estimates — people vary widely.</p>
   ` : `
     <p class="planner-hint">Set your current body fat % (in Body fat) to plan your protein around this goal. You can still set a goal body fat % as a chart target below.</p>
   `;
@@ -8203,7 +8203,7 @@ function openBodyGoalsModal(returnTo) {
         state.goalsOverride.protein_meta = {
           goalBFPct: bf, tier: currentTier,
           leanMass: result.leanMass, muscleGain: result.muscleGain,
-          goalWeight: result.goalWeight, mult: result.mult, protein: result.protein,
+          goalWeight: result.goalWeight, protein: result.protein,
         };
         planned = true;
       }
@@ -8691,7 +8691,6 @@ function openMeasurementEntryModal(editId) {
             leanMass: result.leanMass,
             muscleGain: result.muscleGain,
             goalWeight: result.goalWeight,
-            mult: result.mult,
             protein: result.protein,
           };
           proteinReplanned = true;
