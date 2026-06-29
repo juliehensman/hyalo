@@ -2368,6 +2368,97 @@
   }
   .hub-link:hover { color: var(--ink); }
   .hub-link .hub-chev { margin-left: auto; }
+  .hub-link-sub {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    padding: 0 2px 4px;
+    line-height: 1.4;
+  }
+
+  /* Body tab overview: Now → composition goal → protein, in chain order */
+  .bodyov { margin-bottom: 14px; }
+  .bodyov-eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 700;
+  }
+  .bodyov-now {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 2px 2px 12px;
+  }
+  .bodyov-now-vals {
+    font-size: 15px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .bodyov-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    cursor: default;
+  }
+  .bodyov-card.tappable { cursor: pointer; }
+  .bodyov-card.tappable:active { opacity: 0.7; }
+  .bodyov-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .bodyov-chev { color: var(--ink-muted); font-size: 16px; }
+  .bodyov-goal-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 0;
+  }
+  .bodyov-goal-main { font-size: 16px; font-weight: 600; color: var(--ink); }
+  .bodyov-tier { font-size: 13px; font-weight: 500; color: var(--protein); }
+  .bodyov-togo { font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+  .bodyov-goal-empty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .bodyov-empty-text { font-size: 14px; color: var(--protein); font-weight: 600; }
+  .bodyov-protein-val {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 2px 0 8px;
+  }
+  .bodyov-threads { display: flex; flex-direction: column; gap: 2px; }
+  .bodyov-thread {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    padding: 8px 0 0;
+    cursor: pointer;
+  }
+  .bodyov-thread:first-child { border-top: none; }
+  .bodyov-thread:hover { color: var(--ink-soft); }
+  .bodyov-thread-key { color: var(--ink); font-weight: 600; }
+  .bodyov-thread .bodyov-chev { margin-left: auto; }
   .hub-revert {
     display: flex;
     align-items: center;
@@ -4420,8 +4511,11 @@ function projectedProteinGoal(p, goalBFPct, tier) {
   const safeBF = Math.min(Math.max(goalBFPct, 3), 60);
   const goalWeight = goalLean / (1 - safeBF / 100);
   const { mult } = proteinMultiplier(p);
-  let protein = Math.round(goalWeight * mult);
-  if (p.pregnancy === "pregnant" || p.pregnancy === "breastfeeding") protein += 25;
+  // Same model as the base goal: your projected goal composition through
+  // proteinFromComposition. Because goalWeight × (1 − goalBF) = goalLean, this is
+  // equivalently goalLean scaled the same way the base scales your current lean —
+  // so the plan = base × (goal lean ÷ current lean). Adding muscle raises it.
+  const protein = proteinFromComposition(goalWeight, safeBF / 100, p);
   return {
     leanMass: Math.round(leanMass),
     muscleGain: Math.round(muscleGain),
@@ -4513,14 +4607,23 @@ function bodyMeasurementsSummary() {
   return `${entries.length} ${entries.length === 1 ? "entry" : "entries"} · last ${dateLabel}${stats}`;
 }
 
-function computeProteinGoal(p) {
-  let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
-  mult += { sedentary: 0, light: 0.05, moderate: 0.1, high: 0.15, athlete: 0.2 }[p.activity];
-  if (p.age >= 65 && mult < 0.6) mult = 0.6;
-  if (mult > 1.2) mult = 1.2;
-  let g = proteinBasisWeight(p) * mult;
+// One model for protein from a body composition (weight + body-fat fraction).
+// Lean-mass driven, expressed as an adjusted bodyweight × the goal/activity rate.
+// BOTH the current-state base goal and the projected goal plan route through this,
+// so they are always the same calculation — differing only by their inputs (your
+// current weight/BF vs your projected goal weight/BF). bf is a fraction (0–1) or
+// null when body composition is unknown (then no leanness adjustment is applied).
+function proteinFromComposition(weight, bf, p) {
+  const ref = bandsForSex(p.sex).ref;
+  const factor = (bf == null) ? 1 : Math.max(0.80, Math.min(1.15, (1 - bf) / (1 - ref)));
+  const { mult } = proteinMultiplier(p);
+  let g = weight * factor * mult;
   if (p.pregnancy === "pregnant" || p.pregnancy === "breastfeeding") g += 25;
   return Math.round(g);
+}
+function computeProteinGoal(p) {
+  // Base goal = your current composition through the shared model.
+  return proteinFromComposition(p.weight_lb, resolveBodyFat(p), p);
 }
 function proteinBreakdown(p) {
   let mult = { general: 0.55, maintain: 0.7, lose: 0.9, build: 0.8, recomp: 0.95 }[p.goal];
@@ -5030,7 +5133,7 @@ function renderOnbPlanner() {
   if (result.muscleGain > 0) projRows.push({ label: "Muscle gain target", value: `+${result.muscleGain}<span class="u">lb</span>` });
   projRows.push(
     { label: `Goal weight at ${goalBF}% BF`, value: `${result.goalWeight}<span class="u">lb</span>` },
-    { label: `${result.goalWeight} lb × ${result.mult.toFixed(2)}`, value: fmtG(result.protein) },
+    { label: "Planned protein", value: fmtG(result.protein) },
   );
   $("#onb-planner-breakdown").innerHTML = rowsToHtml(projRows);
   $("#onb-planner-result").textContent = `${result.protein}g`;
@@ -5048,7 +5151,7 @@ function computeAndShowResults() {
   $("#breakdown-water").textContent = waterBreakdown(onbDraft);
   if (overrideProtein) {
     const meta = onbDraft.plannerOverride.protein_meta;
-    $("#breakdown-protein").textContent = `Goal-based plan: ${meta.goalWeight} lb × ${meta.mult.toFixed(2)} g/lb = ${overrideProtein} g (targeting ${meta.goalBFPct}% body fat, ${MUSCLE_TIERS.find(t => t.key === meta.tier)?.label.toLowerCase()} muscle goal).`;
+    $("#breakdown-protein").textContent = `Goal-based plan: ${overrideProtein} g — scaled from your goal lean mass (${meta.leanMass + meta.muscleGain} lb) at ${meta.goalBFPct}% body fat (${MUSCLE_TIERS.find(t => t.key === meta.tier)?.label.toLowerCase()} muscle goal).`;
   } else {
     $("#breakdown-protein").textContent = proteinBreakdown(onbDraft);
   }
@@ -5273,7 +5376,7 @@ function openGoalsExplainerModal() {
         if (meta.muscleGain > 0) r.push({ label: "Muscle gain target", value: `+${meta.muscleGain}<span class="u">lb</span>` });
         r.push(
           { label: `Goal weight at ${meta.goalBFPct}% BF`, value: `${meta.goalWeight}<span class="u">lb</span>` },
-          { label: `${meta.goalWeight} lb × ${meta.mult.toFixed(2)}`, value: fmtG(meta.protein) },
+          { label: "Planned protein", value: fmtG(meta.protein) },
         );
         return rowsToHtml(r);
       }
@@ -6463,23 +6566,6 @@ function openGoalsBodyHub() {
     </div>`;
   const valWithSub = (main, sub, tint) => `<span${tint ? ` style="color:var(--${tint})"` : ""}>${main}</span>${sub ? `<span class="hub-row-sub"> · ${sub}</span>` : ""}`;
 
-  // "Where you're headed" — body composition goal (BF% + muscle target) and WHR.
-  const hasGoal = g.bodyFatPct != null || g.whr != null;
-  const meta = state.goalsOverride.protein_meta;
-  let bcSub = "";
-  if (g.bodyFatPct != null && meta?.goalBFPct != null) {
-    const tl = MUSCLE_TIERS.find(t => t.key === meta.tier)?.label;
-    if (tl) bcSub = `${tl}${meta.muscleGain > 0 ? ` +${meta.muscleGain} lb` : ""}`;
-  }
-  const goalRows = hasGoal ? `
-    ${row("Body composition goal", g.bodyFatPct != null ? valWithSub(`${g.bodyFatPct}% BF`, bcSub, "protein") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "goal-bf" })}
-    ${row("Goal waist-to-hip", g.whr != null ? valWithSub(g.whr.toFixed(2), "", "water") : `<span class="hub-row-sub">not set</span>`, { tap: "goals", info: "whr" })}
-  ` : `
-    <div class="hub-row tappable hub-row-empty" data-hub-tap="goals">
-      <div class="hub-row-label">Set a body composition goal</div>
-      <div class="hub-chev">›</div>
-    </div>`;
-
   openModal(`
     <div class="modal-title">Goals &amp; body</div>
 
@@ -6491,11 +6577,6 @@ function openGoalsBodyHub() {
     </div>
     ${bfHint}
 
-    <div class="hub-section-label">Where you're headed</div>
-    <div class="hub-card">
-      ${goalRows}
-    </div>
-
     <div class="hub-section-label">Your daily targets</div>
     <div class="hub-card">
       ${row("Water", valWithSub(`${goals.water} oz`, wSrc.label, "water"), { tap: "water", info: "water-goal" })}
@@ -6505,7 +6586,8 @@ function openGoalsBodyHub() {
       ` : ""}
     </div>
 
-    <button class="hub-link" id="hub-measurements">Measurement log &amp; trend <span class="hub-chev">›</span></button>
+    <button class="hub-link" id="hub-measurements">Body composition goal &amp; measurements <span class="hub-chev">›</span></button>
+    <div class="hub-link-sub">Your goal, proportions, and trend live on the Body tab.</div>
 
     <div class="modal-actions">
       <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
@@ -6536,7 +6618,6 @@ function openGoalsBodyHub() {
   $$("[data-hub-tap]").forEach(el => el.addEventListener("click", () => {
     const dest = el.dataset.hubTap;
     if (dest === "bodycomp") openBodyCompModal(openGoalsBodyHub);
-    else if (dest === "goals") openBodyGoalsModal(openGoalsBodyHub);
     else if (dest === "water") openGoalOverride("water", { returnTo: openGoalsBodyHub });
     else if (dest === "protein") openGoalOverride("protein", { returnTo: openGoalsBodyHub });
     else if (dest === "measurements") { closeModal(); switchTab("body"); }
@@ -6559,10 +6640,10 @@ function openGoalOverride(kind, opts = {}) {
     : (state.goalsOverride.protein_g ?? suggested);
   const step = kind === "water" ? 4 : 5;
 
-  // The body-composition planner now lives in the Body composition goal editor
-  // (Goals & body → Where you're headed). This editor only sets a manual number.
+  // The body-composition planner now lives in the Body composition goal editor,
+  // reached from the Body tab. This editor only sets a manual number.
   const plannerHTML = kind !== "protein" ? "" : `
-    <p class="planner-hint">To plan this around a goal body fat % and muscle target, set a <strong>Body composition goal</strong> under “Where you're headed.”</p>
+    <p class="planner-hint">To plan this around a goal body fat % and muscle target, set a <strong>Body composition goal</strong> on the Body tab.</p>
   `;
 
   openModal(`
@@ -7885,7 +7966,7 @@ function renderBody() {
   const entries = (state.bodyMeasurements || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
   const html = `
     <div class="body-page">
-      ${renderBmGoalSummary(entries)}
+      ${renderBodyOverview(entries)}
       <button class="bm-add-btn" id="bm-add">+ New entry</button>
       ${renderBmChart(entries)}
       ${renderProportionsPanel(entries)}
@@ -7895,7 +7976,11 @@ function renderBody() {
   $("#main-content").innerHTML = html;
   $("#bm-add")?.addEventListener("click", () => openMeasurementEntryModal(null));
   $("#prop-add-wrist")?.addEventListener("click", () => openMeasurementEntryModal(null));
-  $("#bm-goals")?.addEventListener("click", () => openBodyGoalsModal());
+  $("#bodyov-goal")?.addEventListener("click", () => openBodyGoalsModal());
+  $("#bodyov-plan")?.addEventListener("click", () => openBodyGoalsModal());
+  // The protein base is profile-driven — its editor (with the full breakdown of
+  // how your profile builds the number) lives in the Settings room.
+  $("#bodyov-base")?.addEventListener("click", () => openGoalOverride("protein"));
   $$("[data-bm-edit]").forEach(b => b.addEventListener("click", () => openMeasurementEntryModal(b.dataset.bmEdit)));
 
   // Chart: period tabs + metric pills re-render the canvas only.
@@ -7919,35 +8004,81 @@ function renderBody() {
   }));
 }
 
-// Goal summary band: shows current → target + "to go" for each goal that's set,
-// or a prompt to set goals if none exist. Whole band is tappable to edit goals.
-function renderBmGoalSummary(entries) {
+// Body overview: the connected chain at the top of the Body tab —
+// Now (current snapshot) → Body composition goal → Protein for your goal,
+// with threads that link the protein number back to its profile base
+// (Settings room) and its plan (the goal editor).
+function renderBodyOverview(entries) {
+  const p = state.profile;
   const g = state.bodyGoals || {};
-  const latest = entries[0] || null;            // entries are sorted newest-first
-  const curBF = latest?.bodyFatPct ?? null;
+  const latest = entries[0] || null;            // newest-first
+  const meta = state.goalsOverride.protein_meta;
+
+  // --- Now ---
+  const curBF = (p.bodyComp === "exact" && p.bodyFatPct) ? p.bodyFatPct : (latest?.bodyFatPct ?? null);
   const curWHR = latest ? computeWHR(latest.waist, latest.hip) : null;
+  const nowParts = [`${p.weight_lb} lb`];
+  if (curBF != null) nowParts.push(`${curBF}% BF`);
+  if (curWHR != null) nowParts.push(`${curWHR.toFixed(2)} WHR`);
+
+  // --- Body composition goal ---
   const hasGoal = g.bodyFatPct != null || g.whr != null;
+  let goalCard;
   if (!hasGoal) {
-    return `
-      <button class="bm-goal-row bm-goal-empty" id="bm-goals">
-        <span>◎ Set a body fat % or WHR goal</span>
-        <span class="bm-goal-chev">›</span>
+    goalCard = `
+      <button class="bodyov-card tappable bodyov-goal-empty" id="bodyov-goal">
+        <span class="bodyov-eyebrow">Body composition goal</span>
+        <span class="bodyov-empty-text">Set a goal <span class="bodyov-chev">›</span></span>
+      </button>`;
+  } else {
+    const lines = [];
+    if (g.bodyFatPct != null) {
+      const tier = meta?.tier ? MUSCLE_TIERS.find(t => t.key === meta.tier)?.label : null;
+      const tierTxt = tier ? `<span class="bodyov-tier"> · ${tier}${meta.muscleGain > 0 ? ` +${meta.muscleGain} lb` : ""}</span>` : "";
+      const togo = curBF != null ? `<span class="bodyov-togo">${fmtToGo(curBF - g.bodyFatPct, "%")}</span>` : "";
+      lines.push(`<div class="bodyov-goal-line"><span class="bodyov-goal-main">${g.bodyFatPct}% BF${tierTxt}</span>${togo}</div>`);
+    }
+    if (g.whr != null) {
+      const togo = curWHR != null ? `<span class="bodyov-togo">${fmtToGo(curWHR - g.whr, "")}</span>` : "";
+      lines.push(`<div class="bodyov-goal-line"><span class="bodyov-goal-main">${g.whr.toFixed(2)} WHR</span>${togo}</div>`);
+    }
+    goalCard = `
+      <button class="bodyov-card tappable" id="bodyov-goal">
+        <div class="bodyov-card-head"><span class="bodyov-eyebrow">Body composition goal</span><span class="bodyov-chev">›</span></div>
+        ${lines.join("")}
       </button>`;
   }
-  const parts = [];
-  if (g.bodyFatPct != null) {
-    const togo = curBF != null ? `<span class="bm-goal-togo">${fmtToGo(curBF - g.bodyFatPct, "%")}</span>` : "";
-    parts.push(`<div class="bm-goal-item"><span class="bm-goal-label">Body fat</span><span class="bm-goal-vals"><span class="now">${curBF != null ? curBF + "%" : "—"}</span> → <span class="bm-goal-target bf">${g.bodyFatPct}%</span>${togo}</span></div>`);
+
+  // --- Protein for your goal (the thread) ---
+  const base = computeProteinGoal(p);
+  const active = state.goalsOverride.protein_g ?? base;
+  let threads;
+  if (meta?.goalBFPct != null) {
+    const tier = MUSCLE_TIERS.find(t => t.key === meta.tier)?.label || "";
+    threads = `
+      <button class="bodyov-thread" id="bodyov-base"><span class="bodyov-thread-key">from your profile</span> · base ${base} g <span class="bodyov-chev">›</span></button>
+      <button class="bodyov-thread" id="bodyov-plan"><span class="bodyov-thread-key">planned</span> for ${meta.goalBFPct}% BF${tier ? ` · ${tier}` : ""} <span class="bodyov-chev">›</span></button>`;
+  } else if (state.goalsOverride.protein_g != null) {
+    threads = `<button class="bodyov-thread" id="bodyov-base"><span class="bodyov-thread-key">custom target</span> · base ${base} g from your profile <span class="bodyov-chev">›</span></button>`;
+  } else {
+    threads = `<button class="bodyov-thread" id="bodyov-base"><span class="bodyov-thread-key">from your profile</span> <span class="bodyov-chev">›</span></button>`;
   }
-  if (g.whr != null) {
-    const togo = curWHR != null ? `<span class="bm-goal-togo">${fmtToGo(curWHR - g.whr, "")}</span>` : "";
-    parts.push(`<div class="bm-goal-item"><span class="bm-goal-label">WHR</span><span class="bm-goal-vals"><span class="now">${curWHR != null ? curWHR.toFixed(2) : "—"}</span> → <span class="bm-goal-target whr">${g.whr.toFixed(2)}</span>${togo}</span></div>`);
-  }
+  const proteinCard = `
+    <div class="bodyov-card">
+      <div class="bodyov-card-head"><span class="bodyov-eyebrow">Protein for your goal</span></div>
+      <div class="bodyov-protein-val">${active} g</div>
+      <div class="bodyov-threads">${threads}</div>
+    </div>`;
+
   return `
-    <button class="bm-goal-row" id="bm-goals">
-      <div class="bm-goal-items">${parts.join("")}</div>
-      <span class="bm-goal-chev">›</span>
-    </button>`;
+    <div class="bodyov">
+      <div class="bodyov-now">
+        <span class="bodyov-eyebrow">Now</span>
+        <span class="bodyov-now-vals">${nowParts.join("  ·  ")}</span>
+      </div>
+      ${goalCard}
+      ${proteinCard}
+    </div>`;
 }
 // Format the remaining distance to a goal. Direction-aware: positive delta means
 // the current value is above the goal (needs to come down), negative means below.
