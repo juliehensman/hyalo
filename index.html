@@ -2287,94 +2287,6 @@
 
   /* Body-composition goal summary band (tappable to edit) — end */
 
-  /* Goals & body hub */
-  .hub-section-label {
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-    margin: 18px 2px 8px;
-  }
-  .hub-section-label:first-of-type { margin-top: 4px; }
-  .hub-card {
-    background: var(--card);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .hub-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 13px 16px;
-    min-height: 64px;
-    box-sizing: border-box;
-    border-bottom: 1px solid var(--border);
-    width: 100%;
-    background: none;
-    font-family: inherit;
-    text-align: left;
-    color: var(--ink);
-  }
-  .hub-card .hub-row:last-child { border-bottom: none; }
-  .hub-row.tappable { cursor: pointer; transition: background 0.15s; }
-  .hub-row.tappable:hover { background: var(--card-strong); }
-  .hub-row-label {
-    font-size: 14px;
-    color: var(--ink-soft);
-    flex-shrink: 0;
-  }
-  .hub-row-val {
-    margin-left: auto;
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: 19px;
-    color: var(--ink);
-    text-align: right;
-    line-height: 1.15;
-  }
-  .hub-row-sub {
-    font-family: var(--font-body);
-    font-style: normal;
-    font-size: 12px;
-    color: var(--ink-muted);
-  }
-  .hub-row-empty .hub-row-label { color: var(--ink-soft); font-size: 13.5px; }
-  .hub-chev { color: var(--ink-muted); font-size: 18px; flex-shrink: 0; margin-left: 2px; }
-  .hub-hint {
-    display: block;
-    width: 100%;
-    background: none;
-    border: none;
-    text-align: left;
-    color: var(--water);
-    font-family: inherit;
-    font-size: 12.5px;
-    padding: 8px 4px 2px;
-    cursor: pointer;
-  }
-  .hub-hint:hover { text-decoration: underline; }
-  .hub-link {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--ink-soft);
-    font-family: inherit;
-    font-size: 13.5px;
-    padding: 14px 2px 4px;
-    cursor: pointer;
-  }
-  .hub-link:hover { color: var(--ink); }
-  .hub-link .hub-chev { margin-left: auto; }
-  .hub-link-sub {
-    font-size: 11.5px;
-    color: var(--ink-muted);
-    padding: 0 2px 4px;
-    line-height: 1.4;
-  }
-
   /* Body tab overview: Now → composition goal → protein, in chain order */
   .bodyov { margin-bottom: 14px; }
   .bodyov-eyebrow {
@@ -2459,6 +2371,8 @@
   .bodyov-thread:hover { color: var(--ink-soft); }
   .bodyov-thread-key { color: var(--ink); font-weight: 600; }
   .bodyov-thread .bodyov-chev { margin-left: auto; }
+
+  /* "Use calculated goals" revert row (Settings → Goals) */
   .hub-revert {
     display: flex;
     align-items: center;
@@ -2478,7 +2392,6 @@
   }
   .hub-revert:hover { background: var(--card-strong); color: var(--ink); }
   .hub-revert-glyph { font-size: 15px; opacity: 0.7; }
-  /* Goals & body hub — end */
 
   .bm-derived-row {
     display: grid;
@@ -6376,16 +6289,31 @@ function renderHistory() {
 function renderSettings() {
   const p = state.profile;
   const goals = getBaseGoals();
+  const wSrc = waterGoalSource();
+  const pSrc = proteinGoalSource();
+  // Keep body-composition specifics on the Body tab — Settings just notes that a
+  // plan is the source, and points there.
+  const pLabel = pSrc.key === "planned" ? "planned on Body" : pSrc.label;
+  const hasOverride = state.goalsOverride.water_oz !== null || state.goalsOverride.protein_g !== null;
   const html = `
     <div class="settings-section">
+      <div class="section-head"><span class="section-title">Goals</span></div>
       <div class="settings-card">
-        <button class="settings-row" id="open-goals-body">
+        <button class="settings-row" id="s-goal-water">
           <div class="settings-row-info">
-            <div class="settings-row-label">Goals &amp; body</div>
-            <div class="settings-row-value">${goals.water} oz · ${goals.protein} g${(state.bodyGoals.bodyFatPct != null || state.bodyGoals.whr != null) ? " · goals set" : ""}</div>
+            <div class="settings-row-label">Water</div>
+            <div class="settings-row-value">${goals.water} oz · ${wSrc.label}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
+        <button class="settings-row" id="s-goal-protein">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Protein</div>
+            <div class="settings-row-value">${goals.protein} g · ${pLabel}</div>
+          </div>
+          <div class="settings-row-chev">›</div>
+        </button>
+        ${hasOverride ? `<button class="hub-revert" id="s-revert"><span class="hub-revert-glyph">↺</span>Use calculated goals</button>` : ""}
       </div>
     </div>
 
@@ -6395,7 +6323,7 @@ function renderSettings() {
         <button class="settings-row" data-edit="basics">
           <div class="settings-row-info">
             <div class="settings-row-label">Basics</div>
-            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age}${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""}${p.sex === "F" && p.pregnancy !== "none" ? " · " + PREG_LABELS[p.pregnancy] : ""}</div>
+            <div class="settings-row-value">${SEX_LABELS[p.sex]} · ${p.age}${p.height_in ? ` · ${inchesToFtIn(p.height_in).ft}′${inchesToFtIn(p.height_in).in}″` : ""} · ${p.weight_lb} lb${p.sex === "F" && p.pregnancy !== "none" ? " · " + PREG_LABELS[p.pregnancy] : ""}</div>
           </div>
           <div class="settings-row-chev">›</div>
         </button>
@@ -6512,7 +6440,9 @@ function renderSettings() {
 }
 
 function wireSettingsHandlers() {
-  $("#open-goals-body")?.addEventListener("click", () => openGoalsBodyHub());
+  $("#s-goal-water")?.addEventListener("click", () => openGoalOverride("water"));
+  $("#s-goal-protein")?.addEventListener("click", () => openGoalOverride("protein"));
+  $("#s-revert")?.addEventListener("click", () => confirmUseCalculatedGoals());
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#edit-daily-window")?.addEventListener("click", openDailyWindowModal);
   $("#open-install")?.addEventListener("click", openInstallModal);
@@ -6527,102 +6457,6 @@ function wireSettingsHandlers() {
   }));
   $("#open-learn")?.addEventListener("click", openLearnModal);
   $("#health-disclaimer")?.addEventListener("click", () => openDisclaimerModal());
-}
-
-/* ============ Goals & body hub ============
-   One view that tells the whole story: where you are (current body comp) →
-   where you're headed (goal body comp) → your daily targets (water + protein,
-   each with its source labeled). Replaces the scattered goal/body rows; each
-   line opens its focused editor and returns here so the picture stays whole. */
-function openGoalsBodyHub() {
-  const p = state.profile;
-  const goals = getBaseGoals();
-  const g = state.bodyGoals || {};
-  const entries = (state.bodyMeasurements || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
-  const latest = entries[0] || null;
-  const curWHR = latest ? computeWHR(latest.waist, latest.hip) : null;
-  const wSrc = waterGoalSource();
-  const pSrc = proteinGoalSource();
-
-  // Current body fat value + source label.
-  let curBFval, curBFsub = "";
-  if (p.bodyComp === "exact" && p.bodyFatPct) { curBFval = `${p.bodyFatPct}%`; curBFsub = bodyFatSourceLabel(p); }
-  else if (p.bodyComp && p.bodyComp !== "unset") { curBFval = BODYCOMP_LABELS[p.bodyComp]; curBFsub = "estimate band"; }
-  else { curBFval = "Not set"; }
-
-  // Subtle nudge if the latest measurement disagrees with the profile value
-  // that actually drives goals — keeps the chart and the goal math from drifting.
-  let bfHint = "";
-  if (p.bodyComp === "exact" && p.bodyFatPct && latest?.bodyFatPct != null
-      && Math.abs(latest.bodyFatPct - p.bodyFatPct) >= 0.5) {
-    bfHint = `<button class="hub-hint" id="hub-apply-bf">Latest measurement ${latest.bodyFatPct}% — apply to profile?</button>`;
-  }
-
-  const row = (label, valHtml, { tap = "", chev = true, info = "" } = {}) => `
-    <div class="hub-row${tap ? " tappable" : ""}"${tap ? ` data-hub-tap="${tap}"` : ""}>
-      <div class="hub-row-label">${label}${info ? ` <button class="info-dot" type="button" data-info="${info}">i</button>` : ""}</div>
-      <div class="hub-row-val">${valHtml}</div>
-      ${tap && chev ? `<div class="hub-chev">›</div>` : ""}
-    </div>`;
-  const valWithSub = (main, sub, tint) => `<span${tint ? ` style="color:var(--${tint})"` : ""}>${main}</span>${sub ? `<span class="hub-row-sub"> · ${sub}</span>` : ""}`;
-
-  openModal(`
-    <div class="modal-title">Goals &amp; body</div>
-
-    <div class="hub-section-label">Where you are</div>
-    <div class="hub-card">
-      ${row("Weight", `${p.weight_lb} lb`, { tap: "basics" })}
-      ${row("Body fat", valWithSub(curBFval, curBFsub), { tap: "bodycomp", info: "bf-meaning" })}
-      ${row("Waist-to-hip", curWHR != null ? curWHR.toFixed(2) : `<span class="hub-row-sub">log a measurement</span>`, { tap: "measurements", info: "whr" })}
-    </div>
-    ${bfHint}
-
-    <div class="hub-section-label">Your daily targets</div>
-    <div class="hub-card">
-      ${row("Water", valWithSub(`${goals.water} oz`, wSrc.label, "water"), { tap: "water", info: "water-goal" })}
-      ${row("Protein", valWithSub(`${goals.protein} g`, pSrc.label, "protein"), { tap: "protein", info: "protein-goal" })}
-      ${(state.goalsOverride.water_oz !== null || state.goalsOverride.protein_g !== null) ? `
-        <button class="hub-revert" id="hub-revert"><span class="hub-revert-glyph">↺</span>Use calculated goals</button>
-      ` : ""}
-    </div>
-
-    <button class="hub-link" id="hub-measurements">Body composition goal &amp; measurements <span class="hub-chev">›</span></button>
-    <div class="hub-link-sub">Your goal, proportions, and trend live on the Body tab.</div>
-
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="m-close" style="width:100%">Close</button>
-    </div>
-  `);
-
-  $("#m-close")?.addEventListener("click", closeModal);
-  $("#hub-measurements")?.addEventListener("click", () => { closeModal(); switchTab("body"); });
-  $("#hub-revert")?.addEventListener("click", () => confirmUseCalculatedGoals(openGoalsBodyHub));
-  $("#hub-apply-bf")?.addEventListener("click", () => {
-    if (latest?.bodyFatPct != null) {
-      state.profile.bodyComp = "exact";
-      state.profile.bodyFatPct = latest.bodyFatPct;
-      state.profile.bodyFatSource = "navy";
-      resetBodyCheckTimer();
-      save();
-      render();
-      showToast("Profile body fat updated");
-      openGoalsBodyHub();
-    }
-  });
-  // Inline ⓘ opens the matching Learn topic; stop propagation so the row's
-  // own editor doesn't also fire. Back from the topic returns to the hub.
-  $$("[data-info]").forEach(b => b.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openLearnTopicModal(b.dataset.info, openGoalsBodyHub);
-  }));
-  $$("[data-hub-tap]").forEach(el => el.addEventListener("click", () => {
-    const dest = el.dataset.hubTap;
-    if (dest === "bodycomp") openBodyCompModal(openGoalsBodyHub);
-    else if (dest === "water") openGoalOverride("water", { returnTo: openGoalsBodyHub });
-    else if (dest === "protein") openGoalOverride("protein", { returnTo: openGoalsBodyHub });
-    else if (dest === "measurements") { closeModal(); switchTab("body"); }
-    else if (dest === "basics") openProfileEdit("basics", openGoalsBodyHub);
-  }));
 }
 
 function openGoalOverride(kind, opts = {}) {
@@ -7512,7 +7346,7 @@ function openGoalsUpdateModal() {
     <div class="goals-update-body">
       <p>The "half your bodyweight in ounces" rule Hyalo used for water is a popular fitness shorthand, but it isn't well supported by research. The National Academies recommend ~91 oz of total fluid per day for women and ~125 oz for men — with about 20% of that coming from food.</p>
       <p>We've dialed the baseline from ×0.5 to ×0.4 of your bodyweight to line up with that target. Your water goal will drop ~15–20 oz.</p>
-      <p>If you preferred the higher target, you can override it in Settings → Goals &amp; body. And pale yellow pee is the best feedback signal there is, regardless of what the number says.</p>
+      <p>If you preferred the higher target, you can override it in Settings → Goals. And pale yellow pee is the best feedback signal there is, regardless of what the number says.</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="gu-close" style="width:100%">Got it</button>
