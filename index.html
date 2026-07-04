@@ -1458,6 +1458,136 @@
     flex-shrink: 0;
     opacity: 0.7;
   }
+  /* Non-navigating settings row (holds a switch instead of a chevron). */
+  .settings-row-static { cursor: default; }
+  .settings-hint {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    padding: 8px 4px 0;
+  }
+
+  /* Toggle switch — sage when on. Used for booster tracking opt-in. */
+  .switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    border: none;
+    padding: 0;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .switch.on { background: var(--sage); }
+  .switch-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.2s ease;
+  }
+  .switch.on .switch-knob { transform: translateX(18px); }
+
+  /* Today — daily booster strip under the rings. */
+  .booster-strip {
+    margin: 4px 24px 0;
+    text-align: center;
+  }
+  .booster-strip-label {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .booster-pills {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .booster-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .booster-pill:active { transform: scale(0.97); }
+  .booster-pill.on {
+    background: color-mix(in srgb, var(--sage) 16%, transparent);
+    border-color: color-mix(in srgb, var(--sage) 55%, transparent);
+    color: var(--sage);
+  }
+  .booster-pill-check {
+    font-size: 11px;
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: width 0.18s ease, opacity 0.18s ease;
+  }
+  .booster-pill.on .booster-pill-check { width: 11px; opacity: 1; }
+
+  /* History — per-booster 7-day dot tracks. */
+  .history-chart-title.booster { color: var(--sage); }
+  .history-chart-title.booster .swatch { background: var(--sage); }
+  .booster-history { margin-top: 4px; }
+  .booster-hist-row {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+  .booster-hist-label {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .booster-hist-track {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    justify-items: center;
+    align-items: center;
+  }
+  .booster-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1.5px solid color-mix(in srgb, var(--sage) 45%, transparent);
+    background: transparent;
+  }
+  .booster-dot.on {
+    background: var(--sage);
+    border-color: var(--sage);
+  }
+  .booster-hist-days { padding-top: 2px; }
+  .booster-hist-day {
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+  }
+  .booster-hist-day.today { color: var(--sage); font-weight: 700; }
+
   .about-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -3884,6 +4014,15 @@ function findLearnTopic(id) {
   return null;
 }
 
+/* ============ Boosters ============ */
+// Booster supplements: simple daily "took it" marks, tracked independently and
+// never mixed into water or protein. Opt-in per booster in Settings. Sage accent
+// throughout. Adding a third booster is just another entry here.
+const BOOSTERS = [
+  { id: "creatine",     label: "Creatine",     note: "Daily creatine" },
+  { id: "electrolytes", label: "Electrolytes", note: "Daily electrolyte packet" },
+];
+
 /* ============ State ============ */
 // Bump when the protein math changes in a way that should re-derive existing
 // saved plans. v2 = lean-mass × g/kg-FFM model (replacing the per-pound model).
@@ -3923,6 +4062,7 @@ const DEFAULT_STATE = () => ({
   bodyGoals: { bodyFatPct: null, whr: null },   // target body fat % (shared with protein planner) + target WHR
   windDownDismissedDate: null,
   proteinModelVersion: PROTEIN_MODEL_VERSION,    // new users start on the current model
+  boosters: Object.fromEntries(BOOSTERS.map(b => [b.id, false])),   // per-booster enable flags (opt-in)
 });
 
 let state = DEFAULT_STATE();
@@ -3939,6 +4079,7 @@ function normalizeState(data) {
     profile: { ...DEFAULT_STATE().profile, ...(data.profile || {}) },
     goalsOverride: { ...DEFAULT_STATE().goalsOverride, ...(data.goalsOverride || {}) },
     bodyGoals: { ...DEFAULT_STATE().bodyGoals, ...(data.bodyGoals || {}) },
+    boosters: { ...DEFAULT_STATE().boosters, ...(data.boosters || {}) },
     favorites: {
       water: data.favorites?.water || DEFAULT_STATE().favorites.water,
       protein: data.favorites?.protein || [],
@@ -4758,6 +4899,25 @@ function dayTotals(key) {
   };
 }
 
+/* ============ Booster marks ============ */
+// Enabled boosters, in catalog order.
+function boosterEnabledList() {
+  return BOOSTERS.filter(b => state.boosters?.[b.id]);
+}
+// Was a given booster marked as taken on a given day?
+function boosterTakenOn(key, id) {
+  return !!state.log[key]?.boosters?.[id];
+}
+// Toggle today's "taken it" mark for a booster. Kept off the water/protein
+// totals entirely — this only ever touches day.boosters.
+function toggleBoosterToday(id) {
+  const day = ensureDay(todayKey());
+  day.boosters = day.boosters || {};
+  if (day.boosters[id]) delete day.boosters[id];   // untake → keep the object tidy
+  else day.boosters[id] = true;
+  save();
+}
+
 /* ============ DOM helpers ============ */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -5357,6 +5517,7 @@ function renderToday() {
     ${renderBanners(totals, goals)}
     ${renderWeeklyReview()}
     ${renderRings(totals, goals)}
+    ${renderBoosterStrip()}
     ${renderQuickLog(goals)}
     ${renderWorkoutCard(goals)}
     ${renderTimeline(today)}
@@ -5386,6 +5547,28 @@ function renderRings(totals, goals) {
   <div class="rings-explainer">
     <button class="rings-explainer-link" id="open-goals-why">Why these goals?</button>
   </div>`;
+}
+
+// Slim daily-booster strip under the rings. Only appears when at least one
+// booster is enabled in Settings. Each pill is a tap-to-toggle "took it today"
+// mark — hairline when untaken, soft sage fill + check when taken.
+function renderBoosterStrip() {
+  const enabled = boosterEnabledList();
+  if (!enabled.length) return "";
+  const key = todayKey();
+  const pills = enabled.map(b => {
+    const on = boosterTakenOn(key, b.id);
+    return `
+      <button class="booster-pill${on ? " on" : ""}" data-booster="${b.id}" aria-pressed="${on}">
+        <span class="booster-pill-check" aria-hidden="true">✓</span>
+        <span class="booster-pill-name">${b.label}</span>
+      </button>`;
+  }).join("");
+  return `
+    <div class="booster-strip">
+      <div class="booster-strip-label">Daily boosters</div>
+      <div class="booster-pills">${pills}</div>
+    </div>`;
 }
 
 function ringCard(kind, current, goal, bump, base, label, unit) {
@@ -5574,6 +5757,14 @@ function wireTodayHandlers() {
   $("#workout-card")?.addEventListener("click", openWorkoutModal);
   $$("[data-entry-id]").forEach(b => b.addEventListener("click", () => {
     openEntryActions(b.dataset.entryId, b.dataset.entryKind);
+  }));
+  // Booster pills: toggle today's "took it" mark and flip the pill in place
+  // (no full re-render, so the fill/check transition stays smooth).
+  $$("[data-booster]").forEach(pill => pill.addEventListener("click", () => {
+    toggleBoosterToday(pill.dataset.booster);
+    const on = boosterTakenOn(todayKey(), pill.dataset.booster);
+    pill.classList.toggle("on", on);
+    pill.setAttribute("aria-pressed", String(on));
   }));
 }
 
@@ -6155,6 +6346,34 @@ function openEntryActions(id, kind) {
 }
 
 /* ============ Render: History ============ */
+// Per-booster 7-day signal for History: one track per enabled booster, a sage
+// dot filled on days it was taken, hollow otherwise — distinguishable at a
+// glance by its own row, aligned to the same day columns as the charts.
+function renderBoosterHistory(days) {
+  const enabled = boosterEnabledList();
+  if (!enabled.length) return "";
+  const tracks = enabled.map(b => `
+    <div class="booster-hist-row">
+      <div class="booster-hist-label">${b.label}</div>
+      <div class="booster-hist-track">
+        ${days.map(d => `<span class="booster-dot${boosterTakenOn(d.key, b.id) ? " on" : ""}"></span>`).join("")}
+      </div>
+    </div>`).join("");
+  return `
+    <div class="history-chart-card">
+      <div class="history-chart-title booster"><span class="swatch"></span>Boosters — last 7 days</div>
+      <div class="booster-history">
+        ${tracks}
+        <div class="booster-hist-row booster-hist-days">
+          <div class="booster-hist-label"></div>
+          <div class="booster-hist-track">
+            ${days.map(d => `<span class="booster-hist-day${d.key === todayKey() ? " today" : ""}">${d.date.toLocaleDateString(undefined, { weekday: "narrow" })}</span>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderHistory() {
   const days = [];
   for (let i = 6; i >= 0; i--) {
@@ -6273,6 +6492,7 @@ function renderHistory() {
         </div>
       </div>
     `}
+    ${renderBoosterHistory(days)}
   `;
   $("#main-content").innerHTML = html;
 
@@ -6315,6 +6535,24 @@ function renderSettings() {
         </button>
         ${hasOverride ? `<button class="hub-revert" id="s-revert"><span class="hub-revert-glyph">↺</span>Use calculated goals</button>` : ""}
       </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-head"><span class="section-title">Boosters</span></div>
+      <div class="settings-card">
+        ${BOOSTERS.map(b => {
+          const on = !!state.boosters?.[b.id];
+          return `
+          <div class="settings-row settings-row-static">
+            <div class="settings-row-info">
+              <div class="settings-row-label">${b.label}</div>
+              <div class="settings-row-value">${b.note}</div>
+            </div>
+            <button class="switch${on ? " on" : ""}" role="switch" aria-checked="${on}" aria-label="Track ${b.label.toLowerCase()}" data-booster-toggle="${b.id}"><span class="switch-knob"></span></button>
+          </div>`;
+        }).join("")}
+      </div>
+      <div class="settings-hint">A simple daily “took it” mark on Today and History — never counted as water or protein.</div>
     </div>
 
     <div class="settings-section">
@@ -6443,6 +6681,15 @@ function wireSettingsHandlers() {
   $("#s-goal-water")?.addEventListener("click", () => openGoalOverride("water"));
   $("#s-goal-protein")?.addEventListener("click", () => openGoalOverride("protein"));
   $("#s-revert")?.addEventListener("click", () => confirmUseCalculatedGoals());
+  // Booster on/off switches — flip in place so the knob slides, then persist.
+  $$("[data-booster-toggle]").forEach(sw => sw.addEventListener("click", () => {
+    const id = sw.dataset.boosterToggle;
+    state.boosters = state.boosters || {};
+    state.boosters[id] = !state.boosters[id];
+    sw.classList.toggle("on", state.boosters[id]);
+    sw.setAttribute("aria-checked", String(state.boosters[id]));
+    save();
+  }));
   $$('[data-edit]').forEach(b => b.addEventListener("click", () => openProfileEdit(b.dataset.edit)));
   $("#edit-daily-window")?.addEventListener("click", openDailyWindowModal);
   $("#open-install")?.addEventListener("click", openInstallModal);
