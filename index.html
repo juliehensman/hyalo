@@ -4018,9 +4018,13 @@ function findLearnTopic(id) {
 // Booster supplements: simple daily "took it" marks, tracked independently and
 // never mixed into water or protein. Opt-in per booster in Settings. Sage accent
 // throughout. Adding a third booster is just another entry here.
+// Order matters for layout: on Today the pills render left→right in this order,
+// so electrolytes (paired with water, the left ring) sits left and creatine
+// (paired with protein, the right ring) sits right. History rows and Settings
+// toggles follow the same order.
 const BOOSTERS = [
-  { id: "creatine",     label: "Creatine",     note: "Daily creatine" },
   { id: "electrolytes", label: "Electrolytes", note: "Daily electrolyte packet" },
+  { id: "creatine",     label: "Creatine",     note: "Daily creatine" },
 ];
 
 /* ============ State ============ */
