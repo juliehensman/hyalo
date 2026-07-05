@@ -1253,6 +1253,68 @@
     color: var(--ink-soft);
     flex-shrink: 0;
   }
+  .log-qty {
+    color: var(--protein);
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  /* Library quantity sheet */
+  .qty-serv {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin: -4px 0 20px;
+  }
+  .qty-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  .qty-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--ink);
+    font-size: 26px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .qty-btn:active { background: var(--card-hover); }
+  .qty-input {
+    width: 76px;
+    text-align: center;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 40px;
+    color: var(--ink);
+    background: none;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    padding: 2px 0;
+    -moz-appearance: textfield;
+  }
+  .qty-input::-webkit-outer-spin-button,
+  .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .qty-input:focus { outline: none; border-bottom-color: var(--protein); }
+  .qty-total {
+    text-align: center;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .qty-total-main { font-weight: 600; }
+  .qty-total-sub { color: var(--ink-muted); font-size: 13px; }
+  .qty-total-water { color: var(--water); font-size: 13px; }
   .log-time {
     font-size: 12px;
     color: var(--ink-muted);
@@ -5402,7 +5464,7 @@ function renderTimeline(today) {
         <div class="timeline-label" style="color:var(--protein)">P</div>
         <div class="timeline-track">
           ${markers}
-          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g"></div>`).join("")}
+          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g${e.qty > 1 ? ` ×${e.qty}` : ""}"></div>`).join("")}
         </div>
       </div>
       <div class="timeline-axis">
@@ -5634,8 +5696,9 @@ function topProteinItems(limit) {
     const entries = state.log[dayKey].protein || [];
     for (const e of entries) {
       if (!e.name) continue;
-      const key = e.name + "|" + e.g;
-      if (!counts[key]) counts[key] = { name: e.name, g: e.g, count: 0, lastTs: "" };
+      const unitG = e.unit_g != null ? e.unit_g : e.g;   // multiplied logs count toward the base serving
+      const key = e.name + "|" + unitG;
+      if (!counts[key]) counts[key] = { name: e.name, g: unitG, count: 0, lastTs: "" };
       counts[key].count++;
       if (e.ts > counts[key].lastTs) counts[key].lastTs = e.ts;
     }
@@ -5738,7 +5801,7 @@ function renderTodayLog(today) {
           <div class="log-time">${fmtTime(e.ts)}</div>
           <div class="log-row">
             <div class="log-bar ${e.kind}"></div>
-            <div class="log-name">${e.kind === "water" ? "Water" : escapeHtml(e.name || "Protein")}</div>
+            <div class="log-name">${e.kind === "water" ? "Water" : `${escapeHtml(e.name || "Protein")}${e.qty > 1 ? ` <span class="log-qty">×${e.qty}</span>` : ""}`}</div>
             <div class="log-amount">${e.kind === "water" ? `${e.oz} oz` : `${e.g} g`}</div>
           </div>
         </button>
@@ -5793,17 +5856,21 @@ function logProtein(g, name, ts, opts = {}) {
   const dayKey = todayKey(new Date(entry_ts));
   const before = goalHitStatus(dayKey);
   const day = ensureDay(dayKey);
+  const qty = opts.qty && opts.qty > 1 ? Math.round(opts.qty) : 1;
+  const unitG = opts.unitG != null ? opts.unitG : g;   // grams for a single serving
   const entry = { id: cryptoId(), g, name, ts: entry_ts };
+  if (qty > 1) { entry.qty = qty; entry.unit_g = unitG; }   // record the multiplier
   day.protein.push(entry);
-  if (name && !state.favorites.protein.find(f => f.name === name && f.g === g)) {
-    state.favorites.protein.unshift({ name, g });
+  // Favorites / quick-log always track the base serving, never a ×N variant.
+  if (name && !state.favorites.protein.find(f => f.name === name && f.g === unitG)) {
+    state.favorites.protein.unshift({ name, g: unitG });
     state.favorites.protein = state.favorites.protein.slice(0, 12);
   }
   save();
   render();
   if (!opts.silent) {
     undoBuffer = [{ type: "protein", entry, dayKey }];
-    showToast(`Logged ${g}g ${name || "protein"}`, () => undoLog());
+    showToast(`Logged ${g}g ${name || "protein"}${qty > 1 ? ` ×${qty}` : ""}`, () => undoLog());
   }
   checkGoalCelebration(dayKey, before);
   return { type: "protein", entry, dayKey };
@@ -5811,15 +5878,17 @@ function logProtein(g, name, ts, opts = {}) {
 
 // Log a library/custom item that may carry water content. Creates two entries
 // when water_oz > 0, with a single combined toast that undoes both.
-function logItemWithWater(g, name, water_oz, ts) {
+function logItemWithWater(g, name, water_oz, ts, opts = {}) {
   const t = ts || new Date().toISOString();
+  const qty = opts.qty && opts.qty > 1 ? Math.round(opts.qty) : 1;
+  const label = `${name || "protein"}${qty > 1 ? ` ×${qty}` : ""}`;
   if (!water_oz || water_oz <= 0) {
-    return logProtein(g, name, t);
+    return logProtein(g, name, t, { qty: opts.qty, unitG: opts.unitG });
   }
-  const p = logProtein(g, name, t, { silent: true });
+  const p = logProtein(g, name, t, { silent: true, qty: opts.qty, unitG: opts.unitG });
   const w = logWater(water_oz, t, { silent: true });
   undoBuffer = [p, w];
-  showToast(`Logged ${name || "protein"} — ${g}g · ${water_oz}oz water`, () => undoLog());
+  showToast(`Logged ${label} — ${g}g · ${water_oz}oz water`, () => undoLog());
 }
 function undoLog() {
   if (!undoBuffer || !undoBuffer.length) return;
@@ -6064,8 +6133,56 @@ function wireLibItems() {
     if (libEditing) return;            // in edit mode, taps don't log
     const id = el.dataset.libId;
     const it = state.library.find(x => x.id === id);
-    if (it) { closeModal(); logItemWithWater(it.g, it.name, it.water_oz); }
+    if (it) openLibraryQtyModal(it);   // choose how many servings, then log
   }));
+}
+
+// Quantity sheet for a library item: pick how many servings, see the live
+// total, then log a single multiplied entry (protein + any water credit).
+// Cancel returns to the library; logging closes back to Today.
+function openLibraryQtyModal(item) {
+  const unitG = item.g;
+  const unitW = item.water_oz || 0;
+  const serving = item.serving || "1 serving";
+  openModal(`
+    <div class="modal-title">${escapeHtml(item.name)}</div>
+    <div class="qty-serv">${escapeHtml(serving)}${unitW ? ` <span style="color:var(--water)">· +${unitW}oz water</span>` : ""} each</div>
+    <div class="qty-stepper">
+      <button class="qty-btn" id="qty-minus" type="button" aria-label="Fewer">−</button>
+      <input class="qty-input" id="qty-input" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Number of servings" />
+      <button class="qty-btn" id="qty-plus" type="button" aria-label="More">+</button>
+    </div>
+    <div class="qty-total" id="qty-total"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="qty-cancel">Cancel</button>
+      <button class="btn btn-primary" id="qty-log">Log</button>
+    </div>
+  `);
+  const input = $("#qty-input");
+  const totalEl = $("#qty-total");
+  const logBtn = $("#qty-log");
+  const clamp = n => Math.max(1, Math.min(99, Math.round(n) || 1));
+  function refresh() {
+    const qty = clamp(+input.value);
+    const totalG = unitG * qty;
+    const totalW = unitW * qty;
+    totalEl.innerHTML =
+      `<span class="qty-total-main">${totalG} g protein</span>` +
+      (qty > 1 ? `<span class="qty-total-sub"> · ${qty} × ${unitG} g</span>` : "") +
+      (totalW ? `<span class="qty-total-water"> · +${totalW} oz water</span>` : "");
+    logBtn.textContent = `Log ${totalG} g`;
+  }
+  $("#qty-minus").addEventListener("click", () => { input.value = clamp(+input.value - 1); refresh(); });
+  $("#qty-plus").addEventListener("click", () => { input.value = clamp(+input.value + 1); refresh(); });
+  input.addEventListener("input", refresh);
+  input.addEventListener("blur", () => { input.value = clamp(+input.value); refresh(); });
+  $("#qty-cancel").addEventListener("click", () => openLibraryModal());   // back to the library
+  logBtn.addEventListener("click", () => {
+    const qty = clamp(+input.value);
+    closeModal();
+    logItemWithWater(unitG * qty, item.name, unitW * qty, undefined, { qty, unitG });
+  });
+  refresh();
 }
 
 function removeLibraryItem(id) {
@@ -6341,6 +6458,11 @@ function openEntryActions(id, kind) {
     // Build updated entry and write to (possibly different) day
     const updated = { ...entry, [valField]: newAmount, ts: newTs };
     if (newName !== undefined) updated.name = newName;
+    // If a multiplied entry's amount no longer equals unit × qty, it's now a
+    // custom value — drop the ×N so the label can't contradict the number.
+    if (updated.qty && updated.g !== updated.unit_g * updated.qty) {
+      delete updated.qty; delete updated.unit_g;
+    }
     ensureDay(newDayKey)[kind].push(updated);
 
     save(); render();
@@ -7430,7 +7552,7 @@ function renderDayModalContent() {
 
   const entries = [
     ...day.water.map(e => ({ kind: "water", ts: e.ts, oz: e.oz, name: "Water" })),
-    ...day.protein.map(e => ({ kind: "protein", ts: e.ts, g: e.g, name: e.name || "Protein" })),
+    ...day.protein.map(e => ({ kind: "protein", ts: e.ts, g: e.g, name: e.name || "Protein", qty: e.qty })),
   ].sort((a, b) => (a.ts < b.ts ? 1 : -1));
   const entriesHtml = entries.length === 0
     ? `<div style="text-align:center;padding:32px 0;color:var(--ink-muted);font-size:13px">No entries this day.</div>`
@@ -7439,7 +7561,7 @@ function renderDayModalContent() {
           <div class="log-time">${fmtTime(e.ts)}</div>
           <div class="log-row">
             <div class="log-bar ${e.kind}"></div>
-            <div class="log-name">${escapeHtml(e.name)}</div>
+            <div class="log-name">${escapeHtml(e.name)}${e.qty > 1 ? ` <span class="log-qty">×${e.qty}</span>` : ""}</div>
             <div class="log-amount">${e.kind === "water" ? `${e.oz} oz` : `${e.g} g`}</div>
           </div>
         </div>
