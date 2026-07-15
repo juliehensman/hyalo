@@ -1223,6 +1223,29 @@
     text-align: left;
   }
   .log-item:hover { background: var(--card-hover); }
+  .log-item[data-entry-id] { cursor: pointer; }
+  .log-item[data-entry-id]:active { transform: scale(0.995); }
+  .day-add-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .day-add-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .day-add-btn:active { background: var(--card-hover); }
+  .day-add-btn.water { color: var(--water); }
+  .day-add-btn.protein { color: var(--protein); }
   .log-row {
     display: flex;
     align-items: center;
@@ -1315,6 +1338,181 @@
   .qty-total-main { font-weight: 600; }
   .qty-total-sub { color: var(--ink-muted); font-size: 13px; }
   .qty-total-water { color: var(--water); font-size: 13px; }
+  .qty-half-hint {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+
+  /* History: Week / Month / Year segmented toggle */
+  .hist-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    margin-bottom: 16px;
+  }
+  .hist-seg {
+    flex: 1;
+    padding: 8px 4px;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hist-seg.active { background: var(--ink); color: var(--bg); }
+
+  /* Calendar: month grid */
+  .cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .cal-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    text-align: center;
+    flex: 1;
+  }
+  .cal-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 10px;
+    box-shadow: var(--shadow);
+  }
+  .cal-dow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+  }
+  .cal-dow span {
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.14s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cal-cell:active { background: var(--card-hover); }
+  .cal-cell.cal-blank { cursor: default; }
+  .cal-cell.today { border-color: var(--ink); }
+  .cal-cell.future { opacity: 0.3; cursor: default; }
+  .cal-num {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-feature-settings: "tnum";
+    line-height: 1;
+  }
+  .cal-cell.today .cal-num { font-weight: 700; color: var(--ink); }
+  .cal-dots { display: flex; gap: 3px; height: 6px; align-items: center; }
+  .cal-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .cal-dot.water.met { background: var(--water); }
+  .cal-dot.protein.met { background: var(--protein); }
+  .cal-dot.water.miss { background: color-mix(in srgb, var(--water) 28%, transparent); }
+  .cal-dot.protein.miss { background: color-mix(in srgb, var(--protein) 28%, transparent); }
+  .cal-dot.none { background: none; border: 1px solid var(--border); }
+  .cal-summary {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+  }
+  .cal-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+  .cal-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* Calendar: year overview */
+  .cal-year-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .cal-year-tile {
+    aspect-ratio: 1.15;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.13s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cal-year-tile:active { transform: scale(0.97); }
+  .cal-year-tile.future { opacity: 0.35; cursor: default; }
+  .cal-year-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .cal-year-num {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 26px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .cal-year-tile.hot .cal-year-name,
+  .cal-year-tile.hot .cal-year-num { color: var(--bg); }
+
+  .edit-total {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
   .log-time {
     font-size: 12px;
     color: var(--ink-muted);
@@ -5464,7 +5662,7 @@ function renderTimeline(today) {
         <div class="timeline-label" style="color:var(--protein)">P</div>
         <div class="timeline-track">
           ${markers}
-          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g${e.qty > 1 ? ` ×${e.qty}` : ""}"></div>`).join("")}
+          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g${hasQty(e.qty) ? ` ×${fmtQty(e.qty)}` : ""}"></div>`).join("")}
         </div>
       </div>
       <div class="timeline-axis">
@@ -5801,7 +5999,7 @@ function renderTodayLog(today) {
           <div class="log-time">${fmtTime(e.ts)}</div>
           <div class="log-row">
             <div class="log-bar ${e.kind}"></div>
-            <div class="log-name">${e.kind === "water" ? "Water" : `${escapeHtml(e.name || "Protein")}${e.qty > 1 ? ` <span class="log-qty">×${e.qty}</span>` : ""}`}</div>
+            <div class="log-name">${e.kind === "water" ? "Water" : `${escapeHtml(e.name || "Protein")}${hasQty(e.qty) ? ` <span class="log-qty">×${fmtQty(e.qty)}</span>` : ""}`}</div>
             <div class="log-amount">${e.kind === "water" ? `${e.oz} oz` : `${e.g} g`}</div>
           </div>
         </button>
@@ -5851,15 +6049,35 @@ function logWater(oz, ts, opts = {}) {
   checkGoalCelebration(dayKey, before);
   return { type: "water", entry, dayKey };
 }
+/* ============ Protein quantity ============
+   Servings can be fractional — half a bar, one and a half tenders — so quantity
+   moves in 0.5 steps. A quantity of exactly 1 is a plain entry (no ×N shown);
+   anything else, including 0.5, is a multiplier. 0.5 steps are exact in binary
+   floating point, so the arithmetic here stays clean. */
+const QTY_STEP = 0.5, QTY_MIN = 0.5, QTY_MAX = 99;
+function clampQty(n) {
+  const snapped = Math.round((+n || 0) / QTY_STEP) * QTY_STEP;
+  if (!snapped) return QTY_MIN;
+  return Math.max(QTY_MIN, Math.min(QTY_MAX, snapped));
+}
+// 1.5 → "1.5", 3 → "3" (never "3.0")
+function fmtQty(q) {
+  return Number.isInteger(q) ? String(q) : String(+(+q).toFixed(1));
+}
+// Is this quantity worth showing as a ×N marker?
+function hasQty(q) {
+  return q != null && q !== 1;
+}
+
 function logProtein(g, name, ts, opts = {}) {
   const entry_ts = ts || new Date().toISOString();
   const dayKey = todayKey(new Date(entry_ts));
   const before = goalHitStatus(dayKey);
   const day = ensureDay(dayKey);
-  const qty = opts.qty && opts.qty > 1 ? Math.round(opts.qty) : 1;
+  const qty = opts.qty != null ? clampQty(opts.qty) : 1;
   const unitG = opts.unitG != null ? opts.unitG : g;   // grams for a single serving
   const entry = { id: cryptoId(), g, name, ts: entry_ts };
-  if (qty > 1) { entry.qty = qty; entry.unit_g = unitG; }   // record the multiplier
+  if (hasQty(qty)) { entry.qty = qty; entry.unit_g = unitG; }   // record the multiplier
   day.protein.push(entry);
   // Favorites / quick-log always track the base serving, never a ×N variant.
   if (name && !state.favorites.protein.find(f => f.name === name && f.g === unitG)) {
@@ -5870,7 +6088,7 @@ function logProtein(g, name, ts, opts = {}) {
   render();
   if (!opts.silent) {
     undoBuffer = [{ type: "protein", entry, dayKey }];
-    showToast(`Logged ${g}g ${name || "protein"}${qty > 1 ? ` ×${qty}` : ""}`, () => undoLog());
+    showToast(`Logged ${g}g ${name || "protein"}${hasQty(qty) ? ` ×${fmtQty(qty)}` : ""}`, () => undoLog());
   }
   checkGoalCelebration(dayKey, before);
   return { type: "protein", entry, dayKey };
@@ -5880,8 +6098,8 @@ function logProtein(g, name, ts, opts = {}) {
 // when water_oz > 0, with a single combined toast that undoes both.
 function logItemWithWater(g, name, water_oz, ts, opts = {}) {
   const t = ts || new Date().toISOString();
-  const qty = opts.qty && opts.qty > 1 ? Math.round(opts.qty) : 1;
-  const label = `${name || "protein"}${qty > 1 ? ` ×${qty}` : ""}`;
+  const qty = opts.qty != null ? clampQty(opts.qty) : 1;
+  const label = `${name || "protein"}${hasQty(qty) ? ` ×${fmtQty(qty)}` : ""}`;
   if (!water_oz || water_oz <= 0) {
     return logProtein(g, name, t, { qty: opts.qty, unitG: opts.unitG });
   }
@@ -6149,10 +6367,11 @@ function openLibraryQtyModal(item) {
     <div class="qty-serv">${escapeHtml(serving)}${unitW ? ` <span style="color:var(--water)">· +${unitW}oz water</span>` : ""} each</div>
     <div class="qty-stepper">
       <button class="qty-btn" id="qty-minus" type="button" aria-label="Fewer">−</button>
-      <input class="qty-input" id="qty-input" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Number of servings" />
+      <input class="qty-input" id="qty-input" type="number" inputmode="decimal" step="0.5" min="0.5" max="99" value="1" aria-label="Number of servings" />
       <button class="qty-btn" id="qty-plus" type="button" aria-label="More">+</button>
     </div>
     <div class="qty-total" id="qty-total"></div>
+    <div class="qty-half-hint">Half servings welcome — steps by ½.</div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="qty-cancel">Cancel</button>
       <button class="btn btn-primary" id="qty-log">Log</button>
@@ -6161,26 +6380,25 @@ function openLibraryQtyModal(item) {
   const input = $("#qty-input");
   const totalEl = $("#qty-total");
   const logBtn = $("#qty-log");
-  const clamp = n => Math.max(1, Math.min(99, Math.round(n) || 1));
   function refresh() {
-    const qty = clamp(+input.value);
-    const totalG = unitG * qty;
-    const totalW = unitW * qty;
+    const qty = clampQty(+input.value);
+    const totalG = Math.round(unitG * qty);
+    const totalW = Math.round(unitW * qty);
     totalEl.innerHTML =
       `<span class="qty-total-main">${totalG} g protein</span>` +
-      (qty > 1 ? `<span class="qty-total-sub"> · ${qty} × ${unitG} g</span>` : "") +
+      (hasQty(qty) ? `<span class="qty-total-sub"> · ${fmtQty(qty)} × ${unitG} g</span>` : "") +
       (totalW ? `<span class="qty-total-water"> · +${totalW} oz water</span>` : "");
     logBtn.textContent = `Log ${totalG} g`;
   }
-  $("#qty-minus").addEventListener("click", () => { input.value = clamp(+input.value - 1); refresh(); });
-  $("#qty-plus").addEventListener("click", () => { input.value = clamp(+input.value + 1); refresh(); });
+  $("#qty-minus").addEventListener("click", () => { input.value = fmtQty(clampQty(+input.value - QTY_STEP)); refresh(); });
+  $("#qty-plus").addEventListener("click", () => { input.value = fmtQty(clampQty(+input.value + QTY_STEP)); refresh(); });
   input.addEventListener("input", refresh);
-  input.addEventListener("blur", () => { input.value = clamp(+input.value); refresh(); });
+  input.addEventListener("blur", () => { input.value = fmtQty(clampQty(+input.value)); refresh(); });
   $("#qty-cancel").addEventListener("click", () => openLibraryModal());   // back to the library
   logBtn.addEventListener("click", () => {
-    const qty = clamp(+input.value);
+    const qty = clampQty(+input.value);
     closeModal();
-    logItemWithWater(unitG * qty, item.name, unitW * qty, undefined, { qty, unitG });
+    logItemWithWater(Math.round(unitG * qty), item.name, Math.round(unitW * qty), undefined, { qty, unitG });
   });
   refresh();
 }
@@ -6397,18 +6615,35 @@ function renderWorkoutEntryInModal(editIdx) {
   });
 }
 
-function openEntryActions(id, kind) {
-  const found = findEntry(id, kind);
-  if (!found) return;
-  const { entry, dayKey: oldDayKey } = found;
+// Unified entry editor. Handles both editing an existing entry and adding a new
+// one (add mode when no entryId; seeds a blank entry on the target day). When a
+// returnTo callback is given (e.g. opened from a past-day view), Save/Delete/
+// Cancel return there instead of closing outright, so you stay in the day.
+function openEntryEditor({ kind, entryId = null, dayKey = null, returnTo = null }) {
+  const editing = entryId != null;
+  let entry, oldDayKey;
+  if (editing) {
+    const found = findEntry(entryId, kind);
+    if (!found) return;
+    entry = found.entry; oldDayKey = found.dayKey;
+  } else {
+    oldDayKey = dayKey || todayKey();
+    entry = { ts: buildTs(oldDayKey, tsToTimeStr(new Date().toISOString())) };  // this day, current time
+  }
+  const back = returnTo || closeModal;
 
   const unit = kind === "water" ? "oz" : "g";
-  const valField = kind === "water" ? "oz" : "g";
   const step = kind === "water" ? 4 : 5;
+  const amountInit = editing
+    ? (kind === "protein" ? (entry.unit_g != null ? entry.unit_g : entry.g) : entry.oz)
+    : (kind === "water" ? 8 : 20);
+  const qtyInit = (kind === "protein" && entry.qty) ? entry.qty : 1;
+  const dayLabel = new Date(oldDayKey + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 
   openModal(`
-    <div class="modal-title">Edit entry</div>
-    <div class="modal-sub">Adjust the amount, time, or date.</div>
+    ${returnTo ? `<button class="modal-back" type="button" id="entry-back-top">‹ Back</button>` : ""}
+    <div class="modal-title">${editing ? "Edit entry" : (kind === "water" ? "Add water" : "Add protein")}</div>
+    <div class="modal-sub">${editing ? "Adjust the amount, quantity, time, or date." : `Adding to ${dayLabel}.`}</div>
     ${kind === "protein" ? `
       <div class="field">
         <span class="field-label">Name</span>
@@ -6418,57 +6653,101 @@ function openEntryActions(id, kind) {
       </div>
     ` : ""}
     <div class="field">
-      <span class="field-label">Amount (${unit})</span>
+      <span class="field-label">Amount (${unit})${kind === "protein" ? " each" : ""}</span>
       <div class="num-control">
         <button class="num-step" id="dec" type="button">−</button>
-        <input type="number" id="edit-amount" value="${entry[valField]}" inputmode="numeric" min="1" />
+        <input type="number" id="edit-amount" value="${amountInit}" inputmode="numeric" min="1" />
         <button class="num-step" id="inc" type="button">+</button>
       </div>
     </div>
+    ${kind === "protein" ? `
+      <div class="field">
+        <span class="field-label">Quantity</span>
+        <div class="num-control">
+          <button class="num-step" id="qty-dec" type="button">−</button>
+          <input type="number" id="edit-qty" value="${fmtQty(qtyInit)}" inputmode="decimal" step="0.5" min="0.5" max="99" />
+          <button class="num-step" id="qty-inc" type="button">+</button>
+        </div>
+        <div class="edit-total" id="edit-total"></div>
+      </div>
+    ` : ""}
     ${renderWhenWidget(entry.ts)}
     <div class="modal-actions">
-      <button class="btn btn-secondary" id="entry-delete">Delete</button>
-      <button class="btn btn-primary" id="entry-save">Save</button>
+      ${editing
+        ? `<button class="btn btn-secondary" id="entry-delete">Delete</button>`
+        : (returnTo ? `<button class="btn btn-secondary" id="entry-cancel">Cancel</button>` : "")}
+      <button class="btn btn-primary" id="entry-save">${editing ? "Save" : "Add"}</button>
     </div>
   `);
 
   const amountIn = $("#edit-amount");
+  const qtyIn = $("#edit-qty");          // protein only; null for water
+  const totalEl = $("#edit-total");
   const when = wireWhenWidget(entry.ts);
-  $("#dec").addEventListener("click", () => amountIn.value = Math.max(1, +amountIn.value - step));
-  $("#inc").addEventListener("click", () => amountIn.value = +amountIn.value + step);
-  $("#entry-delete").addEventListener("click", () => {
-    // Remove from whichever day it lives in
+  function refreshTotal() {
+    if (!totalEl) return;
+    const per = Math.max(0, +amountIn.value || 0);
+    const q = clampQty(+qtyIn.value);
+    totalEl.textContent = hasQty(q)
+      ? `${fmtQty(q)} × ${per} = ${Math.round(per * q)} g total`
+      : `${per} g total`;
+  }
+  $("#dec").addEventListener("click", () => { amountIn.value = Math.max(1, +amountIn.value - step); refreshTotal(); });
+  $("#inc").addEventListener("click", () => { amountIn.value = +amountIn.value + step; refreshTotal(); });
+  if (qtyIn) {
+    $("#qty-dec").addEventListener("click", () => { qtyIn.value = fmtQty(clampQty(+qtyIn.value - QTY_STEP)); refreshTotal(); });
+    $("#qty-inc").addEventListener("click", () => { qtyIn.value = fmtQty(clampQty(+qtyIn.value + QTY_STEP)); refreshTotal(); });
+    amountIn.addEventListener("input", refreshTotal);
+    qtyIn.addEventListener("input", refreshTotal);
+    qtyIn.addEventListener("blur", () => { qtyIn.value = fmtQty(clampQty(+qtyIn.value)); refreshTotal(); });
+    refreshTotal();
+  }
+  $("#entry-back-top")?.addEventListener("click", () => back());
+  $("#entry-cancel")?.addEventListener("click", () => back());
+  $("#entry-delete")?.addEventListener("click", () => {
     const oldDay = state.log[oldDayKey];
-    if (oldDay) oldDay[kind] = oldDay[kind].filter(e => e.id !== id);
+    if (oldDay) oldDay[kind] = oldDay[kind].filter(e => e.id !== entryId);
     save(); render();
     showToast("Entry removed");
-    closeModal();
+    back();
   });
   $("#entry-save").addEventListener("click", () => {
-    const newAmount = +amountIn.value;
-    if (!newAmount || newAmount <= 0) { showToast("Amount must be more than 0"); return; }
+    const per = +amountIn.value;
+    if (!per || per <= 0) { showToast("Amount must be more than 0"); return; }
+    const qty = qtyIn ? clampQty(+qtyIn.value) : 1;
     const newTs = when.getTs();
-    const newDayKey = todayKey(new Date(newTs));
     const newName = kind === "protein" ? ($("#edit-name").value.trim() || "Protein") : undefined;
 
-    // Remove from old day
-    const oldDay = state.log[oldDayKey];
-    if (oldDay) oldDay[kind] = oldDay[kind].filter(e => e.id !== id);
-
-    // Build updated entry and write to (possibly different) day
-    const updated = { ...entry, [valField]: newAmount, ts: newTs };
-    if (newName !== undefined) updated.name = newName;
-    // If a multiplied entry's amount no longer equals unit × qty, it's now a
-    // custom value — drop the ×N so the label can't contradict the number.
-    if (updated.qty && updated.g !== updated.unit_g * updated.qty) {
-      delete updated.qty; delete updated.unit_g;
+    if (editing) {
+      // Rebuild and move to its (possibly new) day.
+      const newDayKey = todayKey(new Date(newTs));
+      const oldDay = state.log[oldDayKey];
+      if (oldDay) oldDay[kind] = oldDay[kind].filter(e => e.id !== entryId);
+      const updated = { ...entry, ts: newTs };
+      if (kind === "protein") {
+        updated.g = Math.round(per * qty);
+        updated.name = newName;
+        if (hasQty(qty)) { updated.qty = qty; updated.unit_g = per; }   // keep the ×N
+        else { delete updated.qty; delete updated.unit_g; }             // back to a plain entry
+      } else {
+        updated.oz = per;
+      }
+      ensureDay(newDayKey)[kind].push(updated);
+      save(); render();
+      showToast("Entry updated");
+    } else {
+      // Add mode — reuse the log functions (favorites, undo, day handling).
+      if (kind === "water") logWater(per, newTs);
+      else if (hasQty(qty)) logProtein(Math.round(per * qty), newName, newTs, { qty, unitG: per });
+      else logProtein(per, newName, newTs);
     }
-    ensureDay(newDayKey)[kind].push(updated);
-
-    save(); render();
-    showToast("Entry updated");
-    closeModal();
+    back();
   });
+}
+
+// Back-compat: existing callers open the editor in edit mode.
+function openEntryActions(id, kind, opts = {}) {
+  openEntryEditor({ kind, entryId: id, returnTo: opts.returnTo || null });
 }
 
 /* ============ Render: History ============ */
@@ -6500,7 +6779,70 @@ function renderBoosterHistory(days) {
     </div>`;
 }
 
+/* ============ History views ============
+   Three lenses on the same log: Week (7-day detail bars), Month (calendar grid
+   with a met/missed dot per goal), and Year (twelve month tiles, heat-tinted by
+   how many days both goals were met). Every day cell taps into the editable day
+   view, so Year → Month → Day drills all the way down. */
+let _histView = "week";        // "week" | "month" | "year"
+let _histMonth = null;         // "YYYY-MM" anchor for the month grid
+let _histYear = null;          // year anchor for the year overview
+
 function renderHistory() {
+  if (!_histMonth) _histMonth = todayKey().slice(0, 7);
+  if (!_histYear) _histYear = new Date().getFullYear();
+  const body = _histView === "month" ? renderHistMonth()
+             : _histView === "year"  ? renderHistYear()
+             : renderHistWeek();
+  $("#main-content").innerHTML = renderHistToggle() + body;
+  wireHistToggle();
+  if (_histView === "month") wireHistMonth();
+  else if (_histView === "year") wireHistYear();
+  else wireHistWeek();
+}
+
+function renderHistToggle() {
+  const opt = (k, label) => `<button class="hist-seg${_histView === k ? " active" : ""}" data-hist-view="${k}">${label}</button>`;
+  return `<div class="hist-toggle">${opt("week", "Week")}${opt("month", "Month")}${opt("year", "Year")}</div>`;
+}
+function wireHistToggle() {
+  $$("[data-hist-view]").forEach(b => b.addEventListener("click", () => {
+    _histView = b.dataset.histView;
+    renderHistory();
+  }));
+}
+
+/* ---- Calendar helpers ---- */
+// What a calendar cell needs: was anything logged, and which goals were met.
+function calDayStatus(key) {
+  const day = state.log[key];
+  const logged = !!day && ((day.water?.length || 0) > 0 || (day.protein?.length || 0) > 0);
+  if (!logged) return { logged: false, water: false, protein: false };
+  const s = goalHitStatus(key);
+  return { logged: true, water: s.water, protein: s.protein };
+}
+// Earliest day we have any record of — bounds how far back navigation goes.
+function earliestLogKey() {
+  const keys = Object.keys(state.log).filter(k => {
+    const d = state.log[k];
+    return d && ((d.water?.length || 0) || (d.protein?.length || 0) || (d.workouts?.length || 0));
+  }).sort();
+  return keys[0] || todayKey();
+}
+function monthMeta(monthKey) {
+  const [y, m] = monthKey.split("-").map(Number);
+  return { y, m, firstDow: new Date(y, m - 1, 1).getDay(), daysInMonth: new Date(y, m, 0).getDate() };
+}
+function shiftMonth(monthKey, delta) {
+  const [y, m] = monthKey.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthBounds() {
+  return { earliest: earliestLogKey().slice(0, 7), latest: todayKey().slice(0, 7) };
+}
+
+function renderHistWeek() {
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
@@ -6620,8 +6962,10 @@ function renderHistory() {
     `}
     ${renderBoosterHistory(days)}
   `;
-  $("#main-content").innerHTML = html;
+  return html;
+}
 
+function wireHistWeek() {
   // Tap a bar (anywhere in its column) to open that day's full log.
   $$("#main-content .chart-bar-col").forEach(col => {
     col.addEventListener("click", () => {
@@ -6629,6 +6973,119 @@ function renderHistory() {
       openDayLogModal(col.dataset.dayKey);
     });
   });
+}
+
+/* ---- Month: calendar grid ---- */
+function renderHistMonth() {
+  const { y, m, firstDow, daysInMonth } = monthMeta(_histMonth);
+  const bounds = monthBounds();
+  const canPrev = _histMonth > bounds.earliest;
+  const canNext = _histMonth < bounds.latest;
+  const title = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const tk = todayKey();
+
+  let bothCount = 0, loggedCount = 0;
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) cells.push(`<div class="cal-cell cal-blank"></div>`);
+  for (let dnum = 1; dnum <= daysInMonth; dnum++) {
+    const key = `${y}-${String(m).padStart(2, "0")}-${String(dnum).padStart(2, "0")}`;
+    const st = calDayStatus(key);
+    if (st.logged) loggedCount++;
+    if (st.water && st.protein) bothCount++;
+    const future = key > tk;
+    const dotCls = (met) => met ? "met" : (st.logged ? "miss" : "none");
+    cells.push(`
+      <button class="cal-cell${key === tk ? " today" : ""}${future ? " future" : ""}"${future ? " disabled" : ` data-cal-day="${key}"`}>
+        <span class="cal-num">${dnum}</span>
+        <span class="cal-dots">
+          <span class="cal-dot water ${dotCls(st.water)}"></span>
+          <span class="cal-dot protein ${dotCls(st.protein)}"></span>
+        </span>
+      </button>`);
+  }
+  const dows = ["S", "M", "T", "W", "T", "F", "S"];
+  return `
+    <div class="cal-head">
+      <button class="day-nav-btn" id="cal-prev"${canPrev ? "" : " disabled"} aria-label="Previous month">‹</button>
+      <div class="cal-title">${title}</div>
+      <button class="day-nav-btn" id="cal-next"${canNext ? "" : " disabled"} aria-label="Next month">›</button>
+    </div>
+    <div class="cal-card">
+      <div class="cal-dow">${dows.map(d => `<span>${d}</span>`).join("")}</div>
+      <div class="cal-grid">${cells.join("")}</div>
+    </div>
+    <div class="cal-summary">${bothCount} ${bothCount === 1 ? "day" : "days"} both goals met${loggedCount ? ` · ${loggedCount} logged` : ""}</div>
+    <div class="cal-legend">
+      <span class="cal-legend-item"><span class="cal-dot water met"></span>water</span>
+      <span class="cal-legend-item"><span class="cal-dot protein met"></span>protein</span>
+      <span class="cal-legend-item"><span class="cal-dot water miss"></span>logged, under goal</span>
+    </div>
+  `;
+}
+function wireHistMonth() {
+  $("#cal-prev")?.addEventListener("click", () => { _histMonth = shiftMonth(_histMonth, -1); renderHistory(); });
+  $("#cal-next")?.addEventListener("click", () => { _histMonth = shiftMonth(_histMonth, 1); renderHistory(); });
+  $$("[data-cal-day]").forEach(el => el.addEventListener("click", () => {
+    if (navigator.vibrate) navigator.vibrate(5);
+    openDayLogModal(el.dataset.calDay);
+  }));
+}
+
+/* ---- Year: twelve month tiles, heat-tinted by days both goals were met ---- */
+function renderHistYear() {
+  const tk = todayKey();
+  const earliestY = +earliestLogKey().slice(0, 4);
+  const nowY = new Date().getFullYear();
+  const canPrev = _histYear > earliestY;
+  const canNext = _histYear < nowY;
+
+  let yearBoth = 0, yearLogged = 0;
+  const tiles = [];
+  for (let m = 1; m <= 12; m++) {
+    const mk = `${_histYear}-${String(m).padStart(2, "0")}`;
+    const { daysInMonth } = monthMeta(mk);
+    let both = 0, logged = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${mk}-${String(d).padStart(2, "0")}`;
+      if (key > tk) break;
+      const st = calDayStatus(key);
+      if (st.logged) logged++;
+      if (st.water && st.protein) both++;
+    }
+    yearBoth += both; yearLogged += logged;
+    const future = mk > tk.slice(0, 7);
+    // Heat: share of the month's days where both goals were met. Ink-tinted to
+    // match the "both" streak stat; text flips light once the tile goes dark.
+    const ratio = both / daysInMonth;
+    const intensity = both === 0 ? 0 : 0.15 + 0.55 * ratio;
+    const hot = intensity >= 0.45;
+    const name = new Date(_histYear, m - 1, 1).toLocaleDateString(undefined, { month: "short" });
+    tiles.push(`
+      <button class="cal-year-tile${future ? " future" : ""}${hot ? " hot" : ""}"${future ? " disabled" : ` data-cal-month="${mk}"`}
+        ${intensity ? `style="background: color-mix(in srgb, var(--ink) ${Math.round(intensity * 100)}%, var(--card))"` : ""}>
+        <span class="cal-year-name">${name}</span>
+        <span class="cal-year-num">${logged ? both : "—"}</span>
+      </button>`);
+  }
+  return `
+    <div class="cal-head">
+      <button class="day-nav-btn" id="year-prev"${canPrev ? "" : " disabled"} aria-label="Previous year">‹</button>
+      <div class="cal-title">${_histYear}</div>
+      <button class="day-nav-btn" id="year-next"${canNext ? "" : " disabled"} aria-label="Next year">›</button>
+    </div>
+    <div class="cal-year-grid">${tiles.join("")}</div>
+    <div class="cal-summary">${yearBoth} ${yearBoth === 1 ? "day" : "days"} both goals met${yearLogged ? ` · ${yearLogged} logged` : ""} in ${_histYear}</div>
+    <div class="cal-legend"><span class="cal-legend-item">Darker months = more days you hit both. Tap one to open it.</span></div>
+  `;
+}
+function wireHistYear() {
+  $("#year-prev")?.addEventListener("click", () => { _histYear--; renderHistory(); });
+  $("#year-next")?.addEventListener("click", () => { _histYear++; renderHistory(); });
+  $$("[data-cal-month]").forEach(el => el.addEventListener("click", () => {
+    _histMonth = el.dataset.calMonth;
+    _histView = "month";
+    renderHistory();
+  }));
 }
 
 /* ============ Render: Settings ============ */
@@ -7551,17 +8008,17 @@ function renderDayModalContent() {
   const canNext = nextDayKey(dayKey) !== null;
 
   const entries = [
-    ...day.water.map(e => ({ kind: "water", ts: e.ts, oz: e.oz, name: "Water" })),
-    ...day.protein.map(e => ({ kind: "protein", ts: e.ts, g: e.g, name: e.name || "Protein", qty: e.qty })),
+    ...day.water.map(e => ({ kind: "water", id: e.id, ts: e.ts, oz: e.oz, name: "Water" })),
+    ...day.protein.map(e => ({ kind: "protein", id: e.id, ts: e.ts, g: e.g, name: e.name || "Protein", qty: e.qty })),
   ].sort((a, b) => (a.ts < b.ts ? 1 : -1));
   const entriesHtml = entries.length === 0
-    ? `<div style="text-align:center;padding:32px 0;color:var(--ink-muted);font-size:13px">No entries this day.</div>`
+    ? `<div style="text-align:center;padding:24px 0;color:var(--ink-muted);font-size:13px">No entries this day. Add one below.</div>`
     : entries.map(e => `
-        <div class="log-item" style="cursor:default">
+        <div class="log-item" data-entry-id="${e.id}" data-entry-kind="${e.kind}">
           <div class="log-time">${fmtTime(e.ts)}</div>
           <div class="log-row">
             <div class="log-bar ${e.kind}"></div>
-            <div class="log-name">${escapeHtml(e.name)}${e.qty > 1 ? ` <span class="log-qty">×${e.qty}</span>` : ""}</div>
+            <div class="log-name">${escapeHtml(e.name)}${hasQty(e.qty) ? ` <span class="log-qty">×${fmtQty(e.qty)}</span>` : ""}</div>
             <div class="log-amount">${e.kind === "water" ? `${e.oz} oz` : `${e.g} g`}</div>
           </div>
         </div>
@@ -7593,10 +8050,22 @@ function renderDayModalContent() {
     </div>
     ${bumpNote}
     <div class="log-list" style="margin-top:14px">${entriesHtml}</div>
+    <div class="day-add-row">
+      <button class="day-add-btn water" id="day-add-water">+ Water</button>
+      <button class="day-add-btn protein" id="day-add-protein">+ Protein</button>
+    </div>
   `;
 
   $("#day-prev")?.addEventListener("click", () => navigateDay(-1));
   $("#day-next")?.addEventListener("click", () => navigateDay(1));
+  // Tap an entry to edit/remove it; add buttons add to this day. All return here.
+  const reopen = () => openDayLogModal(_dayModalKey);
+  $$("#day-modal-inner [data-entry-id]").forEach(el => el.addEventListener("click", () =>
+    openEntryEditor({ kind: el.dataset.entryKind, entryId: el.dataset.entryId, returnTo: reopen })));
+  $("#day-add-water")?.addEventListener("click", () =>
+    openEntryEditor({ kind: "water", dayKey: _dayModalKey, returnTo: reopen }));
+  $("#day-add-protein")?.addEventListener("click", () =>
+    openEntryEditor({ kind: "protein", dayKey: _dayModalKey, returnTo: reopen }));
 }
 
 function navigateDay(direction) {
