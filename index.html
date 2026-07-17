@@ -593,100 +593,6 @@
   }
   .rings-explainer-link:hover { color: var(--ink); }
 
-  /* Time-of-day timeline */
-  .timeline-card {
-    margin: 12px 24px 0;
-    padding: 14px 16px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-  }
-  .timeline-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--ink-muted);
-    font-weight: 700;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-  .timeline-now-label {
-    text-transform: none;
-    letter-spacing: 0.02em;
-    font-weight: 500;
-    color: var(--ink-soft);
-    font-size: 11px;
-  }
-  .timeline-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-  }
-  .timeline-row:last-of-type { margin-bottom: 6px; }
-  .timeline-label {
-    width: 14px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--ink-muted);
-    text-align: center;
-    letter-spacing: 0.05em;
-  }
-  .timeline-track {
-    flex: 1;
-    height: 14px;
-    position: relative;
-  }
-  .timeline-track::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0;
-    top: 50%;
-    height: 1px;
-    background: var(--border);
-  }
-  .timeline-marker {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 1px;
-    height: 5px;
-    background: var(--border-strong);
-  }
-  .timeline-now {
-    position: absolute;
-    top: -3px;
-    bottom: -3px;
-    width: 1.5px;
-    background: var(--ink-soft);
-    opacity: 0.55;
-    transform: translateX(-50%);
-    border-radius: 1px;
-    pointer-events: none;
-  }
-  .timeline-dot {
-    position: absolute;
-    top: 50%;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-  }
-  .timeline-dot.water { background: var(--water); }
-  .timeline-dot.protein { background: var(--protein); }
-  .timeline-axis {
-    display: flex;
-    justify-content: space-between;
-    padding-left: 24px;
-    font-size: 9.5px;
-    color: var(--ink-muted);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    margin-top: 4px;
-  }
-
   /* Weekly review */
   .weekly-review {
     margin: 16px 20px 0;
@@ -1344,6 +1250,35 @@
     color: var(--ink-muted);
     margin-top: 6px;
   }
+  .qty-day-note {
+    color: var(--ink-muted);
+    font-size: 12px;
+  }
+
+  /* Add-protein chooser (day editor) */
+  .chooser-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .chooser-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--ink);
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chooser-row:active { background: var(--card-hover); }
+  .chooser-row:disabled { opacity: 0.5; cursor: not-allowed; }
+  .chooser-row-main { flex: 1; min-width: 0; }
+  .chooser-row-title { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .chooser-row-sub { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; }
+  .chooser-row-chev { color: var(--ink-muted); font-size: 20px; }
 
   /* History: Week / Month / Year segmented toggle */
   .hist-toggle {
@@ -5616,65 +5551,6 @@ function renderWeeklyReview() {
 }
 
 /* ============ "Why these goals?" modal ============ */
-function renderTimeline(today) {
-  const total = today.water.length + today.protein.length;
-  if (total === 0) return "";
-
-  // Visible range: dayStart to midnight (so late drinkers still see their dots).
-  const startHour = state.profile.dayStart ?? 7;
-  const endHour = 24;
-  const span = endHour - startHour;
-  const posPct = (iso) => {
-    const d = new Date(iso);
-    let hours = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
-    if (hours < startHour) hours = startHour;
-    if (hours >= endHour) hours = endHour - 0.05;
-    return ((hours - startHour) / span) * 100;
-  };
-  // Static tick marks at noon and 6pm (kept simple — orient the eye).
-  const noonPos = ((12 - startHour) / span) * 100;
-  const sixPos = ((18 - startHour) / span) * 100;
-  const windDown = state.profile.windDown ?? 20;
-  const windDownPos = ((windDown - startHour) / span) * 100;
-  // "Now" line — only shown during the visible window.
-  const nowH = nowHours();
-  const nowPos = nowH > startHour && nowH < endHour ? ((nowH - startHour) / span) * 100 : null;
-  const markers = `
-    <div class="timeline-marker" style="left:${noonPos}%"></div>
-    <div class="timeline-marker" style="left:${sixPos}%"></div>
-    <div class="timeline-marker" style="left:${windDownPos}%"></div>
-    ${nowPos !== null ? `<div class="timeline-now" style="left:${nowPos}%"></div>` : ""}
-  `;
-  return `
-    <div class="timeline-card">
-      <div class="timeline-title">
-        <span>Today's flow</span>
-        ${nowPos !== null ? `<span class="timeline-now-label">now ${fmtTime(new Date().toISOString())}</span>` : ""}
-      </div>
-      <div class="timeline-row">
-        <div class="timeline-label" style="color:var(--water)">W</div>
-        <div class="timeline-track">
-          ${markers}
-          ${today.water.map(e => `<div class="timeline-dot water" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.oz} oz"></div>`).join("")}
-        </div>
-      </div>
-      <div class="timeline-row">
-        <div class="timeline-label" style="color:var(--protein)">P</div>
-        <div class="timeline-track">
-          ${markers}
-          ${today.protein.map(e => `<div class="timeline-dot protein" style="left:${posPct(e.ts)}%" title="${fmtTime(e.ts)} · ${e.g}g${hasQty(e.qty) ? ` ×${fmtQty(e.qty)}` : ""}"></div>`).join("")}
-        </div>
-      </div>
-      <div class="timeline-axis">
-        <span>${formatHour(startHour)}</span>
-        <span>noon</span>
-        <span>6pm</span>
-        <span>12am</span>
-      </div>
-    </div>
-  `;
-}
-
 function openGoalsExplainerModal() {
   const p = state.profile;
   const base = getBaseGoals();
@@ -5784,7 +5660,6 @@ function renderToday() {
     ${renderBoosterStrip()}
     ${renderQuickLog(goals)}
     ${renderWorkoutCard(goals)}
-    ${renderTimeline(today)}
     ${renderTodayLog(today)}
   `;
   $("#main-content").innerHTML = html;
@@ -6190,12 +6065,23 @@ function openCustomWaterModal() {
   setTimeout(() => input.focus(), 100);
 }
 
-function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
+function openCustomProteinModal(prefillName = "", saveToLibDefault = false, ctx = {}) {
   // Guard against being called directly as an event handler (prefillName = Event)
   if (typeof prefillName !== "string") prefillName = "";
+  const { dayKey = null, returnTo = null } = ctx;
+  const back = returnTo || closeModal;
+  // For a past day, seed the when-widget at that day's current time-of-day so
+  // the entry lands on the intended date at a plausible hour.
+  const seedTs = dayKey && dayKey !== todayKey()
+    ? buildTs(dayKey, tsToTimeStr(new Date().toISOString()))
+    : new Date().toISOString();
+  const dayLabel = dayKey && dayKey !== todayKey()
+    ? new Date(dayKey + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
+    : null;
   openModal(`
+    ${returnTo ? `<button class="modal-back" type="button" id="cust-back-top">‹ Back</button>` : ""}
     <div class="modal-title">Custom protein</div>
-    <div class="modal-sub">Log a one-off, or save it to your library to reuse.</div>
+    <div class="modal-sub">${dayLabel ? `Adding to ${dayLabel}.` : "Log a one-off, or save it to your library to reuse."}</div>
     <div class="field">
       <span class="field-label">Name${saveToLibDefault ? "" : " (optional)"}</span>
       <div class="input-box"><input type="text" id="p-name" value="${escapeHtml(prefillName)}" placeholder="e.g. lunch chicken bowl" /></div>
@@ -6212,7 +6098,7 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
       <span class="field-label">Water content <span style="color:var(--ink-muted);font-weight:500">(oz, optional — for shakes & drinks)</span></span>
       <div class="input-box"><input type="number" id="p-water" inputmode="decimal" placeholder="—" /></div>
     </div>
-    ${renderWhenWidget(new Date().toISOString())}
+    ${renderWhenWidget(seedTs)}
     <button class="toggle-row ${saveToLibDefault ? "on" : ""}" id="p-savelib" type="button">
       <div class="toggle-row-info">
         <div class="toggle-row-title">Save to my library</div>
@@ -6230,7 +6116,7 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
     </div>
   `);
   const gIn = $("#p-g");
-  const when = wireWhenWidget(new Date().toISOString());
+  const when = wireWhenWidget(seedTs);
   let saveToLib = saveToLibDefault;
   $("#dec").addEventListener("click", () => gIn.value = Math.max(1, +gIn.value - 5));
   $("#inc").addEventListener("click", () => gIn.value = +gIn.value + 5);
@@ -6239,7 +6125,8 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
     $("#p-savelib").classList.toggle("on", saveToLib);
     $("#serving-field").style.display = saveToLib ? "" : "none";
   });
-  $("#m-cancel").addEventListener("click", closeModal);
+  $("#cust-back-top")?.addEventListener("click", back);
+  $("#m-cancel").addEventListener("click", back);
   $("#m-save").addEventListener("click", () => {
     const g = +gIn.value;
     const name = $("#p-name").value.trim();
@@ -6258,16 +6145,20 @@ function openCustomProteinModal(prefillName = "", saveToLibDefault = false) {
       if (water_oz > 0) item.water_oz = water_oz;
       state.library.push(item);
     }
-    closeModal();
+    if (returnTo) { closeModal(); }
     logItemWithWater(g, name || "Protein", water_oz, ts);
     if (saveToLib) showToast("Logged & saved to library");
+    if (returnTo) returnTo();
+    else closeModal();
   });
 }
 
-function openLibraryModal() {
+function openLibraryModal(ctx = {}) {
+  const { dayKey = null, returnTo = null } = ctx;
   libEditing = false;
   const items = [...state.library].sort((a, b) => a.name.localeCompare(b.name));
   openModal(`
+    ${returnTo ? `<button class="modal-back" type="button" id="lib-back-top">‹ Back</button>` : ""}
     <div class="modal-title">Protein library</div>
     <input class="lib-search" id="lib-search" placeholder="Search foods…" />
     <div class="lib-toolbar">
@@ -6278,10 +6169,12 @@ function openLibraryModal() {
       ${renderLibList(items, "")}
     </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" id="m-cancel">Close</button>
+      <button class="btn btn-secondary" id="m-cancel">${returnTo ? "Back" : "Close"}</button>
     </div>
   `, "modal-tall");
-  $("#m-cancel").addEventListener("click", closeModal);
+  const back = returnTo || closeModal;
+  $("#m-cancel").addEventListener("click", back);
+  $("#lib-back-top")?.addEventListener("click", back);
   $("#lib-search").addEventListener("input", e => {
     const q = e.target.value;
     const ql = q.toLowerCase();
@@ -6289,16 +6182,16 @@ function openLibraryModal() {
     const filtered = allItems.filter(it => it.name.toLowerCase().includes(ql) || (it.serving || "").toLowerCase().includes(ql));
     $("#lib-list").innerHTML = renderLibList(filtered, q);
     applyLibEditingClass();
-    wireLibItems();
-    wireLibAddButton();
+    wireLibItems(ctx);
+    wireLibAddButton(ctx);
   });
   $("#lib-edit-toggle").addEventListener("click", () => {
     libEditing = !libEditing;
     $("#lib-edit-toggle").textContent = libEditing ? "Done" : "Edit";
     applyLibEditingClass();
   });
-  wireLibItems();
-  wireLibAddButton();
+  wireLibItems(ctx);
+  wireLibAddButton(ctx);
 }
 
 let libEditing = false;
@@ -6307,14 +6200,15 @@ function applyLibEditingClass() {
   if (list) list.classList.toggle("editing", libEditing);
 }
 
-function wireLibAddButton() {
+function wireLibAddButton(ctx = {}) {
   const btn = $("#lib-add-open");
   if (!btn) return; // Only present in the empty state
   btn.addEventListener("click", () => {
     const q = ($("#lib-search")?.value || "").trim();
     closeModal();
-    // Hand off to the single Custom screen, pre-filled and set to save to library
-    openCustomProteinModal(q, true);
+    // Hand off to the single Custom screen, pre-filled and set to save to library.
+    // Ctx (day + returnTo) is carried so a past-day add lands on the right day.
+    openCustomProteinModal(q, true, ctx);
   });
 }
 
@@ -6342,7 +6236,7 @@ function renderLibList(items, query = "") {
     </div>
   `).join("");
 }
-function wireLibItems() {
+function wireLibItems(ctx = {}) {
   $$(".lib-item-remove").forEach(btn => btn.addEventListener("click", (e) => {
     e.stopPropagation();
     removeLibraryItem(btn.dataset.removeId);
@@ -6351,20 +6245,22 @@ function wireLibItems() {
     if (libEditing) return;            // in edit mode, taps don't log
     const id = el.dataset.libId;
     const it = state.library.find(x => x.id === id);
-    if (it) openLibraryQtyModal(it);   // choose how many servings, then log
+    if (it) openLibraryQtyModal(it, ctx);   // choose how many servings, then log
   }));
 }
 
 // Quantity sheet for a library item: pick how many servings, see the live
 // total, then log a single multiplied entry (protein + any water credit).
-// Cancel returns to the library; logging closes back to Today.
-function openLibraryQtyModal(item) {
+// Cancel returns to the library; logging closes back to Today — or, when a
+// day-editing context is passed, targets that day and returns to its view.
+function openLibraryQtyModal(item, ctx = {}) {
+  const { dayKey = null, returnTo = null } = ctx;
   const unitG = item.g;
   const unitW = item.water_oz || 0;
   const serving = item.serving || "1 serving";
   openModal(`
     <div class="modal-title">${escapeHtml(item.name)}</div>
-    <div class="qty-serv">${escapeHtml(serving)}${unitW ? ` <span style="color:var(--water)">· +${unitW}oz water</span>` : ""} each</div>
+    <div class="qty-serv">${escapeHtml(serving)}${unitW ? ` <span style="color:var(--water)">· +${unitW}oz water</span>` : ""} each${dayKey && dayKey !== todayKey() ? ` <span class="qty-day-note">· logging to ${new Date(dayKey + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span>` : ""}</div>
     <div class="qty-stepper">
       <button class="qty-btn" id="qty-minus" type="button" aria-label="Fewer">−</button>
       <input class="qty-input" id="qty-input" type="number" inputmode="decimal" step="0.5" min="0.5" max="99" value="1" aria-label="Number of servings" />
@@ -6394,11 +6290,20 @@ function openLibraryQtyModal(item) {
   $("#qty-plus").addEventListener("click", () => { input.value = fmtQty(clampQty(+input.value + QTY_STEP)); refresh(); });
   input.addEventListener("input", refresh);
   input.addEventListener("blur", () => { input.value = fmtQty(clampQty(+input.value)); refresh(); });
-  $("#qty-cancel").addEventListener("click", () => openLibraryModal());   // back to the library
+  // Cancel returns to the library, preserving the day-editing context so its
+  // Back button still leads back to the day view.
+  $("#qty-cancel").addEventListener("click", () => openLibraryModal(ctx));
   logBtn.addEventListener("click", () => {
     const qty = clampQty(+input.value);
-    closeModal();
-    logItemWithWater(Math.round(unitG * qty), item.name, Math.round(unitW * qty), undefined, { qty, unitG });
+    // For a past day, stamp the entry at that day's current-time-of-day so it
+    // slots into the log at a plausible hour instead of midnight-UTC.
+    const ts = dayKey && dayKey !== todayKey()
+      ? buildTs(dayKey, tsToTimeStr(new Date().toISOString()))
+      : undefined;
+    if (returnTo) { closeModal(); }
+    logItemWithWater(Math.round(unitG * qty), item.name, Math.round(unitW * qty), ts, { qty, unitG });
+    if (returnTo) returnTo();
+    else closeModal();
   });
   refresh();
 }
@@ -8065,7 +7970,50 @@ function renderDayModalContent() {
   $("#day-add-water")?.addEventListener("click", () =>
     openEntryEditor({ kind: "water", dayKey: _dayModalKey, returnTo: reopen }));
   $("#day-add-protein")?.addEventListener("click", () =>
-    openEntryEditor({ kind: "protein", dayKey: _dayModalKey, returnTo: reopen }));
+    openAddProteinChooser({ dayKey: _dayModalKey, returnTo: reopen }));
+}
+
+// Add-protein chooser for a specific day (used by the day editor). Mirrors the
+// three ways you can add protein on Today — from your library, a custom entry
+// (optionally saved back), or a plain manual amount — but every path lands on
+// the passed-in day and returns to that day's view when done or cancelled.
+function openAddProteinChooser({ dayKey, returnTo }) {
+  const back = returnTo || closeModal;
+  const dayLabel = new Date(dayKey + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const libCount = state.library.length;
+  openModal(`
+    <button class="modal-back" type="button" id="chooser-back">‹ Back</button>
+    <div class="modal-title">Add protein</div>
+    <div class="modal-sub">Adding to ${dayLabel}.</div>
+    <div class="chooser-list">
+      <button class="chooser-row" id="ch-library"${libCount ? "" : " disabled"}>
+        <div class="chooser-row-main">
+          <div class="chooser-row-title">From your library</div>
+          <div class="chooser-row-sub">${libCount ? `${libCount} saved item${libCount === 1 ? "" : "s"}` : "Nothing saved yet"}</div>
+        </div>
+        <div class="chooser-row-chev">›</div>
+      </button>
+      <button class="chooser-row" id="ch-custom">
+        <div class="chooser-row-main">
+          <div class="chooser-row-title">Custom item</div>
+          <div class="chooser-row-sub">Name it, log it, optionally save to library</div>
+        </div>
+        <div class="chooser-row-chev">›</div>
+      </button>
+      <button class="chooser-row" id="ch-manual">
+        <div class="chooser-row-main">
+          <div class="chooser-row-title">Just a number</div>
+          <div class="chooser-row-sub">Skip the name — enter grams</div>
+        </div>
+        <div class="chooser-row-chev">›</div>
+      </button>
+    </div>
+  `);
+  $("#chooser-back").addEventListener("click", () => back());
+  $("#ch-library")?.addEventListener("click", () => openLibraryModal({ dayKey, returnTo }));
+  $("#ch-custom").addEventListener("click", () => openCustomProteinModal("", false, { dayKey, returnTo }));
+  $("#ch-manual").addEventListener("click", () =>
+    openEntryEditor({ kind: "protein", dayKey, returnTo }));
 }
 
 function navigateDay(direction) {
